@@ -290,7 +290,7 @@ def readStateFeatures(fname):
 	pair = line.split('\t')
 	if len(pair)!=2 or len(pair[1].split())!=94:
 	    continue
-	tokens = pair[1].split()	
+	tokens = pair[1].split()
 	feature = []
 	try:
 	    feature = [float(f) for f in tokens[0:-1]]
@@ -323,6 +323,3 @@ def readWeights(fname):
     fin = file(fname)
     tokens = fin.readline().split()
     return [float(w) for w in tokens]
-
-
-
