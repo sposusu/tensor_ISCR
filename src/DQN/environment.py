@@ -11,8 +11,8 @@ from util import readLex, readFoldQueries, readBackground, readInvIndex, \
 #python python/continuousMDP.py PTV.lex 10fold/query/CMVN/train.fold1 10fold/query/CMVN/test.fold1 background/onebest.CMVN.bg index/onebest/PTV.onebest.CMVN.index doclength/onebest.CMVN.length PTV.ans docmodel/onebest/CMVN/ cmdp/theta/onebest.CMVN/theta.fold1 10 0.01
 
 class Environment(object):
-  def __init__(self,lex,train_quries,test_queries,background,inv_index,\
-        doclengs,answers,docmodeldir,alpha_d=1000,em_iter=10, mu=10,\
+  def __init__(self,lex,background,inv_index,\
+        doclengs,answers,docmodeldir,alpha_d=1000,beta=0.1,em_iter=10,mu=10,\
         delta=1,topicleng=100, topicnumword=500):
     """
     Initialize Environment with
@@ -25,8 +25,6 @@ class Environment(object):
 
     # Initialize
     self.lex = readLex(lex)
-    self.train_queries, self.train_indexes = readFoldQueries(train_queries)
-    self.test_queries, self.test_indexes = readFoldQueries(test_queries)
     self.background = readBackground(background,self.lex)
     self.inv_index = readInvIndex(inv_index)
     self.doclengs = readDocLength(doclengs)
@@ -37,15 +35,18 @@ class Environment(object):
 
     # parameters
     self.alpha_d = alpha_d
+    self.beta = beta
     self.iteration = em_iter
     self.mu = mu
     self.delta = delta
     self.topicleng = topicleng
     self.topicnumword = topicnumword
 
-  def query(self,query,ans,index):
+  def setSession(self,query,ans,index):
     """
-    Query before retrieving anything
+    Set query and answer for this session
+
+    return state: 1 dim-vector for initialization
     """
     self.query = query
 
@@ -66,9 +67,7 @@ class Environment(object):
 
     self.curtHorizon = 0.
 
-    self.firstpass = True
-
-    self.initAP = None
+    firstpass = retrieve(self.query,self.back,self.inv_index,self.doclengs,self.alpha_d)
 
   def retrieve(self, action):
     """
@@ -89,21 +88,30 @@ class Environment(object):
 		  self.topicRanking,self.topicleng,self.topicnumwords)
 
     ret = retrieveCombination(posmodel,negmodel,self.back,\
-      self.inv_index,self.doclengs,self.alpha_d,beta=0.1)
+      self.inv_index,self.doclengs,self.alpha_d, self.beta )
 
     self.curtHorizon += 1
 
-    """
-    Since dictionaries can hold function has keys,
-    We can write a new cost table
+  def game_over():
+    if self.curtHorizon >= 5:
+      return False
 
-    Todo:
-      New cost table
-    """
+    self.query = None
+    return True
 
-    if self.firstpass is True:
-      pass
-
+  def _evalAP(ret,ans):
+    if len(ans) == 0:
+      return 0.0
+    AP = 0.0
+    cnt = 0.0
+    get = 0.0
+    for docID, val in ret:
+      cnt += 1.0
+      if ans.has_key(docID):
+        get += 1.0
+  	    AP += float(get)/float(cnt)
+    AP /= float(len(ans))
+    return AP
 
 def featureExtraction(self,statequeue):
 
@@ -269,7 +277,6 @@ def featureExtraction(self,statequeue):
   #print feature
   return feature
 
-
 if __name__ == "__main__":
   lex = 'PTV.lex'
   train_queries = '10fold/query/CMVN/train.fold1'
@@ -280,7 +287,12 @@ if __name__ == "__main__":
   answers = 'PTV.ans'
   docmodeldir = 'docmodel/onebest/CMVN/'
 
+  train = readFoldQueries(train_queries)
+
+  pdb.set_trace()
+
   env = Environment(lex,train_queries,test_queries,\
           background,inv_index,\
           doclengs,answers,docmodeldir)
-  env.query(env.train_queries[1],env.answers[1],env.train_indexes[1])
+
+  env.setSession(env.train_queries[1],env.answers[1],env.train_indexes[1])
