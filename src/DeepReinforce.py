@@ -1,8 +1,9 @@
 import os, sys, operator, time
 import numpy as np
 from python.util import readFoldQueries,readLex,readInvIndex
-from DQN import agent,q_network
-#from DQN.environment import *
+from DQN import q_network
+import DQN.agent as agent
+from python.environment import *
 
 ################################
 #import argparse
@@ -14,15 +15,15 @@ train_data = '10fold/query/CMVN/train.fold1'
 test_data = '10fold/query/CMVN/test.fold1'
 background = 'background/onebest.CMVN.bg'
 inv_index = 'index/onebest/PTV.onebest.CMVN.index'
-o = readInvIndex(dir+inv_index)
-print o
+#o = readInvIndex(dir+inv_index)
+#print o
 doclengs = 'doclength/onebest.CMVN.length'
 answers = 'PTV.ans'
 docmodeldir = 'docmodel/onebest/CMVN/'
 train_queries,train_indexes = readFoldQueries(dir+train_data)
 test_queries ,test_indexes  = readFoldQueries(dir+test_data)
 ###############################
-input_width, input_height = [100,100]
+input_width, input_height = [91,1]
 num_actions = 10
 phi_length = 4 # phi length?  input 4 frames at once
 discount = 0.95
@@ -56,26 +57,26 @@ class experiment():
     self.agent = agent
     self.env = env
 
-  def run():
+  def run(self):
     epoch = 0
     it = 0
     while epoch < num_epoch:
-      for i in xrange(train_queries):
-        it = it + run_episode(q,False)
+      for q in train_queries:
+        it = it + self.run_episode(q,False)
 
         if it % step_per_epoch == 0:
           epoch = epoch + 1
-          testing()
+          self.testing()
 
-  def testing():
-    for i in xrange(test_queries):
-      run_episode(q,True)
+  def testing(self):
+    for qtest in test_queries:
+      self.run_episode(qtest,True)
       print 'test','MAP = ','Total Reward = '
     
 
-  def run_episode(queries,test_flag):
-    env.query(env.train_queries[1],env.answers[1],env.train_indexes[1])  # reset
-    action = self.agent.start_episode(self.env.get_observation())
+  def run_episode(self,queries,test_flag):
+    init_state = self.env.setSession(train_queries[1],train_indexes[1])  # reset
+    action = self.agent.start_episode(init_state)
 
     num_steps = 0
 
@@ -120,10 +121,9 @@ def launch():
 
   print 'create agent & simulator .. done'
 
-  env = Environment(lex,train_queries,test_queries,\
-                    background,inv_index,\
-                    doclengs,answers,docmodeldir)
-  exp = experiment(agent,simulator)
+  env = Environment(lex,background,inv_index,\
+                    doclengs,answers,docmodeldir,dir)
+  exp = experiment(agt,env)
   exp.run()
 
 launch()

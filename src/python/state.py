@@ -21,7 +21,7 @@ class State:
 	self.posprior = None
 	self.negprior = None
 	self.docmodeldir = docmodeldir
-	self.doclengs = doclengs	
+	self.doclengs = doclengs
 	self.back = back
 	self.iteration = iteration
 	self.mu = mu
@@ -41,11 +41,11 @@ class State:
 	self.posprior = deepcopy(pprior)
 	self.negprior = deepcopy(nprior)
 
-    def featureExtraction(self,statequeue):
+    def featureExtraction(self,state):
 	
 	actions = [state.actionType for state in statequeue[0:]]
 	
-	state = statequeue[-1]
+	#state = statequeue[-1]
 	feature = []
 
 	# Extract Features
@@ -222,7 +222,7 @@ class DiscreteState(State):
 		self.eval += weights[i]*(feature[i]-0.9993*means[i])
 	    else:
 		self.eval += weights[i]*(feature[i]-means[i])/devs[i]
-	#print self.eval,self.ap	
+	#print self.eval,self.ap
 	if self.eval < 0:
 	    self.eval = 0.0
 	elif self.eval >10.0:
@@ -254,6 +254,3 @@ class ContinuousState(State):
 	    self.eval = 0.0
 	elif self.eval >1.0:
 	    self.eval = 1.0
-
-
-
