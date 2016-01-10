@@ -1,34 +1,56 @@
-import os, sys, operator
-from util import *
-from MDP import *
-from retrieval import *
-from expansion import *
-from action as act
-from simulator import *
+import os, sys, operator, time
+import numpy as np
+from python.util import readFoldQueries,readLex,readInvIndex
+from DQN import agent,q_network
+#from DQN.environment import *
 
 ################################
-import argparse
-parser = argparse.ArgumentParser(description='Interactive Retrieval')
-lex = readLex(sys.argv[1])
-train_queries,train_indexes = readFoldQueries(sys.argv[2])
-test_queries ,test_indexes  = readFoldQueries(sys.argv[3])
-
-background = readBackground(sys.argv[4],lex)
-inv_index = readInvIndex(sys.argv[5])
-doclengs = readDocLength(sys.argv[6])
-answers = readAnswer(sys.argv[7],lex)
-docmodeldir = sys.argv[8]
-args = parser.parse_args()
+#import argparse
+#parser = argparse.ArgumentParser(description='Interactive Retrieval')
+#args = parser.parse_args()
+dir='../../ISDR-CMDP/'
+lex = 'PTV.lex'
+train_data = '10fold/query/CMVN/train.fold1'
+test_data = '10fold/query/CMVN/test.fold1'
+background = 'background/onebest.CMVN.bg'
+inv_index = 'index/onebest/PTV.onebest.CMVN.index'
+o = readInvIndex(dir+inv_index)
+print o
+doclengs = 'doclength/onebest.CMVN.length'
+answers = 'PTV.ans'
+docmodeldir = 'docmodel/onebest/CMVN/'
+train_queries,train_indexes = readFoldQueries(dir+train_data)
+test_queries ,test_indexes  = readFoldQueries(dir+test_data)
+###############################
+input_width, input_height = [100,100]
+num_actions = 10
+phi_length = 4 # phi length?  input 4 frames at once
+discount = 0.95
+learning_rate = 0.00025
+rms_decay = 0.99 # rms decay
+rms_epsilon = 0.1
+momentum = 0
+clip_delta = 1.0
+freeze_interval = 10000 #???  no freeze?
+batch_size = 32
+network_type = 'nature_cuda'
+update_rule = 'deepmind_rmsprop' # need update
+batch_accumulator = 'sum'
+rng = np.random.RandomState()
+###############################
+epsilon_start = 1.0
+epsilon_min = 0.1
+epsilon_decay = 1000000
+replay_memory_size = 1000000
+experiment_prefix = 'result/ret'
+replay_start_size = 50000
+update_frequency = 4  #??
 ###############################
 num_epoch = 100
 step_per_epoch = 1000
 num_tr_query = len(train_queries)
 num_tx_query = len(test_queries)
 ###############################
-def define_action_set():
-  actionset = act.genActionSet()
-  costTable = act.genCostTable()
-
 class experiment():
   def __init__(self,agent,env):
     self.agent = agent
@@ -47,18 +69,30 @@ class experiment():
 
   def testing():
     for i in xrange(test_queries):
-      run_episode(q,False)
-      print 'test'
+      run_episode(q,True)
+      print 'test','MAP = ','Total Reward = '
     
 
   def run_episode(queries,test_flag):
-      simulator.setSessionAnswer(answers[train_indexes[i]])
+    env.query(env.train_queries[1],env.answers[1],env.train_indexes[1])  # reset
+    action = self.agent.start_episode(self.env.get_observation())
 
-      mdp = MDP(deepcopy(simulator),actionset,dply,train_indexes[i],costTable)
-      mdp.configIRMDP(train_queries[i],answers[train_indexes[i]],background,inv_index,doclengs,1000,docmodeldir,10,10,1)
-      if test_flag:
-        mdp.FittedValueIteration()
-      return n_steps
+    num_steps = 0
+
+    while True:
+      [reward, state] = self.env.step(action)
+      terminal = self.env.game_over()
+      num_steps += 1
+
+      if num_steps >= max_steps:  # or terminal
+        self.agent.end_episode(reward, terminal)
+        break
+
+      action = self.agent.step(reward, screen)
+      print "Action :", action
+    #if test_flag:
+    
+    return num_steps
 
 def launch():
   t = time.time()
@@ -86,9 +120,9 @@ def launch():
 
   print 'create agent & simulator .. done'
 
-  define_action_set()
-  simulator = Simulator() # env = user simulator.py is modified
-  env = 
+  env = Environment(lex,train_queries,test_queries,\
+                    background,inv_index,\
+                    doclengs,answers,docmodeldir)
   exp = experiment(agent,simulator)
   exp.run()
 
