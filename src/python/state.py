@@ -234,7 +234,7 @@ class ContinuousState(State):
 
     def __init__(self,ret,ans,actionType,horizon,docmodeldir,\
 	    doclengs,back,iteration,mu,delta,inv_index,alpha_d,\
-	    statequeue,weights):
+	    weights):
 	State.__init__(self,ret,ans,actionType,horizon,docmodeldir,\
 		doclengs,back,iteration,mu,delta,inv_index,alpha_d)
 

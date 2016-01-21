@@ -1,13 +1,14 @@
 import pdb
 
 from action import feedbackByDoc, feedbackByTopic, feedbackByKeyterm, feedbackByRequest, showResults
-from action import genCostTable,genActionSet
+from action import genCostTable,genActionSet,ActionType
 from simulator import Simulator
 from state import ContinuousState
 from retrieval import retrieveCombination,retrieve
 from util import readLex, readFoldQueries, readBackground, readInvIndex, \
         readDocLength, readAnswer, readKeytermlist, readRequestlist, \
         readTopicWords, readTopicList
+from state import State
 
 #python python/continuousMDP.py PTV.lex 10fold/query/CMVN/train.fold1 10fold/query/CMVN/test.fold1 background/onebest.CMVN.bg index/onebest/PTV.onebest.CMVN.index doclength/onebest.CMVN.length PTV.ans docmodel/onebest/CMVN/ cmdp/theta/onebest.CMVN/theta.fold1 10 0.01
 
@@ -71,12 +72,11 @@ class Environment(object):
 
     firstpass = retrieve(self.query,self.back,self.inv_index,self.doclengs,self.alpha_d)
 
-    state = ContinuousState(firstpass,\
-            self.answer,ActionType.ACTION_NONE,0,\
+    state = State(firstpass,\
+            self.answers,ActionType.ACTION_NONE,0,\
             self.docmodeldir,self.doclengs,self.back,\
             self.iteration,self.mu,self.delta,\
-            self.inv_index,self.alpha_d,\
-            self.statequeue,self.weights)
+            self.inv_index,self.alpha_d)
 
     state.setModels(self.posprior,self.negprior,\
             self.posprior,self.negprior)
@@ -94,7 +94,7 @@ class Environment(object):
     """
     assert self.query != None
 
-    posmodel, negmodel = action(curtState.ret,self.answer,\
+    posmodel, negmodel = action(curtState.ret,self.answers,\
 		  self.simulator,self.posprior,self.negprior,\
 		  self.positive_docs,self.negative_docs,\
 		  self.positive_leng,self.negative_leng,\
@@ -107,11 +107,10 @@ class Environment(object):
       self.inv_index,self.doclengs,self.alpha_d, self.beta )
 
     state = ContinuousState(ret,\
-                self.answer,actionType,self.curtHorizon,\
+                self.answers,actionType,self.curtHorizon,\
                 self.docmodeldir,self.doclengs,self.back,\
                 self.iteration,self.mu,self.delta,\
-                self.inv_index,self.alpha_d,\
-                self.statequeue,self.weights)
+                self.inv_index,self.alpha_d)
 
     state.setModels(posmodel,negmodel,\
                 self.posprior,self.negprior)

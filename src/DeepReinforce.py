@@ -23,7 +23,7 @@ docmodeldir = 'docmodel/onebest/CMVN/'
 train_queries,train_indexes = readFoldQueries(dir+train_data)
 test_queries ,test_indexes  = readFoldQueries(dir+test_data)
 ###############################
-input_width, input_height = [48,48]
+input_width, input_height = [40,40]
 num_actions = 10
 phi_length = 4 # phi length?  input 4 frames at once
 discount = 0.95
