@@ -23,7 +23,7 @@ docmodeldir = 'docmodel/onebest/CMVN/'
 train_queries,train_indexes = readFoldQueries(dir+train_data)
 test_queries ,test_indexes  = readFoldQueries(dir+test_data)
 ###############################
-input_width, input_height = [91,1]
+input_width, input_height = [48,48]
 num_actions = 10
 phi_length = 4 # phi length?  input 4 frames at once
 discount = 0.95
@@ -72,7 +72,7 @@ class experiment():
     for qtest in test_queries:
       self.run_episode(qtest,True)
       print 'test','MAP = ','Total Reward = '
-    
+
 
   def run_episode(self,queries,test_flag):
     init_state = self.env.setSession(train_queries[1],train_indexes[1])  # reset
@@ -92,7 +92,7 @@ class experiment():
       action = self.agent.step(reward, screen)
       print "Action :", action
     #if test_flag:
-    
+
     return num_steps
 
 def launch():

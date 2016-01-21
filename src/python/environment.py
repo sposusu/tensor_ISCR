@@ -3,6 +3,7 @@ import pdb
 from action import feedbackByDoc, feedbackByTopic, feedbackByKeyterm, feedbackByRequest, showResults
 from action import genCostTable,genActionSet
 from simulator import Simulator
+from state import ContinuousState
 from retrieval import retrieveCombination,retrieve
 from util import readLex, readFoldQueries, readBackground, readInvIndex, \
         readDocLength, readAnswer, readKeytermlist, readRequestlist, \
