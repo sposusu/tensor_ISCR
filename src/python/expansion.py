@@ -3,19 +3,21 @@ import os
 import operator
 from util import *
 
+dir='../../ISDR-CMDP/'
+
 def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
-    
+
     models = []
     alphas = []
 
     for name in docnames:
 	if isinstance(name, str):
-	    models.append(readDocModel(name))
+	    models.append(readDocModel(dir+name))
 	else:
 	    models.append(name)
 	alphas.append(0.5)
     N = float(len(docnames))
-    
+
     # init query model
     query = {}
     for model in models:
@@ -27,7 +29,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 
     # EM expansion
     for it in range(iteration):
-	
+
 	# E step, Estimate P(Zw,d=1)
 	aux = {}
 	for m in range(len(models)):
@@ -40,7 +42,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 			    (alpha*query[word]+\
 			    (1-alpha)*back[word])
 		else:
-		    aux[m][word] = 0.0	
+		    aux[m][word] = 0.0
 	# M step
 	# Estimate alpha_D
 	tmpmass = {}
@@ -54,7 +56,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 		else:
 		    tmpmass[word] = aux[m][word]*val*doclengs[m]
 	    alphas[m] /= doclengs[m]
-	
+
 	# Estimate expanded query model
 	qexpand = {}
 	for word,val in prior.iteritems():
@@ -65,7 +67,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 		qexpand[word] += tmpmass[word]
 	    else:
 		qexpand[word] = tmpmass[word]
-	    
+
 	# Normalize expanded model
 	Z = 0.0
 	for word,val in qexpand.iteritems():
@@ -76,7 +78,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 
 	query = qexpand
 	mu *= delta
-	
+
 	# dealloc
 	del aux
 	del tmpmass
@@ -84,7 +86,7 @@ def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
 
     del models
     del alphas
-    
+
     qsort = sorted(query.iteritems(),key=operator.itemgetter(1),reverse=True)
     query = dict(qsort[0:100])
     #print qsort[0:3]
@@ -104,7 +106,4 @@ def PRFExpansion(queries,ret,doclengs,background,docmodeldir,N,iteration,mu,delt
 	    pleng.append(doclengs[k])
 	qex = expansion(queries[i],prelnames,pleng,background,iteration,mu,delta)
 	expanded_queries.append(qex)
-    return expanded_queries   
-
-
-
+    return expanded_queries

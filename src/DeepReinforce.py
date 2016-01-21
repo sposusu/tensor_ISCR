@@ -1,5 +1,10 @@
 import os, sys, operator, time
+import pdb
 import numpy as np
+
+import progressbar
+from progressbar import ProgressBar, Percentage, Bar, ETA
+
 from python.util import readFoldQueries,readLex,readInvIndex
 from DQN import q_network
 import DQN.agent as agent
@@ -22,9 +27,10 @@ answers = 'PTV.ans'
 docmodeldir = 'docmodel/onebest/CMVN/'
 train_queries,train_indexes = readFoldQueries(dir+train_data)
 test_queries ,test_indexes  = readFoldQueries(dir+test_data)
+
 ###############################
-input_width, input_height = [40,40]
-num_actions = 10
+input_width, input_height = [89,1]
+num_actions = 5
 phi_length = 4 # phi length?  input 4 frames at once
 discount = 0.95
 learning_rate = 0.00025
@@ -34,7 +40,7 @@ momentum = 0
 clip_delta = 1.0
 freeze_interval = 10000 #???  no freeze?
 batch_size = 32
-network_type = 'nature_cuda'
+network_type = 'rl_dnn'
 update_rule = 'deepmind_rmsprop' # need update
 batch_accumulator = 'sum'
 rng = np.random.RandomState()
@@ -47,8 +53,9 @@ experiment_prefix = 'result/ret'
 replay_start_size = 50000
 update_frequency = 4  #??
 ###############################
-num_epoch = 100
+num_epoch = 1
 step_per_epoch = 1000
+max_steps = 5
 num_tr_query = len(train_queries)
 num_tx_query = len(test_queries)
 ###############################
@@ -60,43 +67,54 @@ class experiment():
   def run(self):
     epoch = 0
     it = 0
+    pdb.set_trace()
     while epoch < num_epoch:
-      for q in train_queries:
-        it = it + self.run_episode(q,False)
+        print 'Running epoch {0} out of {1} epochs'.format(epoch,num_epoch)
+        widgets = [ 'Training', Percentage(), Bar(), ETA() ]
+        pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
+        for idx, (q, q_idx) in enumerate(zip(train_queries,train_indexes)):
+            it = it + self.run_episode(q,q_idx,False)
+            pbar.update(idx)
+        pbar.finish()
 
+        """
         if it % step_per_epoch == 0:
-          epoch = epoch + 1
           self.testing()
+        """
+
+        epoch +=1
 
   def testing(self):
-    for qtest in test_queries:
-      self.run_episode(qtest,True)
-      print 'test','MAP = ','Total Reward = '
+    widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
+    pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
+    for idx,(qtest,qtest_idx) in enumerate(test_queries,test_indexes):
+      self.run_episode(qtest,qtest_idx,test_flag=True)
+      pbar.update(idx)
+    pbar.finish()
+    print 'test','MAP = ','Total Reward = '
 
-
-  def run_episode(self,queries,test_flag):
-    init_state = self.env.setSession(train_queries[1],train_indexes[1])  # reset
+  def run_episode(self,q,idx,test_flag = False):
+    init_state = self.env.setSession(q,idx)  # reset
     action = self.agent.start_episode(init_state)
 
     num_steps = 0
-
     while True:
-      [reward, state] = self.env.step(action)
+      reward, state = self.env.step(action)
       terminal = self.env.game_over()
+
       num_steps += 1
 
-      if num_steps >= max_steps:  # or terminal
+      if num_steps >= max_steps or terminal:
         self.agent.end_episode(reward, terminal)
         break
 
-      action = self.agent.step(reward, screen)
-      print "Action :", action
-    #if test_flag:
+      action = self.agent.step(reward, state)
 
     return num_steps
 
 def launch():
   t = time.time()
+  print 'Compiling Network...'
   network = q_network.DeepQLearner(input_width, input_height, num_actions,
                                          phi_length,
                                          discount,
@@ -111,7 +129,8 @@ def launch():
                                          update_rule,
                                          batch_accumulator,
                                          rng)
-  print 'compile network .. done' , time.time()-t
+  print 'Done', time.time()-t
+  print 'Creating Agent and Simulator...'
   agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
                                   replay_memory_size,
                                   experiment_prefix,
@@ -119,7 +138,7 @@ def launch():
                                   update_frequency,
                                   rng)
 
-  print 'create agent & simulator .. done'
+  print 'Done'
 
   env = Environment(lex,background,inv_index,\
                     doclengs,answers,docmodeldir,dir)

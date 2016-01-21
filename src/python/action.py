@@ -8,12 +8,12 @@ from expansion import *
 from retmath import *
 
 class ActionType:
-    FEEDBACK_BY_DOC=1
-    FEEDBACK_BY_KEYTERM=2
-    FEEDBACK_BY_REQUEST=3
-    FEEDBACK_BY_TOPIC=4
-    SHOW_RESULTS=5
-    ACTION_NONE=6
+    FEEDBACK_BY_DOC=0
+    FEEDBACK_BY_KEYTERM=1
+    FEEDBACK_BY_REQUEST=2
+    FEEDBACK_BY_TOPIC=3
+    SHOW_RESULTS=4
+    ACTION_NONE=5
 
 def genActionSet():
     actionset = {}
@@ -66,7 +66,7 @@ def feedbackByKeyterm(ret,ans,simulator,posprior,negprior,posdocs,\
 	tokens = docmodeldir.split('/')
 	params['keyterm'] = keyterm
 	params['ans'] = ans
-	params['docdir'] = '/home/shawnwun/ISDR-CMDP/docmodel/ref/'\
+	params['docdir'] = '../../ISDR-CMDP/docmodel/ref/'\
 		+tokens[-2]+'/'
 	#params['docdir'] = docmodeldir
 	del keytermlst[0]
@@ -112,7 +112,10 @@ def feedbackByTopic(ret,ans,simulator,posprior,negprior,posdocs,\
     negmodel = expansion(renormalize(negprior),negdocs,doclengs,back,iteration,mu,delta)
     return posmodel, negmodel
 
-def showResults():
+def showResults(ret,ans,simulator,posprior,negprior,posdocs,\
+	negdocs,poslengs,neglengs,doclengs,back,iteration,mu,delta,\
+	docmodeldir,keytermlst,requestlst,topiclst,topicRanking,\
+	leng=50,numwords=1000):
     pass
 
 # -------------------------------------------------#
@@ -147,8 +150,6 @@ def returnKeytermYesNo(params):
     keyterm = params['keyterm']
     ans = params['ans']
     docdir = params['docdir']
-    #'/home/shawnwun/ISDR-CMDP/docmodel/ref/CMVN/'
-    #params['docdir']
     cnt = 0.0
     for a in ans.iterkeys():
 	fname = docdir + IndexToDocName(a)

@@ -1,9 +1,7 @@
 import pdb
-
 from action import feedbackByDoc, feedbackByTopic, feedbackByKeyterm, feedbackByRequest, showResults
 from action import genCostTable,genActionSet,ActionType
 from simulator import Simulator
-from state import ContinuousState
 from retrieval import retrieveCombination,retrieve
 from util import readLex, readFoldQueries, readBackground, readInvIndex, \
         readDocLength, readAnswer, readKeytermlist, readRequestlist, \
@@ -24,6 +22,7 @@ class Environment(object):
       Agent should receive train_queries & test_queries
     """
     self.simulator = Simulator()
+    self.simulator.addActions()
     self.costTable = genCostTable()
     self.actionSet = genActionSet()
 
@@ -37,6 +36,7 @@ class Environment(object):
     self.answers = readAnswer(dir+answers,self.lex)
 
     # Document Model Directory, varies with query
+    self.dir = dir
     self.docmodeldir = docmodeldir
 
     # parameters
@@ -54,9 +54,11 @@ class Environment(object):
     return state: 1 dim-vector for initialization
     """
     self.query = query
+    self.ans_index = index
     cpsID = '.'.join(self.docmodeldir.split('/')[1:-1])
     self.keytermlist = readKeytermlist(cpsID,query)
     self.requestlist = readRequestlist(cpsID,self.answers[index]) #  !!
+
     self.topiclist = readTopicWords(cpsID)
     self.topicRanking = readTopicList(cpsID,index)[:5]
 
@@ -68,85 +70,87 @@ class Environment(object):
     self.posprior = self.query
     self.negprior = {}
 
-    self.curtHorizon = 0.
+    self.curtHorizon = 0
+    self.lastAP = 0.
+    self.terminal = False
 
     firstpass = retrieve(self.query,self.back,self.inv_index,self.doclengs,self.alpha_d)
 
+    self.prev_ret = firstpass
+
+
+    # Initialize Retrieval Results with no action
     state = State(firstpass,\
-            self.answers,ActionType.ACTION_NONE,0,\
+            self.answers[self.ans_index],ActionType.ACTION_NONE,0,\
             self.docmodeldir,self.doclengs,self.back,\
-            self.iteration,self.mu,self.delta,\
+            self.dir,self.iteration,self.mu,self.delta,\
             self.inv_index,self.alpha_d)
 
     state.setModels(self.posprior,self.negprior,\
             self.posprior,self.negprior)
 
     feature = state.featureExtraction(state)
-    
     return feature
 
-  def retrieve(self, action):
+  def step(self, action_type):
     """
     Has to have a query before retrieving anything
     Input: action
     Return: (1) State: 1 dim vector
-        (2) Reward: 1 real value
+            (2) Reward: 1 real value
     """
     assert self.query != None
+    assert action_type >= 0 and action_type < 6, 'Action_type not found!'
 
-    posmodel, negmodel = action(curtState.ret,self.answers,\
-		  self.simulator,self.posprior,self.negprior,\
-		  self.positive_docs,self.negative_docs,\
-		  self.positive_leng,self.negative_leng,\
-		  self.doclengs,self.back,self.iteration,
-		  self.mu,self.delta,self.docmodeldir,\
-		  self.keytermlst,self.requestlst,self.topiclst,\
-		  self.topicRanking,self.topicleng,self.topicnumwords)
+    ##################
+    #  Show Results  #
+    ##################
+    if action_type == 4:
+        self.terminal = True
+        reward = self.costTable[action_type] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
+        feature = None
+    else:
+        action = self.actionSet[ action_type ]
 
-    ret = retrieveCombination(posmodel,negmodel,self.back,\
-      self.inv_index,self.doclengs,self.alpha_d, self.beta )
+        posmodel, negmodel = action(self.prev_ret,self.answers[self.ans_index],\
+    		  self.simulator,self.posprior,self.negprior,\
+    		  self.positive_docs,self.negative_docs,\
+    		  self.positive_leng,self.negative_leng,\
+    		  self.doclengs,self.back,self.iteration,
+    		  self.mu,self.delta,self.docmodeldir,\
+    		  self.keytermlist,self.requestlist,self.topiclist,\
+    		  self.topicRanking,self.topicleng,self.topicnumword)
 
-    state = ContinuousState(ret,\
-                self.answers,actionType,self.curtHorizon,\
-                self.docmodeldir,self.doclengs,self.back,\
-                self.iteration,self.mu,self.delta,\
-                self.inv_index,self.alpha_d)
+        ret = retrieveCombination(posmodel,negmodel,self.back,\
+          self.inv_index,self.doclengs,self.alpha_d, self.beta )
 
-    state.setModels(posmodel,negmodel,\
-                self.posprior,self.negprior)
+        state = State(ret,self.answers[self.ans_index],action_type,self.curtHorizon,\
+                    self.docmodeldir,self.doclengs,self.back,\
+                    self.dir,self.iteration,self.mu,self.delta,\
+                    self.inv_index,self.alpha_d)
 
-    feature = state.featureExtraction(state)
+        state.setModels(posmodel,negmodel,self.posprior,self.negprior)
 
-    self.curtHorizon += 1
-    
-    actionA = statej.actionType
-    reward = self.costTable[actionA] + self.costTable['lambda'] * (state.AP - lastAP)
-    lastAP = state.AP
-    
-    return feature,reward
+        feature = state.featureExtraction(state)
 
-  def game_over():
-    if self.curtHorizon >= 5:
-      return False
+        reward = self.costTable[action_type] + self.costTable['lambda'] * (state.ap - self.lastAP)
 
-    self.query = None
-    return True
+        self.lastAP = state.ap
+        self.prev_ret =ret
+        self.curtHorizon += 1
 
-  def _evalAP(ret,ans):
-    if len(ans) == 0:
-      return 0.0
-    AP = 0.0
-    cnt = 0.0
-    get = 0.0
-    for docID, val in ret:
-      cnt += 1.0
-      if ans.has_key(docID):
-        get += 1.0
-        AP += float(get)/float(cnt)
-    AP /= float(len(ans))
-    return AP
+    return reward,feature
+
+  def game_over(self):
+    if self.curtHorizon >= 5 or self.terminal:
+        self.query = None
+        self.ans_index = None
+        return True
+    return False
 
 if __name__ == "__main__":
+
+  dir = '/home/antonie/Project/ISDR-CMDP/'
   lex = 'PTV.lex'
   train_queries = '10fold/query/CMVN/train.fold1'
   test_queries = '10fold/query/CMVN/test.fold1'
@@ -156,12 +160,10 @@ if __name__ == "__main__":
   answers = 'PTV.ans'
   docmodeldir = 'docmodel/onebest/CMVN/'
 
-  train = readFoldQueries(train_queries)
+  train,train_indexes = readFoldQueries(dir + train_queries)
 
-  pdb.set_trace()
+  env = Environment(lex,background,inv_index, \
+    doclengs,answers,docmodeldir,dir,alpha_d=1000,beta=0.1,em_iter=10,mu=10,\
+    delta=1,topicleng=100, topicnumword=500)
 
-  env = Environment(lex,train_queries,test_queries,\
-          background,inv_index,\
-          doclengs,answers,docmodeldir)
-
-  env.setSession(env.train_queries[1],env.answers[1],env.train_indexes[1])
+  env.setSession(train[1],train_indexes[1])
