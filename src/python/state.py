@@ -1,6 +1,3 @@
-import sys
-import os
-import operator
 from util import *
 from retrieval import *
 import math
@@ -30,18 +27,18 @@ class State:
         self.delta = delta
         self.inv_index = inv_index
         self.alpha_d = alpha_d
-
+    """
     def totuple(self):
         bin = math.floor(self.eval*10)/10.0
         if bin==1.0:
             bin = 0.9
         return (bin,self.horizon)
-
+    """
     def setModels(self,pos,neg,pprior,nprior):
-        self.posmodel = deepcopy(pos)
-        self.negmodel = deepcopy(neg)
-        self.posprior = deepcopy(pprior)
-        self.negprior = deepcopy(nprior)
+        self.posmodel = pos
+        self.negmodel = neg
+        self.posprior = pprior
+        self.negprior = nprior
 
     def featureExtraction(self,state):
 
@@ -204,7 +201,7 @@ class State:
 
 	#print feature
 	return feature
-
+"""
 class DiscreteState(State):
 
     def __init__(self,ret,ans,actionType,horizon,docmodeldir,\
@@ -253,3 +250,4 @@ class ContinuousState(State):
 	    self.eval = 0.0
 	elif self.eval >1.0:
 	    self.eval = 1.0
+"""
