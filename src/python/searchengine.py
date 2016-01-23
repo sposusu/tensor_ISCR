@@ -10,7 +10,7 @@ from util import docNameToIndex, readFoldQueries
 """
 
 class SearchEngine(object):
-  def __init__(self,lex,background,inv_index,doclengs,answers,docmodeldir,dir):
+  def __init__(self,lex,background,inv_index,doclengs,answers,docmodeldir,dir,alpha=1000,beta=0.1):
     # Initialize
     self.lex = readLex(dir+lex)
     self.background = readBackground(dir+background,self.lex)
@@ -21,6 +21,10 @@ class SearchEngine(object):
     # Document Model Directory, varies with query
     self.dir = dir
     self.docmodeldir = docmodeldir
+
+    # Query expansion parameters
+    self.alpha = alpha
+    self.beta = beta
 
   def __call__(self,alpha=1000,beta=0.1):
     """
@@ -95,12 +99,6 @@ class SearchEngine(object):
 
     sorted_ret = sorted(result.iteritems(),key=operator.itemgetter(1),reverse=True)
     return sorted_ret
-
-  def evalAP(ret,ans):
-    relevant = sum(1.0 for docID, val in ret.iteritems() if ans.has_key(docID))
-    return ( relevant / len(ans) if len(ans) else 0.0 )
-
-
 
 """
   Retrieval Engine Read Functions ( Migrated from util.py )
