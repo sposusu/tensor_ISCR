@@ -10,7 +10,7 @@ from util import docNameToIndex, readFoldQueries
 """
 
 class SearchEngine(object):
-  def __init__(self,lex,background,inv_index,doclengs,answers,docmodeldir,dir,alpha=1000,beta=0.1):
+  def __init__(self,lex,background,inv_index,doclengs,answers,dir,docmodeldir,alpha=1000,beta=0.1):
     # Initialize
     self.lex = readLex(dir+lex)
     self.background = readBackground(dir+background,self.lex)
