@@ -3,3 +3,6 @@ exec:
 
 env:
 	python python/environment.py
+
+test: 
+	nosetests 
