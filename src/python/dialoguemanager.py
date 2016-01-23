@@ -3,10 +3,12 @@ import math
 import os
 import operator
 import pdb
+
 # For Feature Extraction
 from expansion import expansion
 from retmath import *
 from retrieval import *
+from util import *
 
 dir = '../../ISDR-CMDP/'
 
@@ -16,7 +18,7 @@ dir = '../../ISDR-CMDP/'
 
 class DialogueManager(object):
   def __init__(self,background,inv_index,doclengs,answers,dir,docmodeldir,\
-              iteration=10,mu=10,delta=1,topicleng=100, topicnumword=500):
+              iteration=10,mu=10,delta=1,topicleng=50, topicnumword=1000):
 
     self.statemachine = StateMachine(
                               background = background,
@@ -38,9 +40,6 @@ class DialogueManager(object):
     self.topicleng = topicleng
     self.topicnumword = topicnumword
 
-    # Since we call it only once, put it in constructor
-    self.topiclist = readTopicWords(self.cpsID)
-
   def __call__(self,query,ans_index):
     """
       Set inital parameters for every session
@@ -50,12 +49,6 @@ class DialogueManager(object):
     """
     self.query = query
     self.ans = self.answers[ans_index]
-
-    # Information for actions
-    self.keytermlist = readKeytermlist(self.cpsID,query)
-    self.requestlist = readRequestlist(self.cpsID, self.ans)
-    #self.topiclist = readTopicWords(cpsID) # Move to constructor, since we call it only once
-    self.topicRanking = readTopicList(self.cpsID,ans_index)[:5]
 
     # Initialize Feedback models for this session
     self.positive_docs = []
@@ -70,21 +63,30 @@ class DialogueManager(object):
     # Interaction Parameters
     self.cur_action = 5 # Action None
     self.curtHorizon = 0
-    self.lastAP = 0.
-    self.terminal = False
 
     # Previous retrieved results
-    self.prev_ret = None
+    self.ret = None
 
-    return self
-  # To be modified:
+    self.lastAP = 0.
+    self.AP = 0.
+
+    # Termination indicator
+    self.terminal = False
+
   def get_retrieved_result(self,ret):
-    self.prev_ret = ret
-    self.lastAP = evalAP(ret,self.ans)
+    assert ret != None
+    self.ret = ret
+
+    self.lastAP = self.AP
+    self.AP = evalAP(ret,self.ans)
+
+  def APincrease(self):
+    return self.AP - self.lastAP
 
   def featureExtraction(self):
+    self.curtHorizon += 1
     self.statemachine(
-                    ret = self.prev_ret,
+                    ret = self.ret,
                     ans = self.ans,
                     action_type = self.cur_action,
                     curtHorizon = self.curtHorizon,
@@ -93,8 +95,50 @@ class DialogueManager(object):
                     posprior = self.posprior,
                     negprior = self.negprior
                     )
+    feature = self.statemachine.featureExtraction()
+    return feature
 
-    return self.statemachine.featureExtraction()
+  def request(self,action_type):
+    '''
+      Sends request to simulator for more query info
+    '''
+    self.cur_action = action_type
+    return self.ret, self.cur_action
+
+  def expand_query(self,response):
+    '''
+      Receives response from simulator
+      PS: 204 is HTTP status code for empty content
+    '''
+    if self.cur_action == 0:
+      doc = response
+      if doc:
+        self.posdocs.append(self.docmodeldir+IndexToDocName(doc))
+      	self.poslengs.append(self.doclengs[doc])
+    elif self.cur_action == 1:
+      if response is not 204:
+        keyterm = response[0]
+        boolean = response[1]
+        if boolean:
+          self.posprior[ keyterm ] = 1.
+        else:
+          self.negprior[ keyterm ] = 1.
+    elif self.cur_action == 2:
+      request = response
+      self.posprior[request] = 1.0
+    elif self.cur_action == 3:
+      topicIdx = response
+      self.posdocs.append(pruneAndNormalize(topiclst[topicIdx],self.topicnumword))
+      self.poslengs.append(self.topicleng)
+    elif self.cur_action == 4:
+      # This condition shouldn't happen, since we blocked this in environment.py
+      assert response == None
+      self.terminal = True
+
+    posmodel = expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
+    negmodel = expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
+
+    return posmodel, negmodel
 
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
@@ -129,8 +173,6 @@ class StateMachine(object):
     self.negmodel = negmodel
     self.posprior = posprior
     self.negprior = negprior
-
-    return self
 
   def featureExtraction(self):
     feature = []
@@ -281,9 +323,6 @@ class StateMachine(object):
 
     return feature
 
-  def evalAP(ret,ans):
-    relevant = sum(1.0 for docID, val in ret.iteritems() if ans.has_key(docID))
-    return ( relevant / len(ans) if len(ans) else 0.0 )
 
 """
 

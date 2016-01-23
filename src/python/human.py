@@ -6,56 +6,58 @@ from util import *
 from expansion import expansion
 from retmath import *
 
+FEEDBACK_BY_DOC=0
+FEEDBACK_BY_KEYTERM=1
+FEEDBACK_BY_REQUEST=2
+FEEDBACK_BY_TOPIC=3
+SHOW_RESULT=4
+ACTION_NONE=5
+
 class Simulator:
     """
       Simulates human response to retrieval machine
     """
-    # Will come back to this later
-    def __init__(self):
-        self.answer = []
-        self.policy = {}
+    def __init__(self,answers,dir,docmodeldir):
+      self.dir = dir
+      self.docmodeldir = docmodeldir
+      self.cpsID = '.'.join(docmodeldir.split('/')[1:-1])
+      self.answers = answers
 
-    def setSessionAnswer(self,ans):
-        self.answer = ans
+    def __call__(self,ans_index):
+      # ans
+      self.ans = self.answers[ans_index]
+      # Information for actions
+      self.keytermlist = readKeytermlist(self.cpsID,query)
+      self.requestlist = readRequestlist(self.cpsID, self.ans)
+      self.topiclist = readTopicWords(cpsID) # Move to constructor, since we call it only once
+      self.topicRanking = readTopicList(self.cpsID,ans_index)[:5]
 
-    def addActions(self):
-        self.policy[0] = action.returnSelectedDoc
-        self.policy[1] = action.returnKeytermYesNo
-        self.policy[2] = action.returnSelectedRequest
-        self.policy[3] = action.returnSelectedTopic
-
-    def act(self,key,params):
-        return self.policy[key](params)
-
-
-
-class ActionType:
-    FEEDBACK_BY_DOC=0
-    FEEDBACK_BY_KEYTERM=1
-    FEEDBACK_BY_REQUEST=2
-    FEEDBACK_BY_TOPIC=3
-    SHOW_RESULTS=4
-    ACTION_NONE=5
-
-def genActionSet():
-    actionset = {}
-    actionset[ActionType.FEEDBACK_BY_DOC] = feedbackByDoc
-    actionset[ActionType.FEEDBACK_BY_KEYTERM] = feedbackByKeyterm
-    actionset[ActionType.FEEDBACK_BY_REQUEST] = feedbackByRequest
-    actionset[ActionType.FEEDBACK_BY_TOPIC] = feedbackByTopic
-    actionset[ActionType.SHOW_RESULTS] = showResults
-    return actionset
-
-def genCostTable():
-    costTable = {}
-    costTable[ActionType.FEEDBACK_BY_DOC] = -30
-    costTable[ActionType.FEEDBACK_BY_KEYTERM] = -10
-    costTable[ActionType.FEEDBACK_BY_REQUEST] = -50
-    costTable[ActionType.FEEDBACK_BY_TOPIC] = -20
-    costTable[ActionType.SHOW_RESULTS] = 0
-    costTable[ActionType.ACTION_NONE] = 0
-    costTable['lambda'] = 1000
-    return costTable
+    def respond(self, ret, action_type):
+      if action_type == 0:
+        return doc = next( ( item[0] for item in ret if self.ans.has_key(item[0])), None )
+      elif action_type == 1:
+        if len(self.keytermlist):
+          keyterm = self.keytermlist[0][0]
+          docdir = self.dir + 'docmodel/ref/' + self.docmodeldir.split('/')[-2] + '/'
+      	  cnt = sum( 1.0 for a in self.ans: \
+                if readDocModel(docdir + IndexToDocName(a)).has_key(a) )
+          del self.keytermlist[0]
+          ret =  ( True if cnt/len(ans) > 0.5 else False )
+          return ( keyterm, ret )
+        else:
+          return 204
+      elif action_type == 2:
+        request = self.requestlist[0][0]
+        del self.requestlist[0]
+        return request
+      elif action_type == 3:
+        topic = self.topicRanking[0][0]
+        del self.topicRanking[0]
+        return topic
+      elif action_type == 4:
+        return None
+      else:
+        return ValueError
 
 """
   System Actions
@@ -88,8 +90,7 @@ def feedbackByKeyterm(ret,ans,simulator,posprior,negprior,posdocs,\
   	params['keyterm'] = keyterm
   	params['ans'] = ans
   	params['docdir'] = '../../ISDR-CMDP/docmodel/ref/'+tokens[-2]+'/'
-    #params['docdir'] = docmodeldir
-	del keytermlst[0]
+	  del keytermlst[0]
 
   # ask is relevant or not
   docdir = '../../ISDR-CMDP/docmodel/ref/'+tokens[-2]+'/'
@@ -149,19 +150,19 @@ def showResults(ret,ans,simulator,posprior,negprior,posdocs,\
 # -------------------------------------------------#
 
 def returnSelectedRequest(params):
-    requestlst = params['request']
-    request = requestlst[0][0]
+  requestlst = params['request']
+  request = requestlst[0][0]
     del requestlst[0]
-    return request
+  return request
 
 def returnSelectedDoc(params):
-    ret = params['ret']
-    ans = params['ans']
-    for item in ret:
-	d = item[0]
-	if ans.has_key(d):
-	    return d
-    return None
+  ret = params['ret']
+  ans = params['ans']
+  for item in ret:
+    d = item[0]
+    if ans.has_key(d):
+      return d
+  return None
 
 def returnSelectedTopic(params):
     topicRanking = params['topic']
@@ -173,16 +174,16 @@ def returnSelectedTopic(params):
     return topic
 
 def returnKeytermYesNo(params):
-    keyterm = params['keyterm']
-    ans = params['ans']
-    docdir = params['docdir']
-    cnt = 0.0
-    for a in ans.iterkeys():
-	fname = docdir + IndexToDocName(a)
-	ansdoc = readDocModel(fname)
-	if ansdoc.has_key(keyterm):
-	    cnt += 1.0
-    if cnt/float(len(ans))>0.5:
-	return True
-    else:
-	return False
+  keyterm = params['keyterm']
+  ans = params['ans']
+  docdir = params['docdir']
+  cnt = 0.0
+  for a in ans.iterkeys():
+    fname = docdir + IndexToDocName(a)
+    ansdoc = readDocModel(fname)
+    if ansdoc.has_key(keyterm):
+      cnt += 1.0
+  if cnt/float(len(ans))>0.5:
+    return True
+  else:
+    return False
