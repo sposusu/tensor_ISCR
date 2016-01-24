@@ -6,7 +6,7 @@ from human import Simulator
 # Define Cost Table
 def genCostTable():
     values = [ -30., -10., -50., -20., 0., 0., 1000. ]
-    costTable = dict(zip(range(6)+['lambda'],values)
+    costTable = dict(zip(range(6)+['lambda'],values))
     return costTable
 
 class Environment(object):
@@ -21,6 +21,7 @@ class Environment(object):
                                 inv_index   = inv_index,
                                 doclengs    = doclengs,
                                 answers     = answers,
+                                dir         = dir
                                 )
 
     # Dialogue Manager, with State Machine for Feature Extraction
@@ -35,7 +36,7 @@ class Environment(object):
 
     # Simulator
     self.simulator = Simulator(
-                            answers     = self.searchengine.answers
+                            answers     = self.searchengine.answers,
                             dir         = dir,
                             docmodeldir = docmodeldir,
                             )
@@ -49,7 +50,7 @@ class Environment(object):
         state: 1 dim feature vector ( firstpass result )
     """
 
-    self.simulator(ans_index)
+    self.simulator(query,ans_index)
 
     self.dialoguemanager( query = query, ans_index = ans_index )
     self.dialoguemanager.get_retrieved_result( ret = self.searchengine.retrieve(query) )
@@ -67,12 +68,12 @@ class Environment(object):
         (1) State: 1 dim vector
         (2) Reward: 1 real value
     """
-    assert self.query != None
+    assert self.dialoguemanager.query != None
     assert 0 <= action_type <= 4, 'Action_type not found!'
 
     if action_type == 4: # Show Result
       # Terminated episode
-      self.terminal = True
+      self.dialoguemanager.terminal = True
       # Reward is 0 and feature is None
       reward = self.costTable[ action_type ] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
 
@@ -101,11 +102,7 @@ class Environment(object):
     return reward,feature
 
   def game_over(self):
-    if self.dialoguemanager.curtHorizon >= 5 or self.terminal:
-        self.query = None
-        self.ans_index = None
-        return True
-    return False
+    return self.dialoguemanager.game_over()
 
 if __name__ == "__main__":
   pass

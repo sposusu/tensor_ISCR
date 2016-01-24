@@ -8,7 +8,7 @@ from progressbar import ProgressBar, Percentage, Bar, ETA
 from python.util import readFoldQueries,readLex,readInvIndex
 from DQN import q_network
 import DQN.agent as agent
-from python.environment import *
+from python.new_environment import *
 
 ################################
 #import argparse
@@ -67,7 +67,6 @@ class experiment():
   def run(self):
     epoch = 0
     it = 0
-    pdb.set_trace()
     while epoch < num_epoch:
         print 'Running epoch {0} out of {1} epochs'.format(epoch,num_epoch)
         widgets = [ 'Training', Percentage(), Bar(), ETA() ]
@@ -96,12 +95,12 @@ class experiment():
   def run_episode(self,q,idx,test_flag = False):
     init_state = self.env.setSession(q,idx)  # reset
     action = self.agent.start_episode(init_state)
-
+    #print 'action {0}'.format(action)
     num_steps = 0
     while True:
       reward, state = self.env.step(action)
       terminal = self.env.game_over()
-
+      #print 'terminal {0}'.format(terminal)
       num_steps += 1
 
       if num_steps >= max_steps or terminal:
@@ -110,6 +109,8 @@ class experiment():
 
       action = self.agent.step(reward, state)
 
+      #print 'action {0}'.format(action)
+    #print 'num_steps {0}'.format(num_steps)
     return num_steps
 
 def launch():

@@ -2,7 +2,8 @@ import operator
 import pdb
 
 from retmath import cross_entropy
-from util import docNameToIndex, readFoldQueries
+from util import docNameToIndex
+
 """
 
   Move read function into search engine constructor?
@@ -10,17 +11,13 @@ from util import docNameToIndex, readFoldQueries
 """
 
 class SearchEngine(object):
-  def __init__(self,lex,background,inv_index,doclengs,answers,dir,docmodeldir,alpha=1000,beta=0.1):
+  def __init__(self,lex,background,inv_index,doclengs,answers,dir,alpha=1000,beta=0.1):
     # Initialize
     self.lex = readLex(dir+lex)
     self.background = readBackground(dir+background,self.lex)
     self.inv_index = readInvIndex(dir+inv_index)
     self.doclengs = readDocLength(dir+doclengs)
     self.answers = readAnswer(dir+answers,self.lex)
-
-    # Document Model Directory, varies with query
-    self.dir = dir
-    self.docmodeldir = docmodeldir
 
     # Query expansion parameters
     self.alpha = alpha

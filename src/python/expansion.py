@@ -5,7 +5,7 @@ from util import *
 
 dir='../../ISDR-CMDP/'
 
-def expansion(prior,docnames,doclengs,back,iteration,mu,delta):
+def expansion(prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
 
     models = []
     alphas = []

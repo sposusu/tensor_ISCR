@@ -10,7 +10,6 @@ from retmath import *
 from retrieval import *
 from util import *
 
-dir = '../../ISDR-CMDP/'
 
 """
   Put search engine into dialogue manager?
@@ -21,17 +20,19 @@ class DialogueManager(object):
               iteration=10,mu=10,delta=1,topicleng=50, topicnumword=1000):
 
     self.statemachine = StateMachine(
-                              background = background,
-                              inv_index = inv_index,
-                              doclengs = doclengs,
-                              dir = dir,
+                              background  = background,
+                              inv_index   = inv_index,
+                              doclengs    = doclengs,
+                              dir         = dir,
                               docmodeldir = docmodeldir
                               )
-
-    self.answers = answers
-    self.dir = dir
+    self.background  = background
+    self.doclengs    = doclengs
+    self.answers     = answers
+    self.dir         = dir
     self.docmodeldir = docmodeldir
-    self.cpsID = '.'.join(docmodeldir.split('/')[1:-1])
+    self.cpsID       = '.'.join(docmodeldir.split('/')[1:-1])
+    self.topiclist   = readTopicWords(self.cpsID)
 
     # Parameters for expansion and action
     self.iteration = iteration
@@ -47,28 +48,28 @@ class DialogueManager(object):
       Return:
         state(firstpass): 1 dim vector
     """
-    self.query = query
-    self.ans = self.answers[ans_index]
+    self.query  = query
+    self.ans    = self.answers[ans_index]
 
     # Initialize Feedback models for this session
-    self.positive_docs = []
-    self.positive_leng = []
-    self.negative_docs = []
-    self.negative_leng = []
+    self.posdocs  = []
+    self.poslengs  = []
+    self.negdocs  = []
+    self.neglengs = []
 
     self.posprior = self.query
     self.negprior = {}
 
 
     # Interaction Parameters
-    self.cur_action = 5 # Action None
+    self.cur_action  = 5 # Action None
     self.curtHorizon = 0
 
     # Previous retrieved results
-    self.ret = None
+    self.ret    = None
 
     self.lastAP = 0.
-    self.AP = 0.
+    self.AP     = 0.
 
     # Termination indicator
     self.terminal = False
@@ -128,7 +129,7 @@ class DialogueManager(object):
       self.posprior[request] = 1.0
     elif self.cur_action == 3:
       topicIdx = response
-      self.posdocs.append(pruneAndNormalize(topiclst[topicIdx],self.topicnumword))
+      self.posdocs.append(pruneAndNormalize(self.topiclist[topicIdx],self.topicnumword))
       self.poslengs.append(self.topicleng)
     elif self.cur_action == 4:
       # This condition shouldn't happen, since we blocked this in environment.py
@@ -139,6 +140,16 @@ class DialogueManager(object):
     negmodel = expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
 
     return posmodel, negmodel
+
+  """
+  def calculate_reward(self):
+    return self.costTable(s)
+  """
+  def game_over(self):
+    if self.terminal or self.curtHorizon >= 5:
+      self.query = self.ans = None
+      return True
+    return False
 
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
@@ -323,6 +334,8 @@ class StateMachine(object):
 
     return feature
 
+
+dir = '../../ISDR-CMDP/'
 
 """
 
