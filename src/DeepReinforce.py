@@ -5,10 +5,10 @@ import numpy as np
 import progressbar
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
-from python.util import readFoldQueries,readLex,readInvIndex
+from IR.util import readFoldQueries,readLex,readInvIndex
 from DQN import q_network
 import DQN.agent as agent
-from python.new_environment import *
+from IR.new_environment import *
 
 ################################
 #import argparse
