@@ -1,10 +1,19 @@
-from actionmanager import ActionManager
+
+from searchengine import SearchEngine
 from dialoguemanager import DialogueManager,StateMachine
 from human import Simulator
-from searchengine import SearchEngine
+
+# Define Cost Table
+def genCostTable():
+    values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+    costTable = dict(zip(range(6)+['lambda'],values)
+    return costTable
 
 class Environment(object):
   def __init__(self,lex,background,inv_index,doclengs,answers,docmodeldir,dir):
+    # Cost Table
+    self.costTable = genCostTable()
+
     # Search Engine
     self.searchengine = SearchEngine(
                                 lex = lex,
@@ -23,10 +32,6 @@ class Environment(object):
                                     dir         = dir,
                                     docmodeldir = docmodeldir
                                     )
-    # Define Action Manager
-    self.actionmanager = ActionManager(
-
-                                  )
 
     # Simulator
     self.simulator = Simulator(
@@ -70,6 +75,7 @@ class Environment(object):
       self.terminal = True
       # Reward is 0 and feature is None
       reward = self.costTable[ action_type ] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
+
       feature = None
     else:
       # Interact with Simulator
@@ -82,18 +88,16 @@ class Environment(object):
       # Search Engine retrieves results
       ret = self.searchengine.retrieve(posmodel,negmodel)
 
-      # Set retrieved result to dialogue manager
+      # Set retrieved result
       self.dialoguemanager.get_retrieved_result(ret)
 
       # Get state feature
       feature = self.dialoguemanager.featureExtraction()
 
       # Calculate Reward
-      reward = self.dialoguemanager.calculate_reward()
-      '''
       reward = self.costTable[action_type] +  \
               self.costTable['lambda'] * self.dialoguemanager.APincrease()
-      '''
+
     return reward,feature
 
   def game_over(self):
