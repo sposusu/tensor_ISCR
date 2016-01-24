@@ -4,52 +4,53 @@ import operator
 from retmath import *
 
 def readLex(fname):
-    fin = file(fname)
-    lex = {}
-    num = 0
-    for line in fin.readlines():
-	word = line.replace('\n','')
-	num += 1
-	lex[word] = num
-    return lex
+  fin = file(fname)
+  lex = {}
+  num = 0
+  for line in fin.readlines():
+    word = line.replace('\n','')
+    num += 1
+    lex[word] = num
+  return lex
 
 def readList(fname):
-    fin = file(fname)
-    lst = []
-    for line in fin.readlines():
-	word = line.replace('\n','')
-	lst.append(word)
-    return lst
+  fin = file(fname)
+  lst = []
+  for line in fin.readlines():
+    word = line.replace('\n','')
+    lst.append(word)
+  return lst
 
 def docNameToIndex(fname):
     return int(fname[1:])
 
 def IndexToDocName(index):
-    name = 'T'
-    if index < 10:
-	name += '000' + str(index)
-    elif index < 100:
-	name += '00'  + str(index)
-    elif index < 1000:
-	name += '0'   + str(index)
-    else:
-	name += str(index)
-    return name
+  name = 'T'
+  if index < 10:
+    name += '000' + str(index)
+  elif index < 100:
+    name += '00'  + str(index)
+  elif index < 1000:
+    name += '0'   + str(index)
+  else:
+    name += str(index)
+  return name
 
 def readQuery(fname,lex):
-    fin = file(fname)
-    queries = []
-    for line in fin.readlines():
-	tokens = line.replace('\n','').split()
-	leng = int(tokens[0])
-	query = {}
-	for i in range(1,len(tokens),2):
-	    wordID = lex[tokens[i]]
-	    val = float(tokens[i+1])
-	    query[wordID] = val
-	queries.append(query)
-    fin.close()
-    return queries
+  fin = file(fname)
+  queries = []
+  for line in fin.readlines():
+    tokens = line.replace('\n','').split()
+    leng = int(tokens[0])
+
+  query = {}
+  for i in range(1,len(tokens),2):
+    wordID = lex[tokens[i]]
+    val = float(tokens[i+1])
+    query[wordID] = val
+  queries.append(query)
+  fin.close()
+  return queries
 
 def readFoldQueries(fname):
     fin = file(fname)

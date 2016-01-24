@@ -34,7 +34,7 @@ def retrieve(query, background, inv_index, docleng, alpha):
 		result[docID] += cross_entropy(qryprob,docprob)
 	    else:
 		result[docID] = cross_entropy(qryprob,docprob)
-	
+
 	for docID, val in result.iteritems():
 	    if not existDoc.has_key(docID) and\
 		    background.has_key(wordID):
@@ -47,7 +47,7 @@ def retrieve(query, background, inv_index, docleng, alpha):
 		    result[docID] = cross_entropy(qryprob,docprob)
 
     sorted_ret = sorted(result.iteritems(),\
-	    key=operator.itemgetter(1),reverse=True)	
+	    key=operator.itemgetter(1),reverse=True)
     return sorted_ret
 
 def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, beta):
@@ -68,7 +68,7 @@ def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, 
 		result[docID] += cross_entropy(qryprob,docprob)
 	    else:
 		result[docID] = cross_entropy(qryprob,docprob)
-	
+
 	for docID, val in result.iteritems():
 	    if not existDoc.has_key(docID) and\
 		    background.has_key(wordID):
@@ -79,7 +79,7 @@ def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, 
 		   result[docID] += cross_entropy(qryprob,docprob)
 		else:
 		    result[docID] = cross_entropy(qryprob,docprob)
-   
+
     for wordID, weight in negquery.iteritems():
 	existDoc = {}
 	for docID, val in inv_index[wordID].iteritems():
@@ -92,7 +92,7 @@ def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, 
 		result[docID] -= beta*cross_entropy(qryprob,docprob)
 	    else:
 		result[docID] = -1*beta*cross_entropy(qryprob,docprob)
-	
+
 	for docID, val in result.iteritems():
 	    if not existDoc.has_key(docID) and\
 		    background.has_key(wordID):
@@ -105,7 +105,7 @@ def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, 
 		    result[docID] = -1*beta*cross_entropy(qryprob,docprob)
 
     sorted_ret = sorted(result.iteritems(),\
-	    key=operator.itemgetter(1),reverse=True)	
+	    key=operator.itemgetter(1),reverse=True)
     return sorted_ret
 
 
@@ -144,7 +144,7 @@ def evalMAP(retrieved,answers,verbose=False):
 	    if ans.has_key(docID):
 		get += 1
 		AP += float(get)/float(cnt)
-	
+
 	if len(ans)!=0:
 	    AP /= float(len(ans))
 	APs.append(AP)
@@ -156,5 +156,3 @@ def evalMAP(retrieved,answers,verbose=False):
 	return MAP, APs
     else:
 	return MAP
-	
-

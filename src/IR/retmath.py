@@ -1,12 +1,8 @@
 import math
 import operator
 
-def evalAP(ret,ans):
-  relevant = sum(1.0 for docID, val in ret.iteritems() if ans.has_key(docID))
-  return ( relevant / len(ans) if len(ans) else 0.0 )
-
 def cross_entropy(p1,p2):
-  return ( 0 if p2 == 0 else =1 * p1 * math.log(p1/p2))
+  return ( 0 if p2 == 0 else -1 * p1 * math.log(p1/p2))
 
 def renormalize(distdict):
   Z = sum(distdict.values())
@@ -39,10 +35,10 @@ def IDFscore(model,inv_index):
   x = sorted(model.iteritems(),key=operator.itemgetter(1),reverse=True)
   if len(x)>20:
     x = x[:20]
-    scores = []
-    for key, val in x:
-      if len(inv_index[key])>0:
-        scores.append(math.log(5047.0/float(len(inv_index[key]))))
+  scores = []
+  for key, val in x:
+    if len(inv_index[key])>0:
+      scores.append(math.log(5047.0/float(len(inv_index[key]))))
 
   maxS = 0.0
   avgS = 0.0
@@ -58,7 +54,7 @@ def QueryScope(model,inv_index):
     docs = []
   for wordID,prob in sorted(model.iteritems(),\
     key=operator.itemgetter(1),reverse=True)[:N]:
-  docs = list(set(docs)|set(inv_index[wordID].values()))
+    docs = list(set(docs)|set(inv_index[wordID].values()))
   return -1*math.log(float(len(docs)+1.0)/5047.0)
 
 def idfDev(model,inv_index):

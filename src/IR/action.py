@@ -61,21 +61,21 @@ def feedbackByKeyterm(ret,ans,simulator,posprior,negprior,posdocs,\
 	leng=50,numwords=1000):
     # extract keyterm
     if len(keytermlst)!=0:
-	keyterm = keytermlst[0][0]
-	params = {}
-	tokens = docmodeldir.split('/')
-	params['keyterm'] = keyterm
-	params['ans'] = ans
-	params['docdir'] = '../../ISDR-CMDP/docmodel/ref/'\
-		+tokens[-2]+'/'
-	#params['docdir'] = docmodeldir
-	del keytermlst[0]
-	# ask is relevant or not
-	isRel = simulator.act(ActionType.FEEDBACK_BY_KEYTERM,params)
-	if isRel:
-	    posprior[keyterm] = 1.0
-	else:
-	    negprior[keyterm] = 1.0
+    	keyterm = keytermlst[0][0]
+    	params = {}
+    	tokens = docmodeldir.split('/')
+    	params['keyterm'] = keyterm
+    	params['ans'] = ans
+    	params['docdir'] = '../../ISDR-CMDP/docmodel/ref/'\
+    		+tokens[-2]+'/'
+    	#params['docdir'] = docmodeldir
+    	del keytermlst[0]
+    	# ask is relevant or not
+    	isRel = simulator.act(ActionType.FEEDBACK_BY_KEYTERM,params)
+    	if isRel:
+    	    posprior[keyterm] = 1.0
+    	else:
+    	    negprior[keyterm] = 1.0
     # model expansion
     posmodel = expansion(renormalize(posprior),posdocs,poslengs,back,iteration,mu,delta)
     negmodel = expansion(renormalize(negprior),negdocs,doclengs,back,iteration,mu,delta)

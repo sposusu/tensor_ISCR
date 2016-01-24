@@ -11,15 +11,18 @@ from state import State
 #python python/continuousMDP.py PTV.lex 10fold/query/CMVN/train.fold1 10fold/query/CMVN/test.fold1 background/onebest.CMVN.bg index/onebest/PTV.onebest.CMVN.index doclength/onebest.CMVN.length PTV.ans docmodel/onebest/CMVN/ cmdp/theta/onebest.CMVN/theta.fold1 10 0.01
 
 class Environment(object):
-  def __init__(self,lex,background,inv_index,\
-        doclengs,answers,docmodeldir,dir,alpha_d=1000,beta=0.1,em_iter=10,mu=10,\
-        delta=1,topicleng=100, topicnumword=500):
+  def __init__(self,lex,background,inv_index,doclengs,answers,docmodeldir,dir,\
+        alpha_d=1000,beta=0.1,em_iter=10,mu=10,delta=1,topicleng=100, topicnumword=500):
     """
-    Initialize Environment with
-      lex, background model, inverted index, document lengths, and answers
-
-    Todo:
-      Agent should receive train_queries & test_queries
+      Description:
+        Initialize Environment with
+          lex,
+          background model,
+          inverted index,
+          document lengths,
+          answers
+          directory
+          other parameters
     """
     self.simulator = Simulator()
     self.simulator.addActions()
@@ -27,8 +30,6 @@ class Environment(object):
     self.actionSet = genActionSet()
 
     # Initialize
-    print lex
-    print 'dir = ',dir
     self.lex = readLex(dir+lex)
     self.back = readBackground(dir+background,self.lex)
     self.inv_index = readInvIndex(dir+inv_index)
@@ -39,7 +40,7 @@ class Environment(object):
     self.dir = dir
     self.docmodeldir = docmodeldir
 
-    # parameters
+    # Parameters
     self.alpha_d = alpha_d
     self.beta = beta
     self.iteration = em_iter
@@ -50,11 +51,16 @@ class Environment(object):
 
   def setSession(self,query,index):
     """
-    Set query and answer for this session
-    return state: 1 dim-vector for initialization
+      Description:
+        Sets query and answer for this interactive session
+
+      Return:
+        state: 1 dim feature vector ( firstpass result )
     """
+
     self.query = query
     self.ans_index = index
+
     cpsID = '.'.join(self.docmodeldir.split('/')[1:-1])
     self.keytermlist = readKeytermlist(cpsID,query)
     self.requestlist = readRequestlist(cpsID,self.answers[index]) #  !!
@@ -70,6 +76,7 @@ class Environment(object):
     self.posprior = self.query
     self.negprior = {}
 
+    # Parameters for step ( interaction )
     self.curtHorizon = 0
     self.lastAP = 0.
     self.terminal = False
@@ -78,36 +85,39 @@ class Environment(object):
 
     self.prev_ret = firstpass
 
-
     # Initialize Retrieval Results with no action
     state = State(firstpass,\
-            self.answers[self.ans_index],ActionType.ACTION_NONE,0,\
+            self.answers[self.ans_index], ActionType.ACTION_NONE,0,\
             self.docmodeldir,self.doclengs,self.back,\
             self.dir,self.iteration,self.mu,self.delta,\
             self.inv_index,self.alpha_d)
 
     state.setModels(self.posprior,self.negprior,\
-            self.posprior,self.negprior)
+                    self.posprior,self.negprior)
 
     feature = state.featureExtraction(state)
     return feature
 
   def step(self, action_type):
     """
-    Has to have a query before retrieving anything
-    Input: action
-    Return: (1) State: 1 dim vector
-            (2) Reward: 1 real value
+      Description:
+        Has to have a query before calling this function.
+
+      Input:
+        (1) action: integer value ( >= 0 )
+      Return:
+        (1) State: 1 dim vector
+        (2) Reward: 1 real value
     """
     assert self.query != None
-    assert action_type >= 0 and action_type < 6, 'Action_type not found!'
+    assert 0 <= action_type <= 5, 'Action_type not found!'
 
     ##################
     #  Show Results  #
     ##################
     if action_type == 4:
         self.terminal = True
-        reward = self.costTable[action_type] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
+        reward = self.costTable[ action_type ] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
         feature = None
     else:
         action = self.actionSet[ action_type ]
@@ -136,7 +146,7 @@ class Environment(object):
         reward = self.costTable[action_type] + self.costTable['lambda'] * (state.ap - self.lastAP)
 
         self.lastAP = state.ap
-        self.prev_ret =ret
+        self.prev_ret = ret
         self.curtHorizon += 1
 
     return reward,feature
@@ -150,7 +160,7 @@ class Environment(object):
 
 if __name__ == "__main__":
 
-  dir = '/home/antonie/Project/ISDR-CMDP/'
+  dir = '../../ISDR-CMDP/'
   lex = 'PTV.lex'
   train_queries = '10fold/query/CMVN/train.fold1'
   test_queries = '10fold/query/CMVN/test.fold1'
@@ -165,5 +175,5 @@ if __name__ == "__main__":
   env = Environment(lex,background,inv_index, \
     doclengs,answers,docmodeldir,dir,alpha_d=1000,beta=0.1,em_iter=10,mu=10,\
     delta=1,topicleng=100, topicnumword=500)
-
+  pdb.set_trace()
   env.setSession(train[1],train_indexes[1])
