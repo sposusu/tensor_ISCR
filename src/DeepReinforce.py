@@ -1,32 +1,46 @@
-import os, sys, operator, time
+import cPickle as pickle
+import operator
+import os
+import sys
+import time
 import pdb
-import numpy as np
 
+
+import numpy as np
 import progressbar
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
 from IR.util import readFoldQueries,readLex,readInvIndex
 from DQN import q_network
 import DQN.agent as agent
-from IR.new_environment import *
+from IR.environment import *
+
+##########################
+#       filename         #
+##########################
+
+train_data = 'train.fold1.pkl'
+test_data  = 'test.fold1.pkl'
 
 ################################
 #import argparse
 #parser = argparse.ArgumentParser(description='Interactive Retrieval')
 #args = parser.parse_args()
 dir='../../ISDR-CMDP/'
+data_dir = '10fold/query/CMVN'
+
 lex = 'PTV.lex'
-train_data = '10fold/query/CMVN/train.fold1'
-test_data = '10fold/query/CMVN/test.fold1'
 background = 'background/onebest.CMVN.bg'
 inv_index = 'index/onebest/PTV.onebest.CMVN.index'
-#o = readInvIndex(dir+inv_index)
-#print o
 doclengs = 'doclength/onebest.CMVN.length'
 answers = 'PTV.ans'
+
 docmodeldir = 'docmodel/onebest/CMVN/'
-train_queries,train_indexes = readFoldQueries(dir+train_data)
-test_queries ,test_indexes  = readFoldQueries(dir+test_data)
+
+newdir = '../Data/query/'
+
+(train_queries,train_answers,train_indexes) = pickle.load(open(newdir+train_data,'r'))
+(test_queries,test_answers,test_indexes)    = pickle.load(open(newdir+test_data,'r'))
 
 ###############################
 input_width, input_height = [89,1]
@@ -58,6 +72,7 @@ step_per_epoch = 1000
 max_steps = 5
 num_tr_query = len(train_queries)
 num_tx_query = len(test_queries)
+
 ###############################
 class experiment():
   def __init__(self,agent,env):
@@ -71,8 +86,8 @@ class experiment():
         print 'Running epoch {0} out of {1} epochs'.format(epoch,num_epoch)
         widgets = [ 'Training', Percentage(), Bar(), ETA() ]
         pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
-        for idx, (q, q_idx) in enumerate(zip(train_queries,train_indexes)):
-            it = it + self.run_episode(q,q_idx,False)
+        for idx, (q, ans, ans_index) in enumerate(zip(train_queries,train_answers,train_indexes)):
+            it = it + self.run_episode(q,ans,ans_index,test_flag=False)
             pbar.update(idx)
         pbar.finish()
 
@@ -86,14 +101,14 @@ class experiment():
   def testing(self):
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
     pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
-    for idx,(qtest,qtest_idx) in enumerate(test_queries,test_indexes):
-      self.run_episode(qtest,qtest_idx,test_flag=True)
+    for idx,(qtest,anstest,anstest_index) in enumerate(test_queries,test_answers,test_indexes):
+      self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
     print 'test','MAP = ','Total Reward = '
 
-  def run_episode(self,q,idx,test_flag = False):
-    init_state = self.env.setSession(q,idx)  # reset
+  def run_episode(self,q,ans,ans_index,test_flag = False):
+    init_state = self.env.setSession(q,ans,ans_index)  # reset
     action = self.agent.start_episode(init_state)
     #print 'action {0}'.format(action)
     num_steps = 0
@@ -142,8 +157,9 @@ def launch():
   print 'Done'
 
   env = Environment(lex,background,inv_index,\
-                    doclengs,answers,docmodeldir,dir)
+                    doclengs,docmodeldir,dir)
   exp = experiment(agt,env)
   exp.run()
 
-launch()
+if __name__ == "__main__":
+  launch()

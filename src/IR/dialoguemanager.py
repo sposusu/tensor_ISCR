@@ -5,34 +5,45 @@ import operator
 import pdb
 
 # For Feature Extraction
+from actionmanager import genCostTable
 from expansion import expansion
 from retmath import *
 from retrieval import *
+from searchengine import SearchEngine
 from util import *
 
-
-"""
-  Put search engine into dialogue manager?
-"""
-
 class DialogueManager(object):
-  def __init__(self,background,inv_index,doclengs,answers,dir,docmodeldir,\
+  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,\
               iteration=10,mu=10,delta=1,topicleng=50, topicnumword=1000):
 
+    # Cost Table
+    self.costTable = genCostTable()
+
+    # Search Engine
+    self.searchengine = SearchEngine(
+                                lex = lex,
+                                background  = background,
+                                inv_index   = inv_index,
+                                doclengs    = doclengs,
+                                dir         = dir
+                                )
+
+    # State Machine, feature extraction and AP estimation
     self.statemachine = StateMachine(
-                              background  = background,
-                              inv_index   = inv_index,
-                              doclengs    = doclengs,
+                              background  = self.searchengine.background,
+                              inv_index   = self.searchengine.inv_index,
+                              doclengs    = self.searchengine.doclengs,
                               dir         = dir,
                               docmodeldir = docmodeldir
                               )
-    self.background  = background
-    self.doclengs    = doclengs
-    self.answers     = answers
+
+    self.background  = self.searchengine.background
+    self.doclengs    = self.searchengine.doclengs
     self.dir         = dir
     self.docmodeldir = docmodeldir
     self.cpsID       = '.'.join(docmodeldir.split('/')[1:-1])
     self.topiclist   = readTopicWords(self.cpsID)
+
 
     # Parameters for expansion and action
     self.iteration = iteration
@@ -41,15 +52,21 @@ class DialogueManager(object):
     self.topicleng = topicleng
     self.topicnumword = topicnumword
 
-  def __call__(self,query,ans_index):
+    # Training or Testing
+    self.test_flag = True
+
+  def __call__(self, query, ans, test_flag = False):
     """
       Set inital parameters for every session
 
       Return:
         state(firstpass): 1 dim vector
     """
-    self.query  = query
-    self.ans    = self.answers[ans_index]
+    # Query and answer (for calculating average precision)
+    self.posmodel = query
+    self.negmodel = None
+
+    self.ans = ( None if test_flag else ans )
 
     # Initialize Feedback models for this session
     self.posdocs  = []
@@ -57,9 +74,8 @@ class DialogueManager(object):
     self.negdocs  = []
     self.neglengs = []
 
-    self.posprior = self.query
+    self.posprior = self.posmodel
     self.negprior = {}
-
 
     # Interaction Parameters
     self.cur_action  = 5 # Action None
@@ -74,21 +90,22 @@ class DialogueManager(object):
     # Termination indicator
     self.terminal = False
 
-  def get_retrieved_result(self,ret):
-    assert ret != None
-    self.ret = ret
+    # Training or Testing
+    self.test_flag = test_flag
+
+  def get_retrieved_result(self):
+    assert self.posmodel != None
+    self.ret = self.searchengine.retrieve(self.posmodel,self.negmodel)
 
     self.lastAP = self.AP
-    self.AP = evalAP(ret,self.ans)
 
-  def APincrease(self):
-    return self.AP - self.lastAP
+    self.AP = ( self.statemachine.estimate(ret) if self.test_flag \
+                else evalAP(self.ret,self.ans) )
 
-  def featureExtraction(self):
     self.curtHorizon += 1
+
     self.statemachine(
                     ret = self.ret,
-                    ans = self.ans,
                     action_type = self.cur_action,
                     curtHorizon = self.curtHorizon,
                     posmodel = self.posprior,
@@ -96,7 +113,9 @@ class DialogueManager(object):
                     posprior = self.posprior,
                     negprior = self.negprior
                     )
+
     feature = self.statemachine.featureExtraction()
+
     return feature
 
   def request(self,action_type):
@@ -104,7 +123,7 @@ class DialogueManager(object):
       Sends request to simulator for more query info
     '''
     self.cur_action = action_type
-    return self.ret, self.cur_action
+    return (self.ret, self.cur_action)
 
   def expand_query(self,response):
     '''
@@ -134,17 +153,21 @@ class DialogueManager(object):
     elif self.cur_action == 4:
       # This condition shouldn't happen, since we blocked this in environment.py
       assert response == None
+      assert 0, 'Should not show result in dialogue manager expand query function!'
       self.terminal = True
 
     posmodel = expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
     negmodel = expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
 
+    self.posmodel = posmodel
+    self.negmodel = negmodel
+
     return posmodel, negmodel
 
-  """
   def calculate_reward(self):
-    return self.costTable(s)
-  """
+    reward = self.costTable[action_type] + self.costTable['lambda'] * (self.AP - self.lastAP)
+    return reward
+
   def game_over(self):
     if self.terminal or self.curtHorizon >= 5:
       self.query = self.ans = None
@@ -165,10 +188,9 @@ class StateMachine(object):
     self.iteration = iteration
     self.mu = mu
     self.delta = delta
-    self.inv_index = inv_index
     self.alpha = alpha
 
-  def __call__(self,ret,ans,action_type,curtHorizon,\
+  def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
     """
       Return:
@@ -177,7 +199,6 @@ class StateMachine(object):
     """
 
     self.ret = ret
-    self.ans = ans
     self.action_type = action_type
     self.curtHorizon = curtHorizon
     self.posmodel = posmodel
@@ -334,14 +355,12 @@ class StateMachine(object):
 
     return feature
 
-
-dir = '../../ISDR-CMDP/'
-
 """
 
   Read functions for Dialogue Manager
 
 """
+dir = '../../ISDR-CMDP/'
 def readKeytermlist(cpsID,fileIDs):
   if cpsID=='lattice.tandem':
     cpsID = 'onebest.tandem'

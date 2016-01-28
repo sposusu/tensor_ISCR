@@ -17,23 +17,27 @@ class Simulator(object):
     """
       Simulates human response to retrieval machine
     """
-    def __init__(self,answers,dir,docmodeldir):
+    def __init__(self,dir,docmodeldir):
       self.dir = dir
       self.docmodeldir = docmodeldir
       self.cpsID = '.'.join(docmodeldir.split('/')[1:-1])
-      self.answers = answers
+
       self.ans = None
 
-    def __call__(self,query,ans_index):
+    def __call__(self,query,ans,ans_index):
       # ans
-      self.ans = self.answers[ans_index]
+      self.ans = ans
+
       # Information for actions
-      self.keytermlist = readKeytermlist(self.cpsID,query)
-      self.requestlist = readRequestlist(self.cpsID, self.ans)
-      self.topiclist = readTopicWords(self.cpsID) # Move to constructor, since we call it only once
+      self.keytermlist  = readKeytermlist(self.cpsID,query)
+      self.requestlist  = readRequestlist(self.cpsID, self.ans)
+      self.topiclist    = readTopicWords(self.cpsID)
       self.topicRanking = readTopicList(self.cpsID,ans_index)[:5]
 
-    def respond(self, ret, action_type):
+    def respond(self, request ):
+      ret = request[0]
+      action_type = request[1]
+
       if action_type == 0:
         doc = next( ( item[0] for item in ret if self.ans.has_key(item[0]) ), None )
         return doc

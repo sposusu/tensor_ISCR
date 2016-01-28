@@ -2,7 +2,6 @@ import operator
 import pdb
 
 from retmath import cross_entropy
-from util import docNameToIndex
 
 """
 
@@ -10,23 +9,24 @@ from util import docNameToIndex
 
 """
 
+__all__ = ['SearchEngine',\
+            'readLex',\
+            'readBackground',\
+            'readInvIndex',\
+            'readAnswer',\
+            'readDocLength',\
+            'docNameToIndex']
+
 class SearchEngine(object):
-  def __init__(self,lex,background,inv_index,doclengs,answers,dir,alpha=1000,beta=0.1):
+  def __init__(self,lex,background,inv_index,doclengs,dir,alpha=1000,beta=0.1):
     # Initialize
     self.lex = readLex(dir+lex)
     self.background = readBackground(dir+background,self.lex)
     self.inv_index = readInvIndex(dir+inv_index)
     self.doclengs = readDocLength(dir+doclengs)
-    self.answers = readAnswer(dir+answers,self.lex)
+    #self.answers = readAnswer(dir+answers,self.lex)
 
     # Query expansion parameters
-    self.alpha = alpha
-    self.beta = beta
-
-  def __call__(self,alpha=1000,beta=0.1):
-    """
-     Sets alpha, beta paramters for query expansion
-    """
     self.alpha = alpha
     self.beta = beta
 
@@ -143,6 +143,9 @@ def readDocLength(fname):
       [ p1,p2 ] = line.strip('\n').split()
       doclengs[ docNameToIndex(p1) ] = float(p2)
   return doclengs
+
+def docNameToIndex(fname):
+  return int(fname[1:])
 
 if __name__ == "__main__":
   pass

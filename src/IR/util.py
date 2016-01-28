@@ -259,12 +259,12 @@ def sortTopicByInferenceProb(cpsID):
     return rankings
 
 def readTopicList(cpsID,qID):
-    ranking = []
-    fin = file('../../ISDR-CMDP/topicRanking/'+cpsID+'/'+str(qID))
-    for line in fin.readlines():
-	tokens = line.split('\t')
-	ranking.append((int(float(tokens[0])),float(tokens[1])))
-    return ranking
+  ranking = []
+  fin = file('../../ISDR-CMDP/topicRanking/'+cpsID+'/'+str(qID))
+  for line in fin.readlines():
+    tokens = line.split('\t')
+    ranking.append((int(float(tokens[0])),float(tokens[1])))
+  return ranking
 
 def renormalize(dictdist):
     Z = sum(dictdist.values())
