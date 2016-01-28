@@ -19,12 +19,8 @@ test_data = '10fold/query/CMVN/test.fold1'
 train_queries,train_indexes = util.readFoldQueries(dir+train_data)
 test_queries ,test_indexes  = util.readFoldQueries(dir+test_data)
 
-alpha = 1000
-beta = 0.1
-
 # Initialize Retrieval Engine
 SE = SearchEngine(lex,background,inv_index,doclengs,answers,docmodeldir,dir)
-SE(alpha,beta)
 
 # Read data, using old code from util.py
 lex = util.readLex(dir+lex)
