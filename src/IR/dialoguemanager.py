@@ -114,6 +114,9 @@ class DialogueManager(object):
 
     return feature
 
+  def APincrease(self):
+    return self.AP - self.lastAP
+
   def request(self,action_type):
     '''
       Sends request to simulator for more query info
