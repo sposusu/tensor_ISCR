@@ -60,7 +60,6 @@ class SearchEngine(object):
           alpha_d = self.doclengs[docID] / ( self.doclengs[docID] + self.alpha )
           qryprob = weight
           docprob = (1-alpha_d) * self.background[wordID]
-
           if result[docID] != -9999:
             result[docID] += cross_entropy(qryprob,docprob)
           else:

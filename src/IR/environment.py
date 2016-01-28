@@ -40,11 +40,9 @@ class Environment(object):
 
     self.simulator( query, ans, ans_index )
 
-    self.dialoguemanager( query = query, ans = ans )
+    self.dialoguemanager( query, ans )
 
     firstpass = self.dialoguemanager.get_retrieved_result()
-
-    #firstpass = self.dialoguemanager.featureExtraction()
 
     return firstpass
 
@@ -82,9 +80,6 @@ class Environment(object):
 
       # Calculate Reward
       reward = self.dialoguemanager.calculate_reward()
-      
-      reward = self.costTable[action_type] +  \
-              self.costTable['lambda'] * self.dialoguemanager.APincrease()
 
     return reward,feature
 
