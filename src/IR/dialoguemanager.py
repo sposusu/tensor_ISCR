@@ -76,7 +76,7 @@ class DialogueManager(object):
     self.posprior = self.posmodel
     self.negprior = {}
 
-    # Interaction Parameters
+    # Interaction Parameters, action and current turn number
     self.cur_action  = 5 # Action None
     self.curtHorizon = 0
 
@@ -96,26 +96,29 @@ class DialogueManager(object):
     assert self.posmodel != None
     # Search Engine Retrieves Result
     self.ret = self.searchengine.retrieve(self.posmodel,self.negmodel)
-
-    # Feature extraction and estimation performed by State Machine
     self.curtHorizon += 1
+
+    # Feature Extraction and State Estimation performed by State Machine
     feature, estimatedMAP = self.statemachine(
-                                              ret = self.ret,
+                                              ret         = self.ret,
                                               action_type = self.cur_action,
                                               curtHorizon = self.curtHorizon,
-                                              posmodel = self.posprior,
-                                              negmodel = self.negprior,
-                                              posprior = self.posprior,
-                                              negprior = self.negprior
+                                              posmodel    = self.posprior,
+                                              negmodel    = self.negprior,
+                                              posprior    = self.posprior,
+                                              negprior    = self.negprior
                                               )
-    # Record mean average precision
+
+    # Record mean average precision and train state estimator
     self.lastMAP = self.MAP
-    self.MAP = ( estimatedMAP if self.test_flag else self.evalMAP(self.ret,self.ans) )
+
+    if not self.test_flag:
+      self.MAP = self.evalMAP(self.ret,self.ans)
+      self.statemachine.approximator.train_online(feature,self.MAP)
+    else:
+      self.MAP = estimatedMAP
 
     return feature
-
-  def APincrease(self):
-    return self.AP - self.lastAP
 
   def request(self,action_type):
     '''

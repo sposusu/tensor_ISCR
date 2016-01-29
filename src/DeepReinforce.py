@@ -39,8 +39,17 @@ docmodeldir = 'docmodel/onebest/CMVN/'
 
 newdir = '../Data/query/'
 
-(train_queries,train_answers,train_indexes) = pickle.load(open(newdir+train_data,'r'))
-(test_queries,test_answers,test_indexes)    = pickle.load(open(newdir+test_data,'r'))
+training_data = pickle.load(open(newdir+train_data,'r'))
+testing_data  = pickle.load(open(newdir+test_data,'r'))
+
+def list2tuple(data):
+  result = []
+  for idx in range(len(data[0])):
+    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
+  return result
+
+training_data = list2tuple(training_data)
+testing_data = list2tuple(testing_data)
 
 ###############################
 input_width, input_height = [89,1]
@@ -70,8 +79,8 @@ update_frequency = 4  #??
 num_epoch = 1
 step_per_epoch = 1000
 max_steps = 5
-num_tr_query = len(train_queries)
-num_tx_query = len(test_queries)
+num_tr_query = len(training_data)
+num_tx_query = len(testing_data)
 
 ###############################
 class experiment():
@@ -80,35 +89,29 @@ class experiment():
     self.env = env
 
   def run(self):
-    epoch = 0
-    it = 0
-    while epoch < num_epoch:
-        print 'Running epoch {0} out of {1} epochs'.format(epoch,num_epoch)
-        widgets = [ 'Training', Percentage(), Bar(), ETA() ]
-        pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
-        for idx, (q, ans, ans_index) in enumerate(zip(train_queries,train_answers,train_indexes)):
-            it = it + self.run_episode(q,ans,ans_index,test_flag=False)
-            pbar.update(idx)
-        pbar.finish()
+    self.training()
+    self.testing()
 
-        """
-        if it % step_per_epoch == 0:
-          self.testing()
-        """
-
-        epoch +=1
+  def training(self):
+    for epoch in range(num_epoch):
+      print 'Running epoch {0} out of {1} epochs'.format(epoch+1,num_epoch)
+      widgets = [ 'Training', Percentage(), Bar(), ETA() ]
+      pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
+      for idx, (q, ans, ans_index) in enumerate(training_data):
+          self.run_episode(q,ans,ans_index,test_flag=False)
+          pbar.update(idx)
+      pbar.finish()
 
   def testing(self):
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
     pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
-    for idx,(qtest,anstest,anstest_index) in enumerate(test_queries,test_answers,test_indexes):
+    for idx,(qtest,anstest,anstest_index) in enumerate(testing_data):
       self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
-    print 'test','MAP = ','Total Reward = '
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
-    init_state = self.env.setSession(q,ans,ans_index)  # reset
+    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
     action = self.agent.start_episode(init_state)
     #print 'action {0}'.format(action)
     num_steps = 0
@@ -145,7 +148,7 @@ def launch():
                                          update_rule,
                                          batch_accumulator,
                                          rng)
-  print 'Done', time.time()-t
+  print 'Done'
   print 'Creating Agent and Simulator...'
   agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
                                   replay_memory_size,
@@ -155,10 +158,13 @@ def launch():
                                   rng)
 
   print 'Done'
-
+  print 'Creating Environment and compiling State Estimator...'
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
+  print 'Done'
+  print 'Initializing experiment...'
   exp = experiment(agt,env)
+  print 'Done',time.time()-t
   exp.run()
 
 if __name__ == "__main__":

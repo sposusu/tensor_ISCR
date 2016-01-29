@@ -51,7 +51,7 @@ def QueryScope(model,inv_index):
   N = 10
   if len(model)<10:
     N = len(model)
-    docs = []
+  docs = []
   for wordID,prob in sorted(model.iteritems(),\
     key=operator.itemgetter(1),reverse=True)[:N]:
     docs = list(set(docs)|set(inv_index[wordID].values()))
@@ -61,7 +61,7 @@ def idfDev(model,inv_index):
   N = 10
   if len(model)<10:
     N = len(model)
-    idfs = []
+  idfs = []
   for wordID,prob in sorted(model.iteritems(),\
     key=operator.itemgetter(1),reverse=True)[:N]:
     N = float(len(inv_index[wordID]))

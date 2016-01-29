@@ -1,10 +1,12 @@
 from collections import defaultdict
+import logging
 import math
+import pdb
 
-import theano
-import theano.tensor as T
 import lasagne
 import numpy as np
+import theano
+import theano.tensor as T
 
 from expansion import expansion
 from retmath import *
@@ -13,33 +15,87 @@ from util import IndexToDocName
 
 """
   Todo: build approximator (NN) for statemachine
+  Review feature extraction in old code
 """
+
+def build_mlp(input_var=None):
+  l_in = lasagne.layers.InputLayer(shape=(None, 1, 1, 89),
+                           input_var=input_var)
+
+  l_hid1 = lasagne.layers.DenseLayer(
+                           l_in, num_units=100,
+                           nonlinearity=lasagne.nonlinearities.rectify,
+                           W=lasagne.init.GlorotUniform())
+
+  l_out = lasagne.layers.DenseLayer(
+                           l_hid1, num_units=1,
+                           nonlinearity=lasagne.nonlinearities.softmax)
+  return l_out
 
 class Approximator(object):
   def __init__(self):
-    pass
-  def train_online(self):
-    pass
-  def train_offline(self):
-    pass
-  def predict(self):
-    pass
-"""
-def Approximator():
-  def build_mlp(input_var=None):
-    l_in = lasagne.layers.InputLayer(shape=(None, 1, 89),
-                             input_var=input_var)
-    l_hid1 = lasagne.layers.DenseLayer(
-                             l_in, num_units=100,
-                             nonlinearity=lasagne.nonlinearities.rectify,
-                             W=lasagne.init.GlorotUniform())
+    # Training Data
+    self.cached_X = None
+    self.cached_Y = None
 
-    l_out = lasagne.layers.DenseLayer(
-                             l_hid1, num_units=1,
-                             nonlinearity=lasagne.nonlinearities.softmax)
-    return l_out
-  return None
-"""
+    # Neural Network
+    # Tensors for data
+    self.input  = T.tensor4('input',dtype=theano.config.floatX)
+    self.target = T.tensor4('target',dtype=theano.config.floatX)
+
+    self.network = build_mlp(self.input)
+
+    # Loss
+    self.prediction = lasagne.layers.get_output(self.network)
+    self.loss       = lasagne.objectives.binary_crossentropy(self.prediction, self.target).mean()
+
+    # Updates
+    self.params  = lasagne.layers.get_all_params(self.network, trainable=True)
+    self.updates = lasagne.updates.nesterov_momentum(self.loss, self.params, \
+                                      learning_rate=0.01, momentum=0.9)
+
+    # Train
+    self.train = theano.function(
+                                  inputs  = [ self.input, self.target ],
+                                  outputs = [ self.prediction, self.loss],
+                                  updates = self.updates,
+                                  allow_input_downcast = True
+                                  )
+
+    # Test
+    self.test_prediction = lasagne.layers.get_output(self.network,deterministic=True)
+    self.test = theano.function(
+                                  inputs  = [ self.input ],
+                                  outputs = [ self.test_prediction ],
+                                  allow_input_downcast = True
+                                  )
+
+  def train_online(self,feature,label,batch_size=32):
+    assert self.cached_X == self.cached_Y or \
+           self.cached_X.shape[0] == self.cached_Y.shape[0]
+
+    arr_feature = np.asarray(feature).reshape(1,1,1,89)
+    arr_label   = np.asarray(label).reshape(1,1,1,1)
+
+    if not self.cached_X or not self.cached_Y:
+      self.cached_data = np.asarray(feature).reshape(1,1,1,89)
+    elif self.cached_data.shape[0] < batch_size:
+      self.cached_X = np.append(self.cached_X,arr_feature)
+      self.cached_Y = np.append(self.cached_Y,arr_label)
+    else:
+      self.train(arr_feature,label)
+      self.cached_X = None
+      self.cached_Y = None
+
+  def train_offline(self,batch_size=32,num_epoch=10):
+    pass
+
+  def predict_one(self,feature):
+    assert len(feature) == 89
+    feature = np.asarray(feature).reshape(1,1,1,89)
+    estimatedMAP = float(self.test(feature)[0])
+    return estimatedMAP
+
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
               iteration=10,mu=1,delta=1,alpha=0.1):
@@ -66,21 +122,14 @@ class StateMachine(object):
         feature: 1 dim vector
         estimatedMAP: average precision of retrieved result
     """
-
-    self.ret = ret
-    self.action_type = action_type
-    self.curtHorizon = curtHorizon
-    self.posmodel = posmodel
-    self.negmodel = negmodel
-    self.posprior = posprior
-    self.negprior = negprior
-
-    feature = self.featureExtraction()
-    estimatedMAP = self.approximator.predict(feature)
+    feature = self.featureExtraction(ret,action_type,curtHorizon,\
+                                    posmodel,negmodel,posprior,negprior)
+    estimatedMAP = self.approximator.predict_one(feature)
 
     return feature, estimatedMAP
 
-  def featureExtraction(self):
+  def featureExtraction(self,ret,action_type,curtHorizon,\
+                          posmodel,negmodel,posprior,negprior):
     feature = []
     # Extract Features
     docs = []
@@ -88,7 +137,7 @@ class StateMachine(object):
     k = 0
 
     # read puesdo rel docs
-    for docID,score in self.ret:
+    for docID,score in ret:
       if k>=20:
         break
       model = readDocModel(self.dir + self.docmodeldir + IndexToDocName(docID))
@@ -96,8 +145,8 @@ class StateMachine(object):
       doclengs.append(self.doclengs[docID])
       k += 1
 
-    irrel = cross_entropies(self.posmodel,self.background) - \
-            0.1 * cross_entropies(self.negmodel,self.background)
+    irrel = cross_entropies(posmodel,self.background) - \
+            0.1 * cross_entropies(negmodel,self.background)
 
     ieDocT10 = defaultdict(float)
     ieDocT20 = defaultdict(float)
@@ -111,13 +160,13 @@ class StateMachine(object):
       doc = docs[i]
       leng = doclengs[i]
       if i < 10:
-        WIG10 += (self.ret[i][1]-irrel)/10.0
-        NQC10 += math.pow(self.ret[i][1]-irrel,2)/10.0
+        WIG10 += (ret[i][1]-irrel)/10.0
+        NQC10 += math.pow(ret[i][1]-irrel,2)/10.0
         for wordID,prob in doc.iteritems():
           ieDocT10[ wordID ] += prob * leng
       else:
-        WIG20 += (self.ret[i][1]-irrel)/10.0
-        NQC20 += math.pow(self.ret[i][1]-irrel,2)/10.0
+        WIG20 += (ret[i][1]-irrel)/10.0
+        NQC20 += math.pow(ret[i][1]-irrel,2)/10.0
         for wordID,prob in doc.iteritems():
           ieDocT20[ wordID ] += prob * leng
 
@@ -128,13 +177,13 @@ class StateMachine(object):
     feature.append(1.0)
 
     # dialogue turn
-    feature.append(float(self.curtHorizon))
+    feature.append(float(curtHorizon))
 
     # prior entropy
-    feature.append(entropy(self.posprior))
+    feature.append(entropy(posprior))
 
     # model entropy
-    feature.append(entropy(self.posmodel))
+    feature.append(entropy(posmodel))
 
     # write clarity
     feature.append(-1*cross_entropies(ieDocT10,self.background))
@@ -150,12 +199,12 @@ class StateMachine(object):
 
     # query feedback
     Ns = [10,20,50]
-    posmodel = expansion({},docs[:10],doclengs[:10],\
+    pos = expansion({},docs[:10],doclengs[:10],\
                           self.background,self.iteration,self.mu,self.delta)
-    oret = retrieveCombination(posmodel,self.negprior,\
+    oret = retrieveCombination(pos,negprior,\
                               self.background,self.inv_index,self.doclengs,\
                               self.alpha,0.1)
-    N = min([self.ret,oret])
+    N = min([ret,oret])
     for i in range(len(Ns)):
       if N<Ns[i]:
         Ns[i]=N
@@ -164,17 +213,17 @@ class StateMachine(object):
     qf20 = 0.0
     qf50 = 0.0
     for docID1,rel1 in oret[:Ns[0]]:
-      for docID2,rel2 in self.ret[:Ns[0]]:
+      for docID2,rel2 in ret[:Ns[0]]:
         if docID1==docID2:
           qf10 += 1.0
           break
     for docID1,rel1 in oret[:Ns[1]]:
-      for docID2,rel2 in self.ret[:Ns[1]]:
+      for docID2,rel2 in ret[:Ns[1]]:
         if docID1==docID2:
           qf20 += 1.0
           break
     for docID1,rel1 in oret[:Ns[2]]:
-      for docID2,rel2 in self.ret[:Ns[2]]:
+      for docID2,rel2 in ret[:Ns[2]]:
         if docID1==docID2:
           qf50 += 1.0
           break
@@ -184,30 +233,30 @@ class StateMachine(object):
     feature.append(qf50)
 
     # retrieved number
-    feature.append(len(self.ret))
+    feature.append(len(ret))
 
     # query scope
-    feature.append(QueryScope(self.posprior,self.inv_index))
-    feature.append(QueryScope(self.posmodel,self.inv_index))
+    feature.append(QueryScope(posprior,self.inv_index))
+    feature.append(QueryScope(posmodel,self.inv_index))
 
     # idf stdev
-    feature.append(idfDev(self.posprior,self.inv_index))
-    feature.append(idfDev(self.posmodel,self.inv_index))
+    feature.append(idfDev(posprior,self.inv_index))
+    feature.append(idfDev(posmodel,self.inv_index))
 
     # cross entropy - prior, model, background
-    feature.append(-1*cross_entropies(posmodel,self.posmodel))
-    feature.append(-1*cross_entropies(self.posprior,self.posmodel))
-    feature.append(-1*cross_entropies(self.posprior,self.background))
-    feature.append(-1*cross_entropies(self.posmodel,self.background))
-    del posmodel
+    feature.append(-1*cross_entropies(pos,posmodel))
+    feature.append(-1*cross_entropies(posprior,posmodel))
+    feature.append(-1*cross_entropies(posprior,self.background))
+    feature.append(-1*cross_entropies(posmodel,self.background))
+    del pos
 
     # IDF score, max, average
-    maxIdf, avgIdf = IDFscore(self.posmodel,self.inv_index)
+    maxIdf, avgIdf = IDFscore(posmodel,self.inv_index)
     feature.append(maxIdf)
     feature.append(avgIdf)
 
     # Statistics, top 5, 10, 20, 50, 100
-    means, vars = Variability(self.ret,[5,10,20,50,100])
+    means, vars = Variability(ret,[5,10,20,50,100])
     for mean in means:
       feature.append(-1*mean)
     for var in vars:
@@ -216,15 +265,15 @@ class StateMachine(object):
     # fit to exp distribution
     lamdas = [0.1,0.01,0.001]
     for lamda in lamdas:
-      feature.append(FitExpDistribution(self.ret,lamda))
+      feature.append(FitExpDistribution(ret,lamda))
 
     # fit to gauss distribution
     Vars = [100,200,500]
     for v in Vars:
-      feature.append(FitGaussDistribution(self.ret,0,v))
+      feature.append(FitGaussDistribution(ret,0,v))
 
     # top N scores
-    for key, val in self.ret[:49]:
+    for key, val in ret[:49]:
       feature.append(-1*val)
 
     return feature

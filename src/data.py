@@ -25,8 +25,15 @@ data_answers = readAnswer(dir+answers,data_lex)
 newdir = '../Data/query/'
 pkl = '.pkl'
 
-for filename in os.listdir(dir+data_dir):
+def main():
+  pass
+
+def genQueryAnswer():
+  for filename in os.listdir(dir+data_dir):
     with open( newdir + filename + pkl , 'w' ) as f:
         queries, indexes = readFoldQueries(dir+data_dir+filename)
         ans = [ data_answers[idx] for idx in indexes ]
         pickle.dump((queries,ans,indexes),f)
+
+if __name__ == "__main__":
+  main()

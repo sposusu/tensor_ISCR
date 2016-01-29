@@ -29,7 +29,7 @@ class Environment(object):
                             docmodeldir = docmodeldir,
                             )
 
-  def setSession(self,query,ans,ans_index):
+  def setSession(self,query,ans,ans_index,test_flag = False):
     """
       Description:
         Sets query and answer for this session
@@ -40,7 +40,7 @@ class Environment(object):
 
     self.simulator( query, ans, ans_index )
 
-    self.dialoguemanager( query, ans )
+    self.dialoguemanager( query, ans, test_flag )
 
     firstpass = self.dialoguemanager.get_retrieved_result()
 
