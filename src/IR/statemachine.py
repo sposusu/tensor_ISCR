@@ -18,67 +18,71 @@ from util import IndexToDocName
   Review feature extraction in old code
 """
 
-def build_mlp(input_var=None):
+def neuralnetwork():
+  # Neural Network
+  # Tensors for data
+  input_X  = T.tensor4('input',dtype=theano.config.floatX)
+  target   = T.tensor4('target',dtype=theano.config.floatX)
+
   l_in = lasagne.layers.InputLayer(shape=(None, 1, 1, 89),
-                           input_var=input_var)
+                           input_var=input_X)
 
   l_hid1 = lasagne.layers.DenseLayer(
                            l_in, num_units=100,
                            nonlinearity=lasagne.nonlinearities.rectify,
                            W=lasagne.init.GlorotUniform())
 
-  l_out = lasagne.layers.DenseLayer(
+  network = lasagne.layers.DenseLayer(
                            l_hid1, num_units=1,
                            nonlinearity=lasagne.nonlinearities.softmax)
-  return l_out
+
+  # Loss
+  prediction = lasagne.layers.get_output(network)
+  loss       = lasagne.objectives.binary_crossentropy(prediction, target).mean()
+
+  # Updates
+  params  = lasagne.layers.get_all_params(network, trainable=True)
+  updates = lasagne.updates.nesterov_momentum(loss, params, \
+                                    learning_rate=0.01, momentum=0.9)
+
+  # Train
+  train = theano.function(
+                          inputs  = [ input_X, target ],
+                          outputs = [ prediction, loss ],
+                          updates = updates,
+                          allow_input_downcast = True
+                          )
+
+  # Test
+  test_prediction = lasagne.layers.get_output(network, deterministic=True)
+  test = theano.function(
+                          inputs  = [ input_X ],
+                          outputs = [ test_prediction ],
+                          allow_input_downcast = True
+                          )
+
+  return train,test
 
 class Approximator(object):
   def __init__(self):
-    # Training Data
+    # Cache data
     self.cached_X = None
     self.cached_Y = None
 
-    # Neural Network
-    # Tensors for data
-    self.input  = T.tensor4('input',dtype=theano.config.floatX)
-    self.target = T.tensor4('target',dtype=theano.config.floatX)
-
-    self.network = build_mlp(self.input)
-
-    # Loss
-    self.prediction = lasagne.layers.get_output(self.network)
-    self.loss       = lasagne.objectives.binary_crossentropy(self.prediction, self.target).mean()
-
-    # Updates
-    self.params  = lasagne.layers.get_all_params(self.network, trainable=True)
-    self.updates = lasagne.updates.nesterov_momentum(self.loss, self.params, \
-                                      learning_rate=0.01, momentum=0.9)
-
-    # Train
-    self.train = theano.function(
-                                  inputs  = [ self.input, self.target ],
-                                  outputs = [ self.prediction, self.loss],
-                                  updates = self.updates,
-                                  allow_input_downcast = True
-                                  )
-
-    # Test
-    self.test_prediction = lasagne.layers.get_output(self.network,deterministic=True)
-    self.test = theano.function(
-                                  inputs  = [ self.input ],
-                                  outputs = [ self.test_prediction ],
-                                  allow_input_downcast = True
-                                  )
+    # Functions
+    self.train, self.test = neuralnetwork()
 
   def train_online(self,feature,label,batch_size=32):
     assert self.cached_X == self.cached_Y or \
            self.cached_X.shape[0] == self.cached_Y.shape[0]
 
-    arr_feature = np.asarray(feature).reshape(1,1,1,89)
+    F = len(feature)
+
+    arr_feature = np.asarray(feature).reshape(1,1,1,F)
     arr_label   = np.asarray(label).reshape(1,1,1,1)
 
     if not self.cached_X or not self.cached_Y:
-      self.cached_data = np.asarray(feature).reshape(1,1,1,89)
+      self.cached_data = np.asarray(feature).reshape(1,1,1,F)
     elif self.cached_data.shape[0] < batch_size:
       self.cached_X = np.append(self.cached_X,arr_feature)
       self.cached_Y = np.append(self.cached_Y,arr_label)
