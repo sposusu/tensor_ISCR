@@ -3,6 +3,7 @@ import logging
 import math
 import pdb
 
+import h5py
 import lasagne
 import numpy as np
 import theano
@@ -17,6 +18,8 @@ from util import IndexToDocName
   Todo: build approximator (NN) for statemachine
   Review feature extraction in old code
 """
+
+stateestimation_prefix = '../Data/stateestimation/'
 
 def neuralnetwork():
   # Neural Network
@@ -65,6 +68,9 @@ def neuralnetwork():
 
 class Approximator(object):
   def __init__(self):
+    # Data path
+    #self.h5f = h5py.File('../Data/stateestimation/features_89.h5', 'wr')
+
     # Cache data
     self.cached_X = None
     self.cached_Y = None
@@ -91,12 +97,12 @@ class Approximator(object):
       self.cached_X = None
       self.cached_Y = None
 
-  def train_offline(self,batch_size=32,num_epoch=10):
+  def train_offline(self,batch_size=32,num_epoch=100):
     pass
 
   def predict_one(self,feature):
     assert len(feature) == 89
-    feature = np.asarray(feature).reshape(1,1,1,89)
+    feature      = np.asarray(feature).reshape(1,1,1,89)
     estimatedMAP = float(self.test(feature)[0])
     return estimatedMAP
 

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import cPickle as pickle
 import math
 import os
 import operator
@@ -53,6 +54,10 @@ class DialogueManager(object):
 
     # Training or Testing
     self.test_flag = True
+
+    # Save features for state  estimation
+    self.se_features = []
+    self.se_MAPs     = []
 
   def __call__(self, query, ans, test_flag = False):
     """
@@ -115,6 +120,9 @@ class DialogueManager(object):
     if not self.test_flag:
       self.MAP = self.evalMAP(self.ret,self.ans)
       self.statemachine.approximator.train_online(feature,self.MAP)
+      # Save to file
+      self.se_MAPs.append(self.MAP)
+      self.se_features.append(feature)
     else:
       self.MAP = estimatedMAP
 
@@ -179,6 +187,10 @@ class DialogueManager(object):
       self.query = self.ans = None
       return True
     return False
+
+  def save_features(self,filename):
+    with open(filename + '.pkl','w') as f:
+      pickle.dump((self.se_features,self.se_MAPs),f)
 
 """
 

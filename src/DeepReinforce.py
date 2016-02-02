@@ -77,7 +77,7 @@ experiment_prefix = 'result/ret'
 replay_start_size = 50000
 update_frequency = 4  #??
 ###############################
-num_epoch = 1
+num_epoch = 100
 step_per_epoch = 1000
 max_steps = 5
 num_tr_query = len(training_data)
@@ -99,10 +99,12 @@ class experiment():
       widgets = [ 'Training', Percentage(), Bar(), ETA() ]
       pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
       for idx, (q, ans, ans_index) in enumerate(training_data):
-          self.run_episode(q,ans,ans_index,test_flag=False)
-          pbar.update(idx)
+        self.run_episode(q,ans,ans_index,test_flag=False)
+        pbar.update(idx)
       pbar.finish()
       random.shuffle(training_data)
+      self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89_epoch_{}'.format(epoch+1))
+    self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89'.format(epoch+1))
 
   def testing(self):
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
