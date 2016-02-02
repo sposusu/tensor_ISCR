@@ -179,7 +179,10 @@ class DialogueManager(object):
     return ( Precision_sum/len(ans) if len(ans) else 0. )
 
   def calculate_reward(self):
-    reward = self.costTable[ self.cur_action ] + self.costTable['lambda'] * (self.MAP - self.lastMAP)
+    if self.terminal:
+      reward = self.costTable[4]
+    else:
+      reward = self.costTable[ self.cur_action ] + self.costTable['lambda'] * (self.MAP - self.lastMAP)
     return reward
 
   def game_over(self):

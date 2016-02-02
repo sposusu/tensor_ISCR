@@ -3,8 +3,16 @@ from searchengine import SearchEngine
 from dialoguemanager import DialogueManager,StateMachine
 from human import Simulator
 
+# Define Cost Table
+def genCostTable():
+    values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+    costTable = dict(zip(range(6)+['lambda'],values))
+    return costTable
+
 class Environment(object):
   def __init__(self,lex,background,inv_index,doclengs,docmodeldir,dir):
+    # Cost Table
+    self.costTable = genCostTable()
 
     # Dialogue Manager, with Search Engine and StateMachine
     self.dialoguemanager = DialogueManager(
@@ -56,8 +64,7 @@ class Environment(object):
       # Terminated episode
       self.dialoguemanager.terminal = True
       # Reward is 0 and feature is None
-      reward = self.costTable[ action_type ] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
-
+      #reward = self.costTable[ action_type ] # + self.costTable['lambda'] * (self.lastAP - self.lastAP)
       feature = None
     else:
       # Interact with Simulator
@@ -70,8 +77,8 @@ class Environment(object):
       # Get state feature
       feature = self.dialoguemanager.get_retrieved_result()
 
-      # Calculate Reward
-      reward = self.dialoguemanager.calculate_reward()
+    # Calculate Reward
+    reward = self.dialoguemanager.calculate_reward()
 
     return reward,feature
 
