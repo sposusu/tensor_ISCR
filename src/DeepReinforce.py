@@ -76,7 +76,7 @@ experiment_prefix = 'result/ret'
 replay_start_size = 50000
 update_frequency = 4  #??
 ###############################
-num_epoch = 1
+num_epoch = 2
 step_per_epoch = 1000
 max_steps = 5
 num_tr_query = len(training_data)
