@@ -166,60 +166,60 @@ def printRetrievedList(retrieved,fname):
     fout.close()
 
 def readKeytermlist(cpsID,fileIDs):
-    keyterms = {}
-    if cpsID=='lattice.tandem':
-	cpsID = 'onebest.tandem'
-    elif cpsID=='lattice.CMVN':
-	cpsID = 'onebest.CMVN'
+  keyterms = {}
+  if cpsID=='lattice.tandem':
+    cpsID = 'onebest.tandem'
+  elif cpsID=='lattice.CMVN':
+    cpsID = 'onebest.CMVN'
 
-    for fileID,prob in fileIDs.iteritems():
-	filename = '../../ISDR-CMDP/keyterm/'+cpsID+'/'+str(fileID)
-	if not os.path.isfile(filename):
-	    continue
-	fin = file(filename)
-	for i in range(100):
-	    line = fin.readline()
-	    if line=='':
-		break
-	    pair = line.replace('\n','').split('\t')
-	    if keyterms.has_key(int(pair[0])):
-		keyterms[int(pair[0])] += prob*float(pair[1])
-	    else:
-		keyterms[int(pair[0])] = prob*float(pair[1])
-	fin.close()
-    sortedKeytermlst = sorted(keyterms.iteritems(),key=operator.itemgetter(1),reverse=True)
-    return sortedKeytermlst
+  for fileID,prob in fileIDs.iteritems():
+    filename = '../../ISDR-CMDP/keyterm/'+cpsID+'/'+str(fileID)
+    if not os.path.isfile(filename):
+      continue
+      fin = file(filename)
+      for i in range(100):
+        line = fin.readline()
+        if line=='':
+          break
+        pair = line.replace('\n','').split('\t')
+        if keyterms.has_key(int(pair[0])):
+          keyterms[int(pair[0])] += prob*float(pair[1])
+        else:
+          keyterms[int(pair[0])] = prob*float(pair[1])
+      fin.close()
+  sortedKeytermlst = sorted(keyterms.iteritems(),key=operator.itemgetter(1),reverse=True)
+  return sortedKeytermlst
 
 def readRequestlist(cpsID,fileIDs):
-    requests = {}
-    for fileID,prob in fileIDs.iteritems():
-	filename = '../../ISDR-CMDP/request/'+cpsID+'/'+str(fileID)
-	if not os.path.isfile(filename):
-	    continue
-	fin = file(filename)
-	for line in fin.readlines():
-	    pair = line.replace('\n','').split('\t')
-	    if requests.has_key(int(pair[0])):
-		requests[int(pair[0])] += float(pair[1])
-	    else:
-		requests[int(pair[0])] = float(pair[1])
-	fin.close()
-    return sorted(requests.iteritems(),key=operator.itemgetter(1),reverse=True)
+  requests = {}
+  for fileID,prob in fileIDs.iteritems():
+    filename = '../../ISDR-CMDP/request/'+cpsID+'/'+str(fileID)
+    if not os.path.isfile(filename):
+      continue
+    fin = file(filename)
+    for line in fin.readlines():
+      pair = line.replace('\n','').split('\t')
+      if requests.has_key(int(pair[0])):
+        requests[int(pair[0])] += float(pair[1])
+      else:
+        requests[int(pair[0])] = float(pair[1])
+    fin.close()
+  return sorted(requests.iteritems(),key=operator.itemgetter(1),reverse=True)
 
 def readTopicWords(cpsID):
-    topicWordList = []
-    for i in range(128):
-	words = {}
-	filename = '../../ISDR-CMDP/lda/'+cpsID+'/'+str(i)
-	fin = file(filename)
-	for line in fin.readlines():
-	    if len(line.split('\t'))<=1:
-		continue
-	    pair = line.split('\t')
-	    words[int(pair[0])] = float(pair[1])
-	fin.close()
-	topicWordList.append(words)
-    return topicWordList
+  topicWordList = []
+  for i in range(128):
+    words = {}
+    filename = '../../ISDR-CMDP/lda/'+cpsID+'/'+str(i)
+    fin = file(filename)
+    for line in fin.readlines():
+      if len(line.split('\t'))<=1:
+        continue
+      pair = line.split('\t')
+      words[int(pair[0])] = float(pair[1])
+    fin.close()
+    topicWordList.append(words)
+  return topicWordList
 
 def sortTopicByKLtoAnswer(docmodeldir,ans,doclengs,topiclst):
     answer = {}

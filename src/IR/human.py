@@ -1,10 +1,5 @@
-import sys
-import os
-import operator
-import random
 from util import *
 from expansion import expansion
-from retmath import *
 
 FEEDBACK_BY_DOC=0
 FEEDBACK_BY_KEYTERM=1

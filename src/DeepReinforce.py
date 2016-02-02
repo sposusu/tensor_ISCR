@@ -1,6 +1,7 @@
 import cPickle as pickle
 import operator
 import os
+import random
 import sys
 import time
 import pdb
@@ -76,7 +77,7 @@ experiment_prefix = 'result/ret'
 replay_start_size = 50000
 update_frequency = 4  #??
 ###############################
-num_epoch = 2
+num_epoch = 100
 step_per_epoch = 1000
 max_steps = 5
 num_tr_query = len(training_data)
@@ -98,9 +99,12 @@ class experiment():
       widgets = [ 'Training', Percentage(), Bar(), ETA() ]
       pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
       for idx, (q, ans, ans_index) in enumerate(training_data):
-          self.run_episode(q,ans,ans_index,test_flag=False)
-          pbar.update(idx)
+        self.run_episode(q,ans,ans_index,test_flag=False)
+        pbar.update(idx)
       pbar.finish()
+      random.shuffle(training_data)
+      self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89_epoch_{}'.format(epoch+1))
+    self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89'.format(epoch+1))
 
   def testing(self):
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
@@ -109,6 +113,7 @@ class experiment():
       self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
+    random.shuffle(testing_data)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
@@ -148,7 +153,6 @@ def launch():
                                          update_rule,
                                          batch_accumulator,
                                          rng)
-  print 'Done'
   print 'Creating Agent and Simulator...'
   agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
                                   replay_memory_size,
@@ -157,14 +161,12 @@ def launch():
                                   update_frequency,
                                   rng)
 
-  print 'Done'
   print 'Creating Environment and compiling State Estimator...'
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
-  print 'Done'
   print 'Initializing experiment...'
   exp = experiment(agt,env)
-  print 'Done',time.time()-t
+  print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
 if __name__ == "__main__":

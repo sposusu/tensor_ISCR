@@ -20,11 +20,10 @@ __all__ = ['SearchEngine',\
 class SearchEngine(object):
   def __init__(self,lex,background,inv_index,doclengs,dir,alpha=1000,beta=0.1):
     # Initialize
-    self.lex = readLex(dir+lex)
+    self.lex        = readLex(dir+lex)
     self.background = readBackground(dir+background,self.lex)
-    self.inv_index = readInvIndex(dir+inv_index)
-    self.doclengs = readDocLength(dir+doclengs)
-    #self.answers = readAnswer(dir+answers,self.lex)
+    self.inv_index  = readInvIndex(dir+inv_index)
+    self.doclengs   = readDocLength(dir+doclengs)
 
     # Query expansion parameters
     self.alpha = alpha
