@@ -3,17 +3,8 @@ from searchengine import SearchEngine
 from dialoguemanager import DialogueManager,StateMachine
 from human import Simulator
 
-# Define Cost Table
-def genCostTable():
-    values = [ -30., -10., -50., -20., 0., 0., 1000. ]
-    costTable = dict(zip(range(6)+['lambda'],values))
-    return costTable
-
 class Environment(object):
-  def __init__(self,lex,background,inv_index,doclengs,docmodeldir,dir):
-    # Cost Table
-    self.costTable = genCostTable()
-
+  def __init__(self,lex,background,inv_index,doclengs,docmodeldir,dir,se_method):
     # Dialogue Manager, with Search Engine and StateMachine
     self.dialoguemanager = DialogueManager(
                                     lex         = lex,
@@ -21,7 +12,8 @@ class Environment(object):
                                     inv_index   = inv_index,
                                     doclengs    = doclengs,
                                     dir         = dir,
-                                    docmodeldir = docmodeldir
+                                    docmodeldir = docmodeldir,
+                                    se_method   = se_method
                                     )
     # Simulator
     self.simulator = Simulator(
@@ -41,7 +33,7 @@ class Environment(object):
     self.simulator( query, ans, ans_index )
 
     self.dialoguemanager( query, ans, test_flag )
-
+    
     firstpass = self.dialoguemanager.get_retrieved_result()
 
     return firstpass

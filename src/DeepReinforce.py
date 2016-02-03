@@ -1,20 +1,17 @@
 import cPickle as pickle
-import operator
-import os
-import random
-import sys
-import time
+import logging
 import pdb
-
+import random
+import time
 
 import numpy as np
 import progressbar
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
-from IR.util import readFoldQueries,readLex,readInvIndex
 from DQN import q_network
 import DQN.agent as agent
 from IR.environment import *
+from IR.util import readFoldQueries,readLex,readInvIndex
 
 ##########################
 #       filename         #
@@ -49,8 +46,9 @@ def list2tuple(data):
     result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
   return result
 
+
 training_data = list2tuple(training_data)
-testing_data = list2tuple(testing_data)
+testing_data  = list2tuple(testing_data)
 
 ###############################
 input_width, input_height = [89,1]
@@ -75,11 +73,15 @@ epsilon_decay = 1000000
 replay_memory_size = 1000000
 experiment_prefix = 'result/ret'
 replay_start_size = 50000
-update_frequency = 4  #??
+update_frequency = 1
 ###############################
-num_epoch = 100
+num_epoch = 2
+
 step_per_epoch = 1000
 max_steps = 5
+
+se_method = 'online'
+
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 
@@ -103,8 +105,6 @@ class experiment():
         pbar.update(idx)
       pbar.finish()
       random.shuffle(training_data)
-      self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89_epoch_{}'.format(epoch+1))
-    self.env.dialoguemanager.save_features('../Data/stateestimation/feature_89'.format(epoch+1))
 
   def testing(self):
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
@@ -163,7 +163,7 @@ def launch():
 
   print 'Creating Environment and compiling State Estimator...'
   env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir)
+                    doclengs,docmodeldir,dir,se_method)
   print 'Initializing experiment...'
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)

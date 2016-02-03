@@ -16,7 +16,7 @@ from util import *
   Todo: action manager
 """
 class DialogueManager(object):
-  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,\
+  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,se_method,\
               topicleng=50, topicnumword=1000):
 
     # Cost Table
@@ -55,9 +55,13 @@ class DialogueManager(object):
     # Training or Testing
     self.test_flag = True
 
+    assert se_method in ['online','offline']
+    self.se_method = se_method
+    if self.se_method == 'offline':
+      self.statemachine.train(self.se_method)
     # Save features for state  estimation
-    self.se_features = []
-    self.se_MAPs     = []
+    #self.se_features = []
+    #self.se_MAPs     = []
 
   def __call__(self, query, ans, test_flag = False):
     """
@@ -119,10 +123,12 @@ class DialogueManager(object):
 
     if not self.test_flag:
       self.MAP = self.evalMAP(self.ret,self.ans)
-      self.statemachine.approximator.train_online(feature,self.MAP)
+
+      if self.se_method == 'online':
+        self.statemachine.train(self.se_method,feature,self.MAP)
       # Save to file
-      self.se_MAPs.append(self.MAP)
-      self.se_features.append(feature)
+      #self.se_MAPs.append(self.MAP)
+      #self.se_features.append(feature)
     else:
       self.MAP = estimatedMAP
 
