@@ -1,7 +1,5 @@
 from collections import defaultdict
-import logging
 import math
-import os
 import pdb
 
 import h5py
@@ -13,119 +11,31 @@ import theano.tensor as T
 from expansion import expansion
 from retmath import *
 from retrieval import retrieveCombination
+from stateestimation import dnn
 from util import IndexToDocName
 
 """
-  Todo: build approximator (NN) for statemachine
+  Todo: Online training for approximator
   Review feature extraction in old code
 """
 
-stateestimation_prefix = '../Data/stateestimation/'
-
-def neuralnetwork():
-  input_X  = T.tensor4('input',dtype=theano.config.floatX)
-  target   = T.matrix('target',dtype=theano.config.floatX)
-  l_in = lasagne.layers.InputLayer(shape=(None, 1, 1, 89),
-                           input_var=input_X)
-  l_hid1 = lasagne.layers.DenseLayer(
-                           l_in, num_units=100,
-                           nonlinearity=lasagne.nonlinearities.rectify,
-                           W=lasagne.init.GlorotUniform())
-  network = lasagne.layers.DenseLayer(
-                           l_hid1, num_units=1,
-                           nonlinearity=lasagne.nonlinearities.softmax)
-  prediction = lasagne.layers.get_output(network)
-  loss       = lasagne.objectives.squared_error(prediction, target).mean()
-
-  params  = lasagne.layers.get_all_params(network, trainable=True)
-  updates = lasagne.updates.nesterov_momentum(loss, params, \
-                                    learning_rate=1e-6, momentum=0.9)
-  train = theano.function(
-                          inputs  = [ input_X, target ],
-                          outputs = [ prediction, loss ],
-                          updates = updates,
-                          allow_input_downcast = True
-                          )
-  test_prediction = lasagne.layers.get_output(network, deterministic=True)
-  test = theano.function(
-                          inputs  = [ input_X ],
-                          outputs = test_prediction,
-                          allow_input_downcast = True
-                          )
-  return train,test
+se_prefix = '../Data/stateestimation/'
+weights_file = se_prefix + 'dnn.npz'
 
 class Approximator(object):
   def __init__(self):
-    # Cache data
-    self.cached_X = None
-    self.cached_Y = None
-
     # Functions
-    self.train, self.test = neuralnetwork()
+    self.network, self.train_fn, self.val_fn, self.test_fn = dnn()
 
-  def train_online(self,feature,label,batch_size=32):
-    assert self.cached_X == self.cached_Y or \
-           self.cached_X.shape[0] == self.cached_Y.shape[0]
+    with np.load( weights_file ) as f:
+      param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+      lasagne.layers.set_all_param_values(self.network, param_values)
 
-    F = 89
-
-    arr_feature = np.asarray(feature).reshape(1,1,1,F)
-    arr_label   = np.asarray(label)
-
-    if not self.cached_X or not self.cached_Y:
-      self.cached_data = np.asarray(feature).reshape(1,1,1,F)
-    elif self.cached_data.shape[0] < batch_size:
-      self.cached_X = np.append(self.cached_X,arr_feature)
-      self.cached_Y = np.append(self.cached_Y,arr_label)
-    else:
-      self.train(arr_feature,arr_label)
-      self.cached_X = None
-      self.cached_Y = None
-
-  def train_offline(self,batch_size=32,num_epoch=10):
-    filepath = '../Data/stateestimation/features_89.h5'
-    h5f = h5py.File(filepath,'r')
-    X_train = h5f['features'][:]
-    y_train = h5f['MAPs'][:]
-
-
-    def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
-      assert len(inputs) == len(targets)
-      if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-      for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batchsize]
-        else:
-            excerpt = slice(start_idx, start_idx + batchsize)
-        yield inputs[excerpt], targets[excerpt]
-
-    print '[ State Estimation Neural Network Offline Training ]'
-    print 'Starts at...'
-    print 'Now!'
-    for epoch in range(num_epoch):
-      epoch_loss = 0.
-      epoch_norm_one_err = 0.
-      count = 1.
-      for inputs,targets in iterate_minibatches(X_train, y_train, batch_size, shuffle=True):
-        inputs = inputs.reshape(batch_size,1,1,inputs.shape[1])
-        targets = targets.reshape(batch_size,1)
-        predictions,loss = self.train(inputs, targets)
-        epoch_loss += loss
-        batch_norm_one_err = np.absolute(targets-predictions).mean()
-        epoch_norm_one_err += 1./count*(batch_norm_one_err - epoch_norm_one_err)
-        count += 1.
-      print 'Trained {0} epochs out of {1} epochs, loss: {2}, average norm_one_error: {3}'\
-            .format(epoch,num_epoch,epoch_loss,epoch_norm_one_err)
-    print 'Done Training!'
-    pdb.set_trace()
-    h5f.close()
 
   def predict_one(self,feature):
     assert len(feature) == 89
     feature      = np.asarray(feature).reshape(1,1,1,89)
-    estimatedMAP = float(self.test(feature)[0])
+    estimatedMAP = float(self.test_fn(feature)[0])
     return estimatedMAP
 
 class StateMachine(object):
@@ -133,9 +43,10 @@ class StateMachine(object):
               iteration=10,mu=1,delta=1,alpha=0.1):
 
     self.background = background
-    self.inv_index = inv_index
-    self.doclengs = doclengs
-    self.dir = dir
+    self.inv_index  = inv_index
+    self.doclengs   = doclengs
+
+    self.dir         = dir
     self.docmodeldir = docmodeldir
 
     # Model for state estimation
@@ -162,13 +73,6 @@ class StateMachine(object):
     feature = np.asarray(feature).reshape(1,len(feature))
 
     return feature, estimatedMAP
-
-  def train(self,se_method = 'online',feature = None, MAP = None):
-    if se_method == "online":
-      assert feature != None and MAP != None
-      self.approximator.train_online(feature,MAP)
-    elif se_method == "offline":
-      self.approximator.train_offline()
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):

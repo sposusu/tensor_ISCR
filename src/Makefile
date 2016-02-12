@@ -5,5 +5,7 @@ clean:
 env:
 	python python/environment.py
 
+se:
+	python train_stateestimation.py
 test: 
 	nosetests 

@@ -1,21 +1,16 @@
 import cPickle as pickle
 import os
+import pdb
+
+import h5py
+import numpy
 
 from IR.util import readFoldQueries,readAnswer, readLex
 
 dir='../../ISDR-CMDP/'
 lex = 'PTV.lex'
-#train_data = '10fold/query/CMVN/train.fold1'
-#test_data = '10fold/query/CMVN/test.fold1'
-#background = 'background/onebest.CMVN.bg'
-#inv_index = 'index/onebest/PTV.onebest.CMVN.index'
-#o = readInvIndex(dir+inv_index)
-#print o
-#doclengs = 'doclength/onebest.CMVN.length'
+
 answers = 'PTV.ans'
-#docmodeldir = 'docmodel/onebest/CMVN/'
-#train_queries,train_indexes = readFoldQueries(dir+train_data)
-#test_queries ,test_indexes  = readFoldQueries(dir+test_data)
 
 data_dir = '10fold/query/CMVN/'
 
@@ -26,7 +21,9 @@ newdir = '../Data/query/'
 pkl = '.pkl'
 
 def main():
-  pass
+  fin = '../Data/stateestimation/' + 'feature_89.pkl'
+  fout = '../Data/stateestimation/' + 'feature_89_epoch_1000.h5'
+  removeDuplicateFeatures(fin,fout)
 
 def genQueryAnswer():
   for filename in os.listdir(dir+data_dir):
@@ -34,6 +31,30 @@ def genQueryAnswer():
         queries, indexes = readFoldQueries(dir+data_dir+filename)
         ans = [ data_answers[idx] for idx in indexes ]
         pickle.dump((queries,ans,indexes),f)
+
+def removeDuplicateFeatures(fin,fout):
+  features, MAPs = pickle.load(open(fin))
+
+  data = zip(features,MAPs)
+  result = []
+  for d in data:
+    if d not in result:
+      result.append(d)
+
+  try:
+    indep_features, indep_MAPs = result
+
+    features = np.asarray(indep_features)
+    MAPs = np.asarray(indep_MAPs)
+
+
+    h5f = h5py.File(fout,'w')
+    h5f.create_dataset('features',data=features)
+    h5f.create_dataset('MAPs',data=MAPs)
+    h5f.close()
+  except:
+    pdb.set_trace()
+
 
 if __name__ == "__main__":
   main()

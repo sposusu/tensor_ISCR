@@ -1,30 +1,19 @@
 from collections import defaultdict
 import cPickle as pickle
-import math
-import os
 import operator
 import pdb
 
 # For Feature Extraction
-from actionmanager import genCostTable
-from expansion import expansion
+from actionmanager import ActionManager
 from searchengine import SearchEngine
 from statemachine import StateMachine
-from util import *
 
-"""
-  Todo: action manager
-"""
 class DialogueManager(object):
-  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,se_method,\
-              topicleng=50, topicnumword=1000):
-
-    # Cost Table
-    self.costTable = genCostTable()
+  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir):
 
     # Search Engine
     self.searchengine = SearchEngine(
-                                lex = lex,
+                                lex         = lex,
                                 background  = background,
                                 inv_index   = inv_index,
                                 doclengs    = doclengs,
@@ -40,28 +29,15 @@ class DialogueManager(object):
                               docmodeldir = docmodeldir
                               )
 
-    self.background  = self.searchengine.background
-    self.doclengs    = self.searchengine.doclengs
-    self.dir         = dir
-    self.docmodeldir = docmodeldir
-    self.cpsID       = '.'.join(docmodeldir.split('/')[1:-1])
-    self.topiclist   = readTopicWords(self.cpsID)
-
-
-    # Parameters for expansion and action
-    self.topicleng = topicleng
-    self.topicnumword = topicnumword
+    self.actionmanager = ActionManager(
+                              background  = self.searchengine.background,
+                              doclengs    = self.searchengine.doclengs,
+                              dir         = dir,
+                              docmodeldir = docmodeldir
+                              )
 
     # Training or Testing
     self.test_flag = True
-
-    assert se_method in ['online','offline']
-    self.se_method = se_method
-    if self.se_method == 'offline':
-      self.statemachine.train(self.se_method)
-    # Save features for state  estimation
-    #self.se_features = []
-    #self.se_MAPs     = []
 
   def __call__(self, query, ans, test_flag = False):
     """
@@ -70,27 +46,17 @@ class DialogueManager(object):
       Return:
         state(firstpass): 1 dim vector
     """
-    # Query and answer (for calculating average precision)
-    self.posmodel = query
-    self.negmodel = None
+    self.query = query
+    self.ans   = ( None if test_flag else ans )
 
-    self.ans = ( None if test_flag else ans )
-
-    # Initialize Feedback models for this session
-    self.posdocs  = []
-    self.poslengs  = []
-    self.negdocs  = []
-    self.neglengs = []
-
-    self.posprior = self.posmodel
-    self.negprior = {}
-
+    #print 'DM has query {0}, ans {1}'.format(self.query,self.ans)
+    #print
     # Interaction Parameters, action and current turn number
-    self.cur_action  = 5 # Action None
+    self.cur_action  = -1 # Action None
     self.curtHorizon = 0
 
     # Previous retrieved results and MAP
-    self.ret    = None
+    self.ret     = None
 
     self.lastMAP = 0.
     self.MAP     = 0.
@@ -101,34 +67,33 @@ class DialogueManager(object):
     # Training or Testing
     self.test_flag = test_flag
 
-  def get_retrieved_result(self):
-    assert self.posmodel != None
+  def gen_state_feature(self):
+    assert self.actionmanager.posmodel != None
+
     # Search Engine Retrieves Result
-    self.ret = self.searchengine.retrieve(self.posmodel,self.negmodel)
+    self.ret = self.searchengine.retrieve( self.actionmanager.posmodel,\
+                                            self.actionmanager.negmodel )
     self.curtHorizon += 1
 
-    # Feature Extraction and State Estimation performed by State Machine
+    # Feature Extraction
+    # State Estimation
     feature, estimatedMAP = self.statemachine(
                                               ret         = self.ret,
                                               action_type = self.cur_action,
                                               curtHorizon = self.curtHorizon,
-                                              posmodel    = self.posprior,
-                                              negmodel    = self.negprior,
-                                              posprior    = self.posprior,
-                                              negprior    = self.negprior
+
+                                              posmodel    = self.actionmanager.posprior,
+                                              negmodel    = self.actionmanager.negprior,
+                                              posprior    = self.actionmanager.posprior,
+                                              negprior    = self.actionmanager.negprior
                                               )
 
-    # Record mean average precision and train state estimator
+    # Record mean average precision
+    # Train state estimator
     self.lastMAP = self.MAP
 
     if not self.test_flag:
       self.MAP = self.evalMAP(self.ret,self.ans)
-
-      if self.se_method == 'online':
-        self.statemachine.train(self.se_method,feature,self.MAP)
-      # Save to file
-      #self.se_MAPs.append(self.MAP)
-      #self.se_features.append(feature)
     else:
       self.MAP = estimatedMAP
 
@@ -139,41 +104,16 @@ class DialogueManager(object):
       Sends request to simulator for more query info
     '''
     self.cur_action = action_type
-    return (self.ret, self.cur_action)
+    request = {}
+    request['ret']    = self.ret
+    request['action'] = self.actionmanager.actiontable[ action_type ]
+    return request
 
   def expand_query(self,response):
     '''
-      Receives response from simulator
-      PS: 204 is HTTP status code for empty content
+      Passes response to action manager for query expansion
     '''
-    if self.cur_action == 0:
-      doc = response
-      if doc:
-        self.posdocs.append(self.docmodeldir+IndexToDocName(doc))
-      	self.poslengs.append(self.doclengs[doc])
-    elif self.cur_action == 1:
-      if response is not 204:
-        keyterm = response[0]
-        boolean = response[1]
-        if boolean:
-          self.posprior[ keyterm ] = 1.
-        else:
-          self.negprior[ keyterm ] = 1.
-    elif self.cur_action == 2:
-      request = response
-      self.posprior[request] = 1.0
-    elif self.cur_action == 3:
-      topicIdx = response
-      self.posdocs.append(pruneAndNormalize(self.topiclist[topicIdx],self.topicnumword))
-      self.poslengs.append(self.topicleng)
-    elif self.cur_action == 4:
-      # This condition shouldn't happen, since we blocked this in environment.py
-      assert response == None
-      assert 0, 'Should not show result in dialogue manager expand query function!'
-      self.terminal = True
-
-    posmodel = expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
-    negmodel = expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
+    posmodel, negmodel = self.actionmanager.expand_query(response)
 
     self.posmodel = posmodel
     self.negmodel = negmodel
@@ -186,20 +126,30 @@ class DialogueManager(object):
 
   def calculate_reward(self):
     if self.terminal:
-      reward = self.costTable[4]
+      reward = self.actionmanager.costTable[ 4 ]
     else:
-      reward = self.costTable[ self.cur_action ] + self.costTable['lambda'] * (self.MAP - self.lastMAP)
+      reward = self.actionmanager.costTable[ self.cur_action ] + \
+              self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
     return reward
+
+  def show(self):
+    self.terminal = True
+    params = { 'ret': self.ret }
+    return params
 
   def game_over(self):
     if self.terminal or self.curtHorizon >= 5:
-      self.query = self.ans = None
+      self.query = None
+      self.ans   = None
+      self.actionmanager.posmodel = None
       return True
     return False
 
+  """
   def save_features(self,filename):
     with open(filename + '.pkl','w') as f:
       pickle.dump((self.se_features,self.se_MAPs),f)
+  """
 
 """
 

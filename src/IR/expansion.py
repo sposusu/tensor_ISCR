@@ -1,5 +1,4 @@
-import sys
-import os
+from collections import defaultdict
 import operator
 from util import *
 
@@ -7,93 +6,69 @@ dir='../../ISDR-CMDP/'
 
 def expansion(prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
 
-    models = []
-    alphas = []
+  models = []
+  alphas = []
 
-    for name in docnames:
-	if isinstance(name, str):
-	    models.append(readDocModel(dir+name))
-	else:
-	    models.append(name)
-	alphas.append(0.5)
-    N = float(len(docnames))
+  for name in docnames:
+    if isinstance(name, str):
+      models.append(readDocModel(dir+name))
+    else:
+      models.append(name)
+    alphas.append(0.5)
 
-    # init query model
-    query = {}
-    for model in models:
-	for word,val in model.iteritems():
-	    if query.has_key(word):
-		query[word] += val/N
-	    else:
-		query[word] = val/N
+  N = float(len(docnames))
 
-    # EM expansion
-    for it in range(iteration):
+  # init query model
+  query = defaultdict(float)
+  for model in models:
+    for word,val in model.iteritems():
+      query[word] += val/N
 
-	# E step, Estimate P(Zw,d=1)
-	aux = {}
-	for m in range(len(models)):
-	    model = models[m]
-	    alpha = alphas[m]
-	    aux[m] = {}
-	    for word,val in model.iteritems():
-		if query.has_key(word):
-		    aux[m][word] = alpha*query[word]/\
-			    (alpha*query[word]+\
-			    (1-alpha)*back[word])
-		else:
-		    aux[m][word] = 0.0
-	# M step
-	# Estimate alpha_D
-	tmpmass = {}
-	for m in range(len(models)):
-	    alphas[m] = 0
-	    model = models[m]
-	    for word,val in model.iteritems():
-		alphas[m] += aux[m][word]*val*doclengs[m]
-		if tmpmass.has_key(word):
-		    tmpmass[word] += aux[m][word]*val*doclengs[m]
-		else:
-		    tmpmass[word] = aux[m][word]*val*doclengs[m]
-	    alphas[m] /= doclengs[m]
+  # EM expansion
+  for it in range(iteration):
+    # E step, Estimate P(Zw,d=1)
+    aux = {}
+    for m in range(len(models)):
+      model = models[m]
+      alpha = alphas[m]
+      aux[m] = defaultdict(float)
+      for word,val in model.iteritems():
+        aux[m][word] = alpha*query[word]/(alpha*query[word] + (1-alpha)*back[word])
 
-	# Estimate expanded query model
-	qexpand = {}
-	for word,val in prior.iteritems():
-	    qexpand[word] = mu*val
+    # M step
+    # Estimate alpha_D
+    tmpmass = defaultdict(float)
+    for m in range(len(models)):
+      alphas[m] = 0.
+      model = models[m]
+      for word,val in model.iteritems():
+        alphas[m]     += aux[m][word]*val*doclengs[m]
+        tmpmass[word] += aux[m][word]*val*doclengs[m]
+      alphas[m] /= doclengs[m]
 
-	for word,val in tmpmass.iteritems():
-	    if qexpand.has_key(word):
-		qexpand[word] += tmpmass[word]
-	    else:
-		qexpand[word] = tmpmass[word]
 
-	# Normalize expanded model
-	Z = 0.0
-	for word,val in qexpand.iteritems():
-	    Z += val
-	for word in qexpand.iterkeys():
-	    qexpand[word] = qexpand[word]/Z
-	del query
 
-	query = qexpand
-	mu *= delta
+    # Estimate expanded query model
+    qexpand = defaultdict(float)
+    for word,val in prior.iteritems():
+      qexpand[word] = mu * val
+    for word,val in tmpmass.iteritems():
+      qexpand[word] += tmpmass[word]
 
-	# dealloc
-	del aux
-	del tmpmass
-	del qexpand
+    # Normalize expanded model
+    Z = 0.0
+    for word,val in qexpand.iteritems():
+      Z += val
+    for word in qexpand.iterkeys():
+      qexpand[word] = qexpand[word]/Z
 
-    del models
-    del alphas
+    query = qexpand
+    mu *= delta
 
-    qsort = sorted(query.iteritems(),key=operator.itemgetter(1),reverse=True)
-    query = dict(qsort[0:100])
-    #print qsort[0:3]
-    #for key,val in prior.iteritems():
-    #	print key, val, query[key]
+  qsort = sorted(query.iteritems(),key=operator.itemgetter(1),reverse=True)
+  query = dict(qsort[0:100])
 
-    return query
+  return query
 
 
 def PRFExpansion(queries,ret,doclengs,background,docmodeldir,N,iteration,mu,delta):

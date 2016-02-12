@@ -93,7 +93,7 @@ class experiment():
 
   def run(self):
     self.training()
-    self.testing()
+    #self.testing()
 
   def training(self):
     for epoch in range(num_epoch):
@@ -117,7 +117,8 @@ class experiment():
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
-    action = self.agent.start_episode(init_state)
+    action     = self.agent.start_episode(init_state)
+
     #print 'action {0}'.format(action)
     num_steps = 0
     while True:
@@ -163,7 +164,7 @@ def launch():
 
   print 'Creating Environment and compiling State Estimator...'
   env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir,se_method)
+                    doclengs,docmodeldir,dir)
   print 'Initializing experiment...'
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)

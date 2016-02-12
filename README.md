@@ -16,14 +16,14 @@ Interactive System(Environment): <br/>
       - calculates reward
 
     * State Machine: <br/>
-      Mainly used for feature extraction
+      Extracts feature and performs state estimation
       Feature: the 1-dimensional observation vector our RL agent needs
 
-    * (Todo) Action Manager: <br/>
-  Performs actions that produces posmodel and negmodel for search engine retrieval
+    * Action Manager: <br/>
+      Performs query expansion according to different actions
+
   * Search Engine: <br/>
-  The retrieval engine of our system.
-  Inputs query,returns list of documents
+    The retrieval engine of our system.
+    Inputs query,returns list of documents
   * Simulator: <br/>
-  Simulates Human behavior, ( response to human actions )
-  * (Todo) Dataset Manager
+    Simulates Human behavior, ( response to human actions )

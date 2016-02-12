@@ -218,7 +218,7 @@ def readTopicWords(cpsID):
       pair = line.split('\t')
       words[int(pair[0])] = float(pair[1])
     fin.close()
-  topicWordList.append(words)
+    topicWordList.append(words)
   return topicWordList
 
 def sortTopicByKLtoAnswer(docmodeldir,ans,doclengs,topiclst):
