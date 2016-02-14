@@ -93,7 +93,6 @@ class experiment():
 
   def run(self):
     self.training()
-    self.testing()
 
   def training(self):
     for epoch in range(num_epoch):
@@ -130,7 +129,6 @@ class experiment():
     while True:
       reward, state = self.env.step(action)
       terminal = self.env.game_over()
-      #print 'terminal {0}'.format(terminal)
       num_steps += 1
 
       if num_steps >= max_steps or terminal:
@@ -139,8 +137,6 @@ class experiment():
 
       action = self.agent.step(reward, state)
 
-      #print 'action {0}'.format(action)
-    #print 'num_steps {0}'.format(num_steps)
     return num_steps
 
 def launch():
