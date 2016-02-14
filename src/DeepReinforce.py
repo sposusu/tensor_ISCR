@@ -104,6 +104,7 @@ class experiment():
         pbar.update(idx)
       pbar.finish()
       self.agent.finish_epoch()
+
       random.shuffle(training_data)
 
   def testing(self):
@@ -114,7 +115,6 @@ class experiment():
       pbar.update(idx)
     pbar.finish()
     self.agent.finish_epoch()
-    random.shuffle(testing_data)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
