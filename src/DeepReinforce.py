@@ -75,7 +75,9 @@ experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 2
+num_epoch = 20
+
+test_frequency = 5
 
 step_per_epoch = 1000
 max_steps = 5
@@ -92,7 +94,6 @@ class experiment():
   def run(self):
     self.training()
     self.testing()
-    self.agent.finish_testing()
 
   def training(self):
     for epoch in range(num_epoch):
@@ -103,16 +104,23 @@ class experiment():
         self.run_episode(q,ans,ans_index,test_flag=False)
         pbar.update(idx)
       pbar.finish()
-      
+
+      if epoch % test_frequency == 0:
+        self.testing(epoch+1)
+
+
       random.shuffle(training_data)
 
-  def testing(self):
+  def testing(self,epoch):
+    print 'Running test at epoch {0}'.format(epoch)
+    self.agent.start_testing()
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
     pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
     for idx,(qtest,anstest,anstest_index) in enumerate(testing_data):
       self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
+    self.agent.finish_testing(epoch)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
