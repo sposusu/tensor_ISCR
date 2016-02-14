@@ -70,17 +70,15 @@ rng = np.random.RandomState()
 epsilon_start = 1.0
 epsilon_min = 0.1
 epsilon_decay = 1000000
-replay_memory_size = 1000000
+replay_memory_size = 10000
 experiment_prefix = 'result/ret'
-replay_start_size = 50000
+replay_start_size = 500
 update_frequency = 1
 ###############################
 num_epoch = 2
 
 step_per_epoch = 1000
 max_steps = 5
-
-se_method = 'online'
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -93,7 +91,8 @@ class experiment():
 
   def run(self):
     self.training()
-    #self.testing()
+    self.testing()
+    self.agent.finish_testing()
 
   def training(self):
     for epoch in range(num_epoch):
@@ -104,6 +103,7 @@ class experiment():
         self.run_episode(q,ans,ans_index,test_flag=False)
         pbar.update(idx)
       pbar.finish()
+      self.agent.finish_epoch()
       random.shuffle(training_data)
 
   def testing(self):
@@ -113,13 +113,13 @@ class experiment():
       self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
+    self.agent.finish_epoch()
     random.shuffle(testing_data)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
     action     = self.agent.start_episode(init_state)
 
-    #print 'action {0}'.format(action)
     num_steps = 0
     while True:
       reward, state = self.env.step(action)
