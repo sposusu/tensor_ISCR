@@ -1,4 +1,5 @@
 import logging
+import os
 import pdb
 
 
@@ -20,7 +21,7 @@ num_epoch = 10
 # Lasagne related
 act = lasagne.nonlinearities.sigmoid
 obj = lasagne.objectives.squared_error
-init = lasagne.init.Sparse
+init = lasagne.init.GlorotUniform
 
 # Data split ratio
 split = 0.2
@@ -45,12 +46,14 @@ weights_file = se_prefix + dnn_name + '.npz'
 log_root = '../logs/stateestimation/'
 log_file = log_root + dnn_name
 
-
+try:
+  os.makedirs(log_root)
+  
 #########################
 #  Call Neural Network  #
 #########################
 
-network, train_fn, val_fn, test_fn = dnn(act = act,obj=obj)
+network, train_fn, val_fn, test_fn = dnn(act=act,obj=obj,init=init)
 
 
 def load_dataset(split=split):
