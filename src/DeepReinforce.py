@@ -67,15 +67,16 @@ rng = np.random.RandomState()
 ###############################
 epsilon_start = 1.0
 epsilon_min = 0.1
-epsilon_decay = 1000
 replay_memory_size = 10000
 experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 2
+num_epoch = 200
 
-test_frequency = 1
+epsilon_decay = num_epoch * 500
+
+test_frequency = 5
 
 step_per_epoch = 1000
 max_steps = 5
