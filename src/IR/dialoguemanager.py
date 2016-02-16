@@ -1,5 +1,6 @@
 from collections import defaultdict
 import cPickle as pickle
+import logging
 import operator
 import pdb
 
@@ -29,6 +30,7 @@ class DialogueManager(object):
                               docmodeldir = docmodeldir
                               )
 
+    # Action Manager, performs query expansion
     self.actionmanager = ActionManager(
                               background  = self.searchengine.background,
                               doclengs    = self.searchengine.doclengs,
@@ -49,8 +51,6 @@ class DialogueManager(object):
     self.query = query
     self.ans   = ( None if test_flag else ans )
 
-    #print 'DM has query {0}, ans {1}'.format(self.query,self.ans)
-    #print
     # Interaction Parameters, action and current turn number
     self.cur_action  = -1 # Action None
     self.curtHorizon = 0
@@ -96,6 +96,8 @@ class DialogueManager(object):
       self.MAP = self.evalMAP(self.ret,self.ans)
     else:
       self.MAP = estimatedMAP
+
+    logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
 
     return feature
 

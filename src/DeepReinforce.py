@@ -1,5 +1,7 @@
 import cPickle as pickle
+import datetime
 import logging
+import os
 import pdb
 import random
 import time
@@ -20,10 +22,8 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
 
-################################
-#import argparse
-#parser = argparse.ArgumentParser(description='Interactive Retrieval')
-#args = parser.parse_args()
+
+
 dir='../../ISDR-CMDP/'
 data_dir = '10fold/query/CMVN'
 
@@ -46,13 +46,13 @@ def list2tuple(data):
     result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
   return result
 
-
 training_data = list2tuple(training_data)
 testing_data  = list2tuple(testing_data)
 
 ###############################
 input_width, input_height = [89,1]
 num_actions = 5
+
 phi_length = 4 # phi length?  input 4 frames at once
 discount = 0.95
 learning_rate = 0.00025
@@ -60,7 +60,7 @@ rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
 momentum = 0
 clip_delta = 1.0
-freeze_interval = 10000 #???  no freeze?
+freeze_interval = 100 #???  no freeze?
 batch_size = 32
 network_type = 'rl_dnn'
 update_rule = 'deepmind_rmsprop' # need update
@@ -69,15 +69,15 @@ rng = np.random.RandomState()
 ###############################
 epsilon_start = 1.0
 epsilon_min = 0.1
-epsilon_decay = 1000000
+epsilon_decay = 1000
 replay_memory_size = 10000
 experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 20
+num_epoch = 2
 
-test_frequency = 5
+test_frequency = 1
 
 step_per_epoch = 1000
 max_steps = 5
@@ -86,6 +86,17 @@ num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 
 ###############################
+
+exp_log_root = '../logs/'
+try:
+  os.makedirs(exp_log_root)
+except:
+  pass
+
+cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+exp_log_name = exp_log_root + cur_datetime + ".log"
+
 class experiment():
   def __init__(self,agent,env):
     self.agent = agent
@@ -95,11 +106,16 @@ class experiment():
     self.training()
 
   def training(self):
+    logging.basicConfig(filename=exp_log_name,level=logging.INFO)
+
+    logging.info('ans_index,turns,MAP')
     for epoch in range(num_epoch):
+      logging.info('epoch {0}'.format(epoch))
       print 'Running epoch {0} out of {1} epochs'.format(epoch+1,num_epoch)
       widgets = [ 'Training', Percentage(), Bar(), ETA() ]
       pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
       for idx, (q, ans, ans_index) in enumerate(training_data):
+        logging.info('ans_index {0}'.format(ans_index))
         self.run_episode(q,ans,ans_index,test_flag=False)
         pbar.update(idx)
       pbar.finish()
@@ -111,11 +127,14 @@ class experiment():
       random.shuffle(training_data)
 
   def testing(self,epoch):
+    logging.info('Testing')
     print 'Running test at epoch {0}'.format(epoch)
     self.agent.start_testing()
+
     widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
     pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
     for idx,(qtest,anstest,anstest_index) in enumerate(testing_data):
+      logging.info('anstest_index {0}'.format(anstest_index))
       self.run_episode(qtest,anstest,anstest_index,test_flag=True)
       pbar.update(idx)
     pbar.finish()
