@@ -7,21 +7,23 @@ from retmath import *
 from copy import *
 
 def batchRetrieve(queries, background, inv_index, docleng, alpha):
-    retrieved = []
-    cnt = 1
-    for query in queries:
-	#print 'Retrieving query %d...' % cnt
-	cnt += 1
-	retrieved.append( retrieve(query, background, \
-		inv_index, docleng, alpha))
-    return retrieved
+    return [ retrieve(query, background, inv_index, docleng, alpha) for query in queries ]
+#    retrieved = []
+#    cnt = 1
+#    for query in queries:
+#	#print 'Retrieving query %d...' % cnt
+#	cnt += 1
+#	retrieved.append( retrieve(query, background, \
+#		inv_index, docleng, alpha))
+#    return retrieved
 
 def retrieve(query, background, inv_index, docleng, alpha):
     result = {}
-    for i in range(1,5048,1):
-	result[i] = -9999
+    for i in xrange(1,5048):
+        result[i] = -9999
+
     for wordID, weight in query.iteritems():
-	existDoc = {}
+        existDoc = {}
 	for docID, val in inv_index[wordID].iteritems():
 	    existDoc[docID] = 1
 	    # smooth doc model by background
@@ -114,47 +116,20 @@ def evalAP(ret,ans):
     cnt = 0.0
     get = 0.0
     for docID, val in ret:
-	cnt += 1.0
+        cnt += 1.0
         if ans.has_key(docID):
-	    get += 1.0
-	    AP += float(get)/float(cnt)
-    if len(ans)==0:
-	AP = 0.0
-    else:
-	AP /= float(len(ans))
+            get += 1.0
+            AP += float(get)/float(cnt)
+    if len(ans)!=0:
+        AP /= float(len(ans))
     return AP
 
 def evalMAP(retrieved,answers,verbose=False):
-    MAP = 0.0
-    APs = []
-    nonzero = 0.0
-    for i in range(len(retrieved)):
-	list = retrieved[i]
-	ans = answers[i]
-	"""
-	if i==0:
-	    for key,val in list:
-		print IndexToDocName(key), val
-	"""
-	cnt = 0
-	get = 0
-	AP = 0.0
-	for docID, val in list:
-	    cnt += 1
-	    if ans.has_key(docID):
-		get += 1
-		AP += float(get)/float(cnt)
-	
-	if len(ans)!=0:
-	    AP /= float(len(ans))
-	APs.append(AP)
-	MAP += AP
-	if AP!=0.0:
-	    nonzero += 1.0
-    MAP /= float(len(retrieved))
+    APs = [ evalAP(retrieved[i],answers[i]) for i in xrange(len(retrieved)) ]
+    MAP = sum(APs)/len(APs)
     if verbose:
-	return MAP, APs
+	    return MAP, APs
     else:
-	return MAP
+	    return MAP
 	
 
