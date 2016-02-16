@@ -22,8 +22,6 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
 
-
-
 dir='../../ISDR-CMDP/'
 data_dir = '10fold/query/CMVN'
 
@@ -97,6 +95,8 @@ cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 exp_log_name = exp_log_root + cur_datetime + ".log"
 
+logging.basicConfig(filename=exp_log_name,level=logging.INFO)
+
 class experiment():
   def __init__(self,agent,env):
     self.agent = agent
@@ -106,8 +106,6 @@ class experiment():
     self.training()
 
   def training(self):
-    logging.basicConfig(filename=exp_log_name,level=logging.INFO)
-
     logging.info('ans_index,turns,MAP')
     for epoch in range(num_epoch):
       logging.info('epoch {0}'.format(epoch))
