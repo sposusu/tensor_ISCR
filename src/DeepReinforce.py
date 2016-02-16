@@ -52,12 +52,12 @@ input_width, input_height = [89,1]
 num_actions = 5
 
 phi_length = 4 # phi length?  input 4 frames at once
-discount = 0.95
+discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
 momentum = 0
-clip_delta = 1.0
+clip_delta = 0.
 freeze_interval = 100 #???  no freeze?
 batch_size = 32
 network_type = 'rl_dnn'
