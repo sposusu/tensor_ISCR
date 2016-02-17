@@ -76,11 +76,7 @@ replay_start_size = 500
 update_frequency = 1
 ###############################
 num_epoch = 20
-
 epsilon_decay = num_epoch * 500
-
-test_frequency = 1
-
 step_per_epoch = 1000
 max_steps = 5
 
@@ -118,6 +114,11 @@ class experiment():
     self.env = env
 
   def run(self):
+    print_red( 'Init Model')
+    self.agent.start_testing()
+    self.run_epoch(True)
+    self.agent.finish_testing(0)
+
     for epoch in xrange(num_epoch):
       logging.info('epoch {0}'.format(epoch))
       print_red( 'Running epoch {0}'.format(epoch+1))
