@@ -133,7 +133,12 @@ class NeuralAgent(object):
 
         self.start_time = time.time()
 
-        return_action = self.rng.randint(0, self.num_actions)
+#        return_action = self.rng.randint(0, self.num_actions)
+        if self.testing:
+            phi = self.test_data_set.phi(observation)
+            return_action = self.network.choose_action(phi, 0.)
+        else:
+            return_action = self.rng.randint(0, self.num_actions)
 
         self.last_action = return_action
 
@@ -172,7 +177,8 @@ class NeuralAgent(object):
         #TESTING---------------------------
         if self.testing:
             self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
+            #action = self._choose_action(self.test_data_set, .05,
+            action = self._choose_action(self.test_data_set, 0.,
                                          observation, np.clip(reward, -1, 1))
 
         #NOT TESTING---------------------------
@@ -213,6 +219,7 @@ class NeuralAgent(object):
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
         else:
+            print 'random action'
             action = self.rng.randint(0, self.num_actions)
 
         return action

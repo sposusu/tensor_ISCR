@@ -50,7 +50,8 @@ class DialogueManager(object):
         state(firstpass): 1 dim vector
     """
     self.query = query
-    self.ans   = ( None if test_flag else ans )
+#    self.ans   = ( None if test_flag else ans )
+    self.ans   = ans
 
     # Interaction Parameters, action and current turn number
     self.cur_action  = -1 # Action None
@@ -93,10 +94,10 @@ class DialogueManager(object):
     # Train state estimator
     self.lastMAP = self.MAP
 
-    if not self.test_flag:
-      self.MAP = self.evalAP(self.ret,self.ans)
-    else:
-      self.MAP = estimatedMAP
+#    if not self.test_flag:
+    self.MAP = self.evalAP(self.ret,self.ans)
+#    else:
+#      self.MAP = estimatedMAP
 
     logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
 
@@ -109,7 +110,7 @@ class DialogueManager(object):
     self.cur_action = action_type
     request = {}
     request['ret']    = self.ret
-    request['action'] = self.actionmanager.actiontable[ action_type ]
+    request['action'] = self.actionmanager.actionTable[ action_type ]
     return request
 
   def expand_query(self,response):
@@ -142,7 +143,7 @@ class DialogueManager(object):
     else:
       reward = self.actionmanager.costTable[ self.cur_action ] + \
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
-      print 'action : ', self.cur_action,'cost : ',self.actionmanager.costTable[ self.cur_action ] ,"\tlast MAP : ", self.lastMAP, "\tMAP : ", self.MAP, "\treward : ", reward
+#      print 'action : ', self.cur_action,'cost : ',self.actionmanager.costTable[ self.cur_action ] ,"\tlast MAP : ", self.lastMAP, "\tMAP : ", self.MAP, "\treward : ", reward
     return reward
 
   def show(self):
@@ -155,8 +156,8 @@ class DialogueManager(object):
       self.query = None
       self.ans   = None
       self.actionmanager.posmodel = None
-      return True
-    return False
+      return True, self.MAP
+    return False, self.MAP
 
   """
   def save_features(self,filename):

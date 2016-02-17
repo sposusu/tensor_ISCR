@@ -28,8 +28,8 @@ class Environment(object):
     """
     # Sets up query and answer
     self.simulator( query, ans, ans_index )
-    print 'index :', ans_index,'query : ', query
     self.dialoguemanager( query, ans, test_flag ) # ans is for MAP
+    #self.test_flag = test_flag
 
     # Begin first pass
     action_type = -1 # Action None
@@ -39,7 +39,8 @@ class Environment(object):
     self.dialoguemanager.expand_query(feedback)
 
     firstpass = self.dialoguemanager.gen_state_feature()
-
+    if test_flag:
+      print 'action : ', action_type,' first pass',"\t\tAP : ", self.dialoguemanager.MAP
     return firstpass
 
   def step(self, action_type):

@@ -5,7 +5,10 @@ import os
 import pdb
 import random
 import time
-
+from termcolor import cprint
+print_red = lambda x: cprint(x, 'red')
+print_blue = lambda x: cprint(x, 'blue')
+print_yellow = lambda x: cprint(x, 'yellow')
 import numpy as np
 import progressbar
 from progressbar import ProgressBar, Percentage, Bar, ETA
@@ -51,7 +54,7 @@ testing_data  = list2tuple(testing_data)
 input_width, input_height = [89,1]
 num_actions = 5
 
-phi_length = 4 # phi length?  input 4 frames at once
+phi_length = 1 # phi length?  input 4 frames at once num_frames
 discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
@@ -88,81 +91,81 @@ print "number of testing data: ", num_tx_query
 # TODO
 # map -> ap  -- done
 # action 2   -- done
-# count num_steps
+# count num_steps -- done
+# testing MAP,ans -- done (no state estimate)
+# test print AP -- done (termcolor)
+# test no random --  done (epsilon = 0,phi = 1,init episode no random)
+# check 4 baseline
+# check dict copy?
 # overfit one query
 # mix tr tx
+# test progress bar
+# simulate platform
 ###############################
-
+# logging
 exp_log_root = '../logs/'
 try:
   os.makedirs(exp_log_root)
 except:
   pass
-
-cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
+cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 exp_log_name = exp_log_root + cur_datetime + ".log"
-
 logging.basicConfig(filename=exp_log_name,level=logging.INFO)
-
+###############################
 class experiment():
   def __init__(self,agent,env):
     self.agent = agent
     self.env = env
 
   def run(self):
-    self.training()
-
-  def training(self):
-    logging.info('ans_index,turns,MAP')
     for epoch in xrange(num_epoch):
       logging.info('epoch {0}'.format(epoch))
-      print 'Running epoch {0} out of {1} epochs'.format(epoch+1,num_epoch)
-      widgets = [ 'Training', Percentage(), Bar(), ETA() ]
-      pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
+      print_red( 'Running epoch {0}'.format(epoch+1))
+      ## TRAIN ##
+      self.run_epoch()
+      self.agent.finish_epoch(epoch+1)
+      
+      ## TEST ##
+      self.agent.start_testing()
+      self.run_epoch(True)
+      self.agent.finish_testing(epoch+1)
 
-      for idx, (q, ans, ans_index) in enumerate(training_data):
-        logging.info('ans_index {0}'.format(ans_index))
-        n = self.run_episode(q,ans,ans_index,test_flag=False)
+  def run_epoch(self,test_flag=False):
+    ## PROGRESS BAR SETTING
+    title = ['Training', 'Testing']
+    widgets = [ title[test_flag], Percentage(), Bar(), ETA() ]
+    pbar = ProgressBar(widgets=widgets,maxval=step_per_epoch).start()
+
+    steps_left = step_per_epoch
+    while steps_left > 0:
+      if True:
+      #for q, ans, ans_index in training_data:
+        q, ans, ans_index = training_data[0]
+        logging.info( 'ans_index {0}'.format(ans_index) )
+        n_steps = self.run_episode(q,ans,ans_index,test_flag)
+        pbar.update(step_per_epoch - steps_left)
+        steps_left -= n_steps
+      if test_flag:
+        print_yellow( 'Episode Reward : '+ str(self.agent.episode_reward) )
         break
-        pbar.update(idx)
-      pbar.finish()
-
-      #if epoch % test_frequency == 0:
-      #  self.testing(epoch+1)
-
-
-      #random.shuffle(training_data)
-
-  def testing(self,epoch):
-    logging.info('Testing')
-    print 'Running test at epoch {0}'.format(epoch)
-    self.agent.start_testing()
-
-    widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
-    pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
-    for idx,(qtest,anstest,anstest_index) in enumerate(testing_data):
-      logging.info('anstest_index {0}'.format(anstest_index))
-      self.run_episode(qtest,anstest,anstest_index,test_flag=True)
-      pbar.update(idx)
     pbar.finish()
-    self.agent.finish_testing(epoch)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
-    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset & first-pass
+    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
     action     = self.agent.start_episode(init_state)
 
     num_steps = 0
     while True:
-      reward, state = self.env.step(action)
-      terminal = self.env.game_over()
+      reward, state = self.env.step(action)				# ENVIROMENT STEP
+      terminal, AP = self.env.game_over()
+      if test_flag and action != 4:
+        AM = self.env.dialoguemanager.actionmanager
+        print 'action : ', action,' ',AM.actionTable[ action],'\tcost : ', AM.costTable[ action ] ,"\tAP : ", AP, "\treward : ", reward
       num_steps += 1
-      if num_steps >= max_steps or terminal:
+      if num_steps >= max_steps or terminal:  # STOP Retrieve
         self.agent.end_episode(reward, terminal)
         break
-
-      action = self.agent.step(reward, state)
-    print "num_steps : ", num_steps
+      action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps
 
 def launch():
