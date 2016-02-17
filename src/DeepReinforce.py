@@ -72,18 +72,25 @@ experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 200
+num_epoch = 20
 
 epsilon_decay = num_epoch * 500
 
-test_frequency = 5
+test_frequency = 1
 
 step_per_epoch = 1000
 max_steps = 5
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
-
+print "number of trainig data: ", num_tr_query
+print "number of testing data: ", num_tx_query
+# TODO
+# map -> ap  -- done
+# action 2   -- done
+# count num_steps
+# overfit one query
+# mix tr tx
 ###############################
 
 exp_log_root = '../logs/'
@@ -108,22 +115,24 @@ class experiment():
 
   def training(self):
     logging.info('ans_index,turns,MAP')
-    for epoch in range(num_epoch):
+    for epoch in xrange(num_epoch):
       logging.info('epoch {0}'.format(epoch))
       print 'Running epoch {0} out of {1} epochs'.format(epoch+1,num_epoch)
       widgets = [ 'Training', Percentage(), Bar(), ETA() ]
       pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
+
       for idx, (q, ans, ans_index) in enumerate(training_data):
         logging.info('ans_index {0}'.format(ans_index))
-        self.run_episode(q,ans,ans_index,test_flag=False)
+        n = self.run_episode(q,ans,ans_index,test_flag=False)
+        break
         pbar.update(idx)
       pbar.finish()
 
-      if epoch % test_frequency == 0:
-        self.testing(epoch+1)
+      #if epoch % test_frequency == 0:
+      #  self.testing(epoch+1)
 
 
-      random.shuffle(training_data)
+      #random.shuffle(training_data)
 
   def testing(self,epoch):
     logging.info('Testing')
@@ -140,7 +149,7 @@ class experiment():
     self.agent.finish_testing(epoch)
 
   def run_episode(self,q,ans,ans_index,test_flag = False):
-    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
+    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset & first-pass
     action     = self.agent.start_episode(init_state)
 
     num_steps = 0
@@ -148,13 +157,12 @@ class experiment():
       reward, state = self.env.step(action)
       terminal = self.env.game_over()
       num_steps += 1
-
       if num_steps >= max_steps or terminal:
         self.agent.end_episode(reward, terminal)
         break
 
       action = self.agent.step(reward, state)
-
+    print "num_steps : ", num_steps
     return num_steps
 
 def launch():

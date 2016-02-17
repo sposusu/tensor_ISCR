@@ -28,7 +28,7 @@ class Environment(object):
     """
     # Sets up query and answer
     self.simulator( query, ans, ans_index )
-
+    print 'index :', ans_index,'query : ', query
     self.dialoguemanager( query, ans, test_flag ) # ans is for MAP
 
     # Begin first pass
@@ -36,7 +36,6 @@ class Environment(object):
 
     request  = self.dialoguemanager.request( action_type )
     feedback = self.simulator.feedback(request)
-
     self.dialoguemanager.expand_query(feedback)
 
     firstpass = self.dialoguemanager.gen_state_feature()

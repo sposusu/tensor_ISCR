@@ -8,6 +8,7 @@ import pdb
 from actionmanager import ActionManager
 from searchengine import SearchEngine
 from statemachine import StateMachine
+import numpy as np
 
 class DialogueManager(object):
   def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir):
@@ -93,7 +94,7 @@ class DialogueManager(object):
     self.lastMAP = self.MAP
 
     if not self.test_flag:
-      self.MAP = self.evalMAP(self.ret,self.ans)
+      self.MAP = self.evalAP(self.ret,self.ans)
     else:
       self.MAP = estimatedMAP
 
@@ -119,19 +120,29 @@ class DialogueManager(object):
 
     self.posmodel = posmodel
     self.negmodel = negmodel
+#    print "positive model ",self.posmodel
+#    print "negtive model ",self.negmodel
 
     return posmodel, negmodel
 
+  def evalAP(self,ret,ans):
+    tp = [ float(ans.has_key(docID)) for docID,val in ret ]
+    atp = np.cumsum(tp)
+    precision = [  atp[idx] / (idx+1) * tp[idx] for idx,(docID,val) in enumerate(ret)  ]
+    return ( sum(precision)/len(ans) if len(ans) else 0. )
+
   def evalMAP(self,ret,ans):
-    Precision_sum = sum([ 1.0/(idx+1) if ans.has_key(docID) else 0. for idx,(docID,val) in enumerate(ret) ])
-    return ( Precision_sum/len(ans) if len(ans) else 0. )
+    APs = [ evalAP(ret[i],ans[i]) for i in xrange(len(ret)) ]
+    print "warning!! MAP"
+    return sum(APs)/len(APs)
 
   def calculate_reward(self):
     if self.terminal:
       reward = self.actionmanager.costTable[ 4 ]
     else:
       reward = self.actionmanager.costTable[ self.cur_action ] + \
-              self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
+               self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
+      print 'action : ', self.cur_action,'cost : ',self.actionmanager.costTable[ self.cur_action ] ,"\tlast MAP : ", self.lastMAP, "\tMAP : ", self.MAP, "\treward : ", reward
     return reward
 
   def show(self):

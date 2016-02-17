@@ -13,7 +13,7 @@ class Simulator(object):
 
   def __call__(self,query,ans,ans_index):
     # query and desired answer
-    self.query = query
+    self.query = query.copy()
     self.ans   = ans
     self.ret   = None
 
