@@ -7,6 +7,7 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
+import random
 
 from expansion import expansion
 from retmath import *
@@ -67,8 +68,8 @@ class StateMachine(object):
     """
     feature = self.featureExtraction(ret,action_type,curtHorizon,\
                                     posmodel,negmodel,posprior,negprior)
-
-    estimatedMAP = self.approximator.predict_one(feature)
+    estimatedMAP = 0
+#    estimatedMAP = self.approximator.predict_one(feature)
 
     feature = np.asarray(feature).reshape(1,len(feature))
 
@@ -222,6 +223,7 @@ class StateMachine(object):
     for key, val in ret[:49]:
       feature.append(-1*val)
 
+#    return random.sample(range(300), 89)
     return feature
 
 

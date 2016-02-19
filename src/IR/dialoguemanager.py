@@ -99,7 +99,7 @@ class DialogueManager(object):
 #    else:
 #      self.MAP = estimatedMAP
 
-    logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
+#    logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
 
     return feature
 

@@ -137,6 +137,7 @@ class NeuralAgent(object):
         if self.testing:
             phi = self.test_data_set.phi(observation)
             return_action = self.network.choose_action(phi, 0.)
+            logging.debug( self.network.q_vals(phi) )
         else:
             return_action = self.rng.randint(0, self.num_actions)
 
@@ -250,6 +251,7 @@ class NeuralAgent(object):
         """
 
         self.episode_reward += reward
+        self.episode_loss = 0
         self.step_counter += 1
         total_time = time.time() - self.start_time
 
@@ -267,14 +269,13 @@ class NeuralAgent(object):
                                      np.clip(reward, -1, 1),
                                      True)
 
-            logging.info("steps/second: {:.2f}".format(\
-                            self.step_counter/total_time))
+#            logging.info("steps/second: {:.2f}".format(\
+#                            self.step_counter/total_time))
 
             if self.batch_counter > 0:
                 self._update_learning_file()
-                logging.info("average loss: {:.4f}".format(\
-                                np.mean(self.loss_averages)))
-
+                self.episode_loss = np.mean(self.loss_averages)
+                logging.debug("average loss: {:.4f}".format(self.episode_loss))
 
     def finish_epoch(self, epoch):
         net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \

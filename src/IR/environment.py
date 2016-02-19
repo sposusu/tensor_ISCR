@@ -39,8 +39,8 @@ class Environment(object):
     self.dialoguemanager.expand_query(feedback)
 
     firstpass = self.dialoguemanager.gen_state_feature()
-    if test_flag:
-      print 'action : ', action_type,' first pass',"\t\tAP : ", self.dialoguemanager.MAP
+#    if test_flag:
+#      print 'action : ', action_type,' first pass',"\t\tAP : ", self.dialoguemanager.MAP
     return firstpass
 
   def step(self, action_type):
