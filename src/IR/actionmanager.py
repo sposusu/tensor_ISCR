@@ -4,6 +4,7 @@
 """
 
 from collections import defaultdict
+from copy import deepcopy
 import json
 import operator
 import pdb
@@ -30,7 +31,7 @@ def genActionTable():
 
 class ActionManager(object):
   def __init__(self, background, doclengs, dir, docmodeldir, \
-                    topicleng=50, topicnumword=1000):
+                    topicleng=100, topicnumword=500):
 
     self.background  = background
     self.doclengs    = doclengs
@@ -50,7 +51,7 @@ class ActionManager(object):
     self.costTable    = genCostTable()
     
   def __call__(self, query):
-    self.posmodel = query
+    self.posmodel = deepcopy(query)
     self.negmodel = None
 
     self.posdocs  = []
@@ -58,7 +59,7 @@ class ActionManager(object):
     self.negdocs  = []
     self.neglengs = []
 
-    self.posprior = self.posmodel
+    self.posprior = deepcopy(self.posmodel)
     self.negprior = {}
 
 
