@@ -223,7 +223,7 @@ class StateMachine(object):
     for key, val in ret[:49]:
       feature.append(-1*val)
 
-#    return random.sample(range(300), 89)
+#    return feature[:12]
     return feature
 
 

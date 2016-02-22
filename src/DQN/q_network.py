@@ -463,24 +463,24 @@ class DeepQLearner:
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_in,
-            num_units=256,
+            num_units=1024,
             nonlinearity=lasagne.nonlinearities.rectify,
-            #W=lasagne.init.HeUniform(),
+#            W=lasagne.init.GlorotNormal(),
             W=lasagne.init.Normal(.01),
             b=lasagne.init.Constant(.1)
         )
 
         l_hidden2 = lasagne.layers.DenseLayer(
             l_hidden1,
-            num_units=256,
+            num_units=1024,
             nonlinearity=lasagne.nonlinearities.rectify,
-            #W=lasagne.init.HeUniform(),
             W=lasagne.init.Normal(.01),
             b=lasagne.init.Constant(.1)
         )
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden2,
+#            l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
             W=lasagne.init.Normal(.01),
@@ -504,7 +504,8 @@ class DeepQLearner:
             l_in,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.Constant(0.0),
+#            W=lasagne.init.Constant(0.0),
+            W = lasagne.init.Normal(0.01,0),
             b=None
         )
 

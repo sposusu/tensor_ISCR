@@ -53,7 +53,7 @@ data.extend(testing_data)
 data.extend(training_data)
 ###############################
 input_width, input_height = [89,1]
-#input_width, input_height = [40,1]
+#input_width, input_height = [12,1]
 num_actions = 5
 
 phi_length = 1 # phi length?  input 4 frames at once num_frames
@@ -63,9 +63,10 @@ rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
 momentum = 0
 clip_delta = 1.0
-freeze_interval = 750 #???  no freeze?
+freeze_interval = 100 #???  no freeze?
 batch_size = 32
 network_type = 'rl_dnn'
+#network_type = 'linear'
 update_rule = 'deepmind_rmsprop' # need update
 batch_accumulator = 'sum'
 rng = np.random.RandomState()
@@ -80,7 +81,7 @@ update_frequency = 1
 ###############################
 num_epoch = 40
 epsilon_decay = num_epoch * 500
-step_per_epoch = 5000
+step_per_epoch = 1000
 #step_per_epoch = 10
 
 num_tr_query = len(training_data)
@@ -100,7 +101,7 @@ print "number of testing data: ", num_tx_query
 # test progress bar -- done
 # check 4 baseline
 # check dict copy?
-# print action percetage
+# print action percetage -- done
 # print best action seq
 # overfit one query
 # simulate platform
@@ -129,16 +130,23 @@ logging.info('replay_memory_size : %d', replay_memory_size)
 logging.info('num_epoch : %d', num_epoch)
 logging.info('step_per_epoch : %d', step_per_epoch)
 logging.info('epsilon_decay : %d', epsilon_decay)
+logging.info('network_type : %s', network_type)
+logging.info('input_width : %d', input_width)
 
 print 'freeze_interval : ', freeze_interval
 print 'replay_memory_size : ', replay_memory_size
 print 'step_per_epoch : ', step_per_epoch
+print 'network_type : ', network_type
+print 'feature dimension : ', input_width
+print 'exp_log_name : ', exp_log_name
 
 ###############################
 class experiment():
   def __init__(self,agent,env):
     self.agent = agent
     self.env = env
+    self.best_seq = {}
+    self.best_return = np.zeros(num_query)
 
   def run(self):
     print_red( 'Init Model')
@@ -188,6 +196,9 @@ class experiment():
           Losses.append(self.agent.episode_loss)
           pbar.update(step_per_epoch-steps_left)
 
+        if self.agent.episode_reward > self.best_return[idx]:
+          self.best_return[idx] = self.agent.episode_reward
+
         if steps_left <= 0:
           break
       if test_flag:
@@ -199,16 +210,16 @@ class experiment():
       print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
       logging.info( 'MAP = %f\tReturn = %f',MAP,Return )
     else:
-      Loss = np.mean(Losses)
-      print_blue( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon) )
+      Loss,BestReturn = [ np.mean(Losses), np.mean(self.best_return) ]
+      print_blue( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon)+'\tBest Return = ' + str(BestReturn) )
       print_blue( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
       logging.info( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon) )
 
   def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
     init_state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
-#    init_state = np.random.rand(1,89)
+#    init_state = np.random.randn(1,12)
     action     = self.agent.start_episode(init_state)
-#    print action, init_state
+#    print init_state
     if test_flag and action != 4:
       logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
@@ -218,15 +229,18 @@ class experiment():
       terminal, AP = self.env.game_over()
       self.act_stat[action] += 1
 
-      if test_flag and action != 4:
+      if test_flag :#and action != 4:
         AM = self.env.dialoguemanager.actionmanager
         logging.debug('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
+#        print('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
 
       num_steps += 1
       if num_steps >= max_steps or terminal:  # STOP Retrieve
         self.agent.end_episode(reward, terminal)
         break
 
+#      state = np.random.randn(1,12)
+#      print state
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
 
