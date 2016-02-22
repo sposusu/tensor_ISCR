@@ -137,7 +137,6 @@ class NeuralAgent(object):
         if self.testing:
             phi = self.test_data_set.phi(observation)
             return_action = self.network.choose_action(phi, 0.)
-            logging.debug( self.network.q_vals(phi) )
         else:
             return_action = self.rng.randint(0, self.num_actions)
 
@@ -219,6 +218,7 @@ class NeuralAgent(object):
         if self.step_counter >= self.phi_length:
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
+#            logging.debug( self.network.q_vals(phi) )
         else:
             print 'random action'
             action = self.rng.randint(0, self.num_actions)
