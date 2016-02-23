@@ -78,6 +78,7 @@ class StateMachine(object):
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):
     feature = []
+    my_feature = []
     # Extract Features
     docs = []
     doclengs = []
@@ -223,7 +224,9 @@ class StateMachine(object):
     for key, val in ret[:49]:
       feature.append(-1*val)
 
-#    return feature[:12]
+    
+
+    #return np.array(my_feature)
     return feature
 
 
