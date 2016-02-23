@@ -20,6 +20,8 @@ from util import IndexToDocName
   Review feature extraction in old code
 """
 
+normalize_feature = False
+
 se_prefix = '../Data/stateestimation/'
 weights_file = se_prefix + 'dnn.npz'
 
@@ -52,6 +54,11 @@ class StateMachine(object):
 
     # Model for state estimation
     self.approximator = Approximator()
+    
+    # Mean and std for feature normalization	
+    with h5py.File("../Data/stateestimation/norm.h5") as norm:
+      self.mean = norm['mean'][:]
+      self.std = norm['std'][:]
 
     # Parameters for expansion
     self.iteration = iteration
@@ -73,6 +80,12 @@ class StateMachine(object):
 
     feature = np.asarray(feature).reshape(1,len(feature))
 
+    if normalize_feature:
+      with np.errstate(divide='ignore', invalid='ignore'):
+	feature = np.true_divide(feature-self.mean , self.std)
+    	feature[feature == np.inf] = 0
+    	feature = np.nan_to_num(feature)
+	print 'Done'
     return feature, estimatedMAP
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
