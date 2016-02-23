@@ -22,6 +22,13 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 #       filename         #
 ##########################
 
+recognitions = [ ('onebest','CMVN'), 
+		 ('onebest','tandem'),
+                 ('lattice','CMVN'),
+                 ('lattice','tandem') ]
+
+rec_type = recognitions[1]
+
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
 
@@ -30,10 +37,14 @@ dir='../../ISDR-CMDP/'
 #answers = 'PTV.ans'
 
 lex = 'PTV.lex'
-background = 'background/onebest.CMVN.bg'
-inv_index = 'index/onebest/PTV.onebest.CMVN.index'
-doclengs = 'doclength/onebest.CMVN.length'
-docmodeldir = 'docmodel/onebest/CMVN/'
+#background = 'background/onebest.CMVN.bg'
+background = 'background/' + '.'.join(rec_type) + '.bg'
+#inv_index = 'index/onebest/PTV.onebest.CMVN.index'
+inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
+#doclengs = 'doclength/onebest.CMVN.length'
+doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
+#docmodeldir = 'docmodel/onebest/CMVN/'
+docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
 
 newdir = '../Data/query/'
 
@@ -79,7 +90,7 @@ replay_start_size = 500
 #replay_start_size = 1
 update_frequency = 1
 ###############################
-num_epoch = 40
+num_epoch = 100
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 #step_per_epoch = 10
@@ -87,6 +98,7 @@ step_per_epoch = 1000
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 num_query = len(data)
+print "recognition type: ", rec_type
 print "number of queries: ", num_query
 print "number of trainig data: ", num_tr_query
 print "number of testing data: ", num_tx_query
@@ -119,7 +131,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + cur_datetime + ".log"
+exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
 logging.info('learning_rate : %f', learning_rate)
@@ -153,7 +165,6 @@ class experiment():
     self.agent.start_testing()
     self.run_epoch(True)
     self.agent.finish_testing(0)
-
     for epoch in xrange(num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
       logging.info('epoch {0}'.format(epoch))
