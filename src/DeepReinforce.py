@@ -1,4 +1,5 @@
 import cPickle as pickle
+from collections import defaultdict
 import datetime
 import logging
 import os
@@ -53,7 +54,7 @@ data.extend(testing_data)
 data.extend(training_data)
 ###############################
 input_width, input_height = [89,1]
-#input_width, input_height = [12,1]
+#input_width, input_height = [164,1]
 num_actions = 5
 
 phi_length = 1 # phi length?  input 4 frames at once num_frames
@@ -63,7 +64,7 @@ rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
 momentum = 0
 clip_delta = 1.0
-freeze_interval = 100 #???  no freeze?
+freeze_interval = 500 #???  no freeze?
 batch_size = 32
 network_type = 'rl_dnn'
 #network_type = 'linear'
@@ -73,15 +74,15 @@ rng = np.random.RandomState()
 ###############################
 epsilon_start = 1.0
 epsilon_min = 0.1
-replay_memory_size = 10000
+replay_memory_size = 100000
 experiment_prefix = 'result/ret'
 replay_start_size = 500
 #replay_start_size = 1
 update_frequency = 1
 ###############################
-num_epoch = 40
+num_epoch = 50
 epsilon_decay = num_epoch * 500
-step_per_epoch = 1000
+step_per_epoch = 2500
 #step_per_epoch = 10
 
 num_tr_query = len(training_data)
@@ -119,7 +120,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + cur_datetime + ".log"
+exp_log_name = exp_log_root + cur_datetime + ".log_deep_4_1024"
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
 logging.info('learning_rate : %f', learning_rate)
@@ -198,9 +199,12 @@ class experiment():
 
         if self.agent.episode_reward > self.best_return[idx]:
           self.best_return[idx] = self.agent.episode_reward
+          self.best_seq[idx] = self.agent.act_seq
+#          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
 
         if steps_left <= 0:
           break
+
       if test_flag:
         break
     pbar.finish()
@@ -209,6 +213,7 @@ class experiment():
       print_yellow( 'MAP = '+str(MAP)+'\tReturn = '+ str(Return) )
       print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
       logging.info( 'MAP = %f\tReturn = %f',MAP,Return )
+      
     else:
       Loss,BestReturn = [ np.mean(Losses), np.mean(self.best_return) ]
       print_blue( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon)+'\tBest Return = ' + str(BestReturn) )
@@ -216,10 +221,14 @@ class experiment():
       logging.info( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon) )
 
   def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
-    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
-#    init_state = np.random.randn(1,12)
-    action     = self.agent.start_episode(init_state)
+    state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
+#    init_state = np.random.randn(1,89)*10000
 #    print init_state
+#    state = np.zeros((1,164))
+#    state[0][ans_index] = 1.
+#    state[0][-1] = 0
+
+    action     = self.agent.start_episode(state)
     if test_flag and action != 4:
       logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
@@ -239,7 +248,10 @@ class experiment():
         self.agent.end_episode(reward, terminal)
         break
 
-#      state = np.random.randn(1,12)
+#      state = np.zeros((1,164))
+#      state[0][ans_index] = 1.
+#      state[0][-1] = num_steps
+#      state = np.random.randn(1,89)
 #      print state
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
@@ -277,5 +289,54 @@ def launch():
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
+def test_action():
+  env = Environment(lex,background,inv_index,\
+                    doclengs,docmodeldir,dir)
+  best_returns = defaultdict(float)
+  best_seqs = defaultdict(list)
+  for idx,(q, ans, ans_index) in enumerate(data):
+    seqs = []
+    # 1
+    for a in xrange(4):
+	  seqs.append([a]) 
+
+    # 2
+    for a in xrange(4):
+      for b in xrange(4):
+        seqs.append([a,b])
+
+    # 3
+    for a in xrange(4):
+      for b in xrange(4):
+        for c in xrange(4):
+          seqs.append([a,b,c])
+
+    # 4
+    for a in xrange(4):
+      for b in xrange(4):
+        for c in xrange(4):
+          for d in xrange(4):
+            seqs.append([a,b,c,d])
+
+    for seq in seqs:
+      print 'Running',seq
+      cur_return = 0.
+      init_state = env.setSession(q,ans,ans_index,True)
+      for act in seq:
+        reward, state = env.step(act)
+        cur_return += reward
+      terminal, AP = env.game_over()
+
+      if cur_return > best_returns[idx]: 
+        best_returns[idx] = cur_return
+        best_seqs[idx] = seq
+
+    print best_returns
+    print best_seqs 
+  
+  with open('best_seq_return.pkl','w') as f:
+	pickle.dump( (best_returns, best_seqs),f )    
+
 if __name__ == "__main__":
   launch()
+#  test_action()
