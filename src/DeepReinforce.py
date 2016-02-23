@@ -133,7 +133,8 @@ except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 
-exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
+exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log_deep_4_1024"
+#exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
