@@ -457,34 +457,61 @@ class DeepQLearner:
     def build_rl_network_dnn(self, input_width, input_height, output_dim,
                             num_frames, batch_size):
 
+#        _num_units = 256
+#        var = 0.01
+#        bias = 0.1
+
+        _num_units = 1024
+        var = 0.01
+        bias = 0.1
+
+
         l_in = lasagne.layers.InputLayer(
             shape=(batch_size, num_frames, input_width, input_height)
         )
 
         l_hidden1 = lasagne.layers.DenseLayer(
             l_in,
-            num_units=1024,
+            num_units=_num_units,
             nonlinearity=lasagne.nonlinearities.rectify,
 #            W=lasagne.init.GlorotNormal(),
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
         )
 
         l_hidden2 = lasagne.layers.DenseLayer(
             l_hidden1,
-            num_units=1024,
+            num_units=_num_units,
             nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
         )
 
-        l_out = lasagne.layers.DenseLayer(
+        l_hidden3 = lasagne.layers.DenseLayer(
             l_hidden2,
+            num_units=_num_units,
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
+        )
+
+        l_hidden4 = lasagne.layers.DenseLayer(
+            l_hidden3,
+            num_units=_num_units,
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
+        )
+
+
+
+        l_out = lasagne.layers.DenseLayer(
+            l_hidden4,
 #            l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
         )
 
         return l_out
