@@ -5,6 +5,7 @@ import logging
 import os
 import pdb
 import random
+from random import shuffle
 import time
 from termcolor import cprint
 print_red = lambda x: cprint(x, 'red')
@@ -64,7 +65,7 @@ rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
 momentum = 0
 clip_delta = 1.0
-freeze_interval = 500 #???  no freeze?
+freeze_interval = 100 #???  no freeze?
 batch_size = 32
 network_type = 'rl_dnn'
 #network_type = 'linear'
@@ -74,16 +75,14 @@ rng = np.random.RandomState()
 ###############################
 epsilon_start = 1.0
 epsilon_min = 0.1
-replay_memory_size = 100000
+replay_memory_size = 10000
 experiment_prefix = 'result/ret'
 replay_start_size = 500
-#replay_start_size = 1
 update_frequency = 1
 ###############################
 num_epoch = 50
 epsilon_decay = num_epoch * 500
-step_per_epoch = 2500
-#step_per_epoch = 10
+step_per_epoch = 1000
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -120,7 +119,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + cur_datetime + ".log_deep_4_1024"
+exp_log_name = exp_log_root + cur_datetime + ".log"
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
 logging.info('learning_rate : %f', learning_rate)
@@ -151,11 +150,14 @@ class experiment():
 
   def run(self):
     print_red( 'Init Model')
-    self.agent.start_testing()
-    self.run_epoch(True)
-    self.agent.finish_testing(0)
+#    self.agent.start_testing()
+#    self.run_epoch(True)
+#    self.agent.finish_testing(0)
 
     for epoch in xrange(num_epoch):
+
+      shuffle(data)
+
       print_red( 'Running epoch {0}'.format(epoch+1))
       logging.info('epoch {0}'.format(epoch))
       ## TRAIN ##
@@ -166,6 +168,7 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
+
 
   def run_epoch(self,test_flag=False):
     ## PROGRESS BAR SETTING
