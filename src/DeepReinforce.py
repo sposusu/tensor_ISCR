@@ -93,7 +93,7 @@ update_frequency = 1
 ###############################
 num_epoch = 50
 epsilon_decay = num_epoch * 500
-step_per_epoch = 500
+step_per_epoch = 1000
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -131,7 +131,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log_test500"
+exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
