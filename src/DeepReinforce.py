@@ -29,7 +29,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[3]
+rec_type = recognitions[0]
 
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
@@ -93,7 +93,7 @@ update_frequency = 1
 ###############################
 num_epoch = 50
 epsilon_decay = num_epoch * 500
-step_per_epoch = 1000
+step_per_epoch = 500
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -131,14 +131,8 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-<<<<<<< HEAD
-exp_log_name = exp_log_root + cur_datetime + ".log"
-=======
+exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log_test500"
 
-exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log_deep_4_1024"
-#exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
-
->>>>>>> cf01271829db28e308f65a402b3ac337e4c05476
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
 logging.info('learning_rate : %f', learning_rate)
@@ -169,16 +163,11 @@ class experiment():
 
   def run(self):
     print_red( 'Init Model')
-<<<<<<< HEAD
-#    self.agent.start_testing()
-#    self.run_epoch(True)
-#    self.agent.finish_testing(0)
 
-=======
     self.agent.start_testing()
     self.run_epoch(True)
     self.agent.finish_testing(0)
->>>>>>> cf01271829db28e308f65a402b3ac337e4c05476
+
     for epoch in xrange(num_epoch):
 
       shuffle(data)
