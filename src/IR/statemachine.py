@@ -135,7 +135,7 @@ class StateMachine(object):
     ieDocT20 = renormalize(ieDocT20)
 
     # bias term
-    feature.append(1.0)
+#    feature.append(1.0)
 
     # dialogue turn
     feature.append(float(curtHorizon))
@@ -194,7 +194,7 @@ class StateMachine(object):
     feature.append(qf50)
 
     # retrieved number
-    feature.append(len(ret))
+#    feature.append(len(ret))
 
     # query scope
     feature.append(QueryScope(posprior,self.inv_index))

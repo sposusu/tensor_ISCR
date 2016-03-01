@@ -35,17 +35,11 @@ train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
 
 dir='../../ISDR-CMDP/'
-#data_dir = '10fold/query/CMVN'
-#answers = 'PTV.ans'
 
 lex = 'PTV.lex'
-#background = 'background/onebest.CMVN.bg'
 background = 'background/' + '.'.join(rec_type) + '.bg'
-#inv_index = 'index/onebest/PTV.onebest.CMVN.index'
 inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
-#doclengs = 'doclength/onebest.CMVN.length'
 doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
-#docmodeldir = 'docmodel/onebest/CMVN/'
 docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
 
 newdir = '../Data/query/'
@@ -64,12 +58,11 @@ testing_data  = list2tuple(testing_data)
 data = []
 data.extend(testing_data)
 data.extend(training_data)
-###############################
-input_width, input_height = [89,1]
-#input_width, input_height = [164,1]
+############## NETWORK ################# 
+input_width, input_height = [87,1]
 num_actions = 5
 
-phi_length = 1 # phi length?  input 4 frames at once num_frames
+phi_length = 1 # input 4 frames at once num_frames
 discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
@@ -77,13 +70,13 @@ rms_epsilon = 0.1
 momentum = 0
 clip_delta = 1.0
 freeze_interval = 100 #???  no freeze?
-batch_size = 32
+batch_size = 128
 network_type = 'rl_dnn'
 #network_type = 'linear'
 update_rule = 'deepmind_rmsprop' # need update
 batch_accumulator = 'sum'
 rng = np.random.RandomState()
-###############################
+############# REINFORCE ##################
 epsilon_start = 1.0
 epsilon_min = 0.1
 replay_memory_size = 10000
@@ -111,10 +104,10 @@ print "number of testing data: ", num_tx_query
 # test no random --  done (epsilon = 0,phi = 1,init episode no random)
 # mix tr tx -- done
 # test progress bar -- done
-# check 4 baseline
+# check 4 baseline -- done?
 # check dict copy?
 # print action percetage -- done
-# print best action seq
+# print best action seq -- done
 # overfit one query
 # simulate platform
 # accelerate
@@ -124,7 +117,6 @@ print "number of testing data: ", num_tx_query
 # parametor -- done
 # TRAIN : best actions seq, loss, epsilon
 # TEST : action AP Return -- done
-# filename exp name
 exp_log_root = '../logs/'
 try:
   os.makedirs(exp_log_root)
@@ -145,6 +137,7 @@ logging.info('step_per_epoch : %d', step_per_epoch)
 logging.info('epsilon_decay : %d', epsilon_decay)
 logging.info('network_type : %s', network_type)
 logging.info('input_width : %d', input_width)
+logging.info('batch_size : %d', batch_size)
 
 print 'freeze_interval : ', freeze_interval
 print 'replay_memory_size : ', replay_memory_size
@@ -152,6 +145,7 @@ print 'step_per_epoch : ', step_per_epoch
 print 'network_type : ', network_type
 print 'feature dimension : ', input_width
 print 'exp_log_name : ', exp_log_name
+print 'batch_size : ', batch_size
 
 ###############################
 class experiment():
