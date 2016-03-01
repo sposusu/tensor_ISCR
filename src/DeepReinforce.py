@@ -2,7 +2,7 @@ import cPickle as pickle
 from collections import defaultdict
 import datetime
 import logging
-import os
+import os,sys
 import pdb
 import random
 from random import shuffle
@@ -55,9 +55,7 @@ def list2tuple(data):
 
 training_data = list2tuple(training_data)
 testing_data  = list2tuple(testing_data)
-data = []
-data.extend(testing_data)
-data.extend(training_data)
+data = testing_data + training_data
 ############## NETWORK ################# 
 input_width, input_height = [87,1]
 num_actions = 5
@@ -190,11 +188,17 @@ class experiment():
     Losses = []
     self.act_stat = [0,0,0,0,0]
 
+    epoch_data = []
+    if(test_flag):
+      epoch_data = data
+    else:
+      epoch_data = training_data
+
     steps_left = step_per_epoch
     while steps_left > 0:
       #if True:
       #  q, ans, ans_index = training_data[0]
-      for idx,(q, ans, ans_index) in enumerate(data):
+      for idx,(q, ans, ans_index) in enumerate(epoch_data):
         logging.debug( 'ans_index {0}'.format(ans_index) )
         n_steps,AP = self.run_episode(q,ans,ans_index,steps_left,test_flag)
         steps_left -= n_steps
@@ -233,11 +237,6 @@ class experiment():
 
   def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
     state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
-#    init_state = np.random.randn(1,89)*10000
-#    print init_state
-#    state = np.zeros((1,164))
-#    state[0][ans_index] = 1.
-#    state[0][-1] = 0
 
     action     = self.agent.start_episode(state)
     if test_flag and action != 4:
@@ -259,11 +258,6 @@ class experiment():
         self.agent.end_episode(reward, terminal)
         break
 
-#      state = np.zeros((1,164))
-#      state[0][ans_index] = 1.
-#      state[0][-1] = num_steps
-#      state = np.random.randn(1,89)
-#      print state
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
 
@@ -300,54 +294,91 @@ def launch():
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
+def get_seqs():
+  seqs = []
+  # 1
+  for a in xrange(4):
+    seqs.append([a]) 
+
+  # 2
+  for a in xrange(4):
+    for b in xrange(4):
+      seqs.append([a,b])
+
+  # 3
+  for a in xrange(4):
+    for b in xrange(4):
+      for c in xrange(4):
+        seqs.append([a,b,c])
+
+  # 4
+  for a in xrange(4):
+    for b in xrange(4):
+      for c in xrange(4):
+        for d in xrange(4):
+          seqs.append([a,b,c,d])
+  return seqs
+ 
+
 def test_action():
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
-  best_returns = defaultdict(float)
+  best_returns = np.zeros(163)
   best_seqs = defaultdict(list)
+  APs = np.zeros(163)
+  seqs = get_seqs()
+
   for idx,(q, ans, ans_index) in enumerate(data):
-    seqs = []
-    # 1
-    for a in xrange(4):
-	  seqs.append([a]) 
-
-    # 2
-    for a in xrange(4):
-      for b in xrange(4):
-        seqs.append([a,b])
-
-    # 3
-    for a in xrange(4):
-      for b in xrange(4):
-        for c in xrange(4):
-          seqs.append([a,b,c])
-
-    # 4
-    for a in xrange(4):
-      for b in xrange(4):
-        for c in xrange(4):
-          for d in xrange(4):
-            seqs.append([a,b,c,d])
-
+    print '\nQuery ',idx
     for seq in seqs:
-      print 'Running',seq
       cur_return = 0.
       init_state = env.setSession(q,ans,ans_index,True)
       for act in seq:
         reward, state = env.step(act)
         cur_return += reward
       terminal, AP = env.game_over()
+      sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
 
-      if cur_return > best_returns[idx]: 
+      if cur_return > best_returns[idx]:
         best_returns[idx] = cur_return
         best_seqs[idx] = seq
+        APs[idx] = AP
+    print '\rBest seq :',best_seqs[idx],'    Best Return : ',best_returns[idx],'    AP : ',APs[idx]
 
-    print best_returns
-    print best_seqs 
+  with open('lattice_best_seq_return.pkl','w') as f:
+	pickle.dump( (best_returns, best_seqs,APs),f )
+  print 'MAP = ', np.means(APs),'Return = ',np.means(Returns)
+
+def random_action_baseline():
+  env = Environment(lex,background,inv_index,\
+                    doclengs,docmodeldir,dir)
+  repeat = 1000
+  EAPs = np.zeros(163)
+  EReturns = np.zeros(163)
+
+  for idx,(q, ans, ans_index) in enumerate(data):
+    for i in xrange(repeat):
+      cur_return = 0.
+      APs = np.zeros(repeat)
+      Returns = np.zeros(repeat)
+      
+      terminal = False
+      init_state = env.setSession(q,ans,ans_index,True)
+      while( not terminal ):
+        act = np.random.randint(5)
+        reward, state = env.step(act)
+        cur_return += reward
+        terminal, AP = env.game_over()
+      APs[i] = AP
+      Returns[i] = cur_return
+    EAPs[idx] = np.mean(APs)
+    EReturns[idx] = np.mean(Returns)
+
+  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
+
   
-  with open('best_seq_return.pkl','w') as f:
-	pickle.dump( (best_returns, best_seqs),f )    
 
 if __name__ == "__main__":
   launch()
 #  test_action()
+#  random_action_baseline()
