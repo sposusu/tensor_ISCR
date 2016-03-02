@@ -29,7 +29,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[0]
+rec_type = recognitions[2]
 
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
@@ -65,7 +65,7 @@ data = []
 data.extend(testing_data)
 data.extend(training_data)
 ###############################
-input_width, input_height = [89,1]
+input_width, input_height = [87,1]
 #input_width, input_height = [164,1]
 num_actions = 5
 
@@ -74,13 +74,29 @@ discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
-momentum = 0
+momentum = 0.
+nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #???  no freeze?
-batch_size = 32
+batch_size = 128
 network_type = 'rl_dnn'
 #network_type = 'linear'
-update_rule = 'deepmind_rmsprop' # need update
+
+"""
+Update Rules:
+1. deepmind_rmsprop
+2. rmsprop
+3. adagrad
+4. adadelta
+5. sgd
+
+Can combine with momentum ( default: 0.9 ) 
+1. momentum
+2. nesterov_momentum
+Note: Can only set one type of momentum 
+"""
+update_rule = 'deepmind_rmsprop'
+
 batch_accumulator = 'sum'
 rng = np.random.RandomState()
 ###############################
@@ -88,12 +104,14 @@ epsilon_start = 1.0
 epsilon_min = 0.1
 replay_memory_size = 10000
 experiment_prefix = 'result/ret'
-replay_start_size = 500
+replay_start_size = 1000
 update_frequency = 1
 ###############################
-num_epoch = 50
+num_epoch = 80
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
+
+exp_name = ''
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -131,7 +149,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
@@ -139,6 +157,8 @@ logging.info('learning_rate : %f', learning_rate)
 logging.info('clip_delta : %f', clip_delta)
 logging.info('freeze_interval : %f', freeze_interval)
 logging.info('replay_memory_size : %d', replay_memory_size)
+
+logging.info('batch_size : %d',batch_size)
 
 logging.info('num_epoch : %d', num_epoch)
 logging.info('step_per_epoch : %d', step_per_epoch)
@@ -148,6 +168,7 @@ logging.info('input_width : %d', input_width)
 
 print 'freeze_interval : ', freeze_interval
 print 'replay_memory_size : ', replay_memory_size
+print 'batch_size : ', batch_size
 print 'step_per_epoch : ', step_per_epoch
 print 'network_type : ', network_type
 print 'feature dimension : ', input_width
@@ -283,6 +304,7 @@ def launch():
                                          rms_decay,
                                          rms_epsilon,
                                          momentum,
+                                         nesterov_momentum,
                                          clip_delta,
                                          freeze_interval,
                                          batch_size,
