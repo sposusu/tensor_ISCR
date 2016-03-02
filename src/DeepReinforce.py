@@ -345,18 +345,23 @@ def test_action():
         APs[idx] = AP
     print '\rBest seq :',best_seqs[idx],'    Best Return : ',best_returns[idx],'    AP : ',APs[idx]
 
-  with open('lattice_best_seq_return.pkl','w') as f:
+  filename = '.'.join(rec_type) + '_best_seq_return.pkl'
+  with open(filename,'w') as f:
 	pickle.dump( (best_returns, best_seqs,APs),f )
   print 'MAP = ', np.means(APs),'Return = ',np.means(Returns)
 
 def random_action_baseline():
+  filename = '.'.join(rec_type) + '_random_action_baseline.log'
+  f = open(filename,'w')
+  f.write('Index\tMAP\tReturn')
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
-  repeat = 1000
+  repeat = 100
   EAPs = np.zeros(163)
   EReturns = np.zeros(163)
 
   for idx,(q, ans, ans_index) in enumerate(data):
+    print 'Query ',idx
     for i in xrange(repeat):
       cur_return = 0.
       APs = np.zeros(repeat)
@@ -373,10 +378,11 @@ def random_action_baseline():
       Returns[i] = cur_return
     EAPs[idx] = np.mean(APs)
     EReturns[idx] = np.mean(Returns)
-
-  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
-
-  
+    f.write( '{}\t{}\t{}\n'.format(idx,EAPs[idx],EReturns[idx]) )
+    f.flush()
+  f.write('\nResults\n{}\t{}'.format( np.mean(EAPs),np.mean(EReturns) ) )
+  f.close()
+#  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
   launch()
