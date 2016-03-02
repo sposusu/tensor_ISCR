@@ -29,10 +29,10 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 
-train_data = 'train.fold1.pkl'
-test_data  = 'test.fold1.pkl'
+train_data = 'train.fold3.pkl'
+test_data  = 'test.fold3.pkl'
 
 dir='../../ISDR-CMDP/'
 
@@ -55,7 +55,6 @@ def list2tuple(data):
 
 training_data = list2tuple(training_data)
 testing_data  = list2tuple(testing_data)
-
 data = testing_data + training_data
 
 ############## NETWORK ################# 
@@ -96,7 +95,7 @@ epsilon_start = 1.0
 epsilon_min = 0.1
 replay_memory_size = 10000
 experiment_prefix = 'result/ret'
-replay_start_size = 1000
+replay_start_size = 500
 update_frequency = 1
 ###############################
 num_epoch = 80
@@ -212,9 +211,11 @@ class experiment():
 
     epoch_data = []
     if(test_flag):
-      epoch_data = data
+#      epoch_data = data
+      epoch_data = testing_data
     else:
       epoch_data = training_data
+      print 'number of training queries',len(epoch_data)
 
     steps_left = step_per_epoch
     while steps_left > 0:
@@ -234,9 +235,9 @@ class experiment():
           Losses.append(self.agent.episode_loss)
           pbar.update(step_per_epoch-steps_left)
 
-        if self.agent.episode_reward > self.best_return[idx]:
-          self.best_return[idx] = self.agent.episode_reward
-          self.best_seq[idx] = self.agent.act_seq
+        if self.agent.episode_reward > self.best_return[ans_index]:
+          self.best_return[ans_index] = self.agent.episode_reward
+          self.best_seq[ans_index] = self.agent.act_seq
 #          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
 
         if steps_left <= 0:
@@ -376,19 +377,19 @@ def test_action():
 def random_action_baseline():
   filename = '.'.join(rec_type) + '_random_action_baseline.log'
   f = open(filename,'w')
-  f.write('Index\tMAP\tReturn')
+  f.write('Index\tMAP\tReturn\n')
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
-  repeat = 100
+  repeat = 10
   EAPs = np.zeros(163)
   EReturns = np.zeros(163)
 
   for idx,(q, ans, ans_index) in enumerate(data):
     print 'Query ',idx
+    APs = np.zeros(repeat)
+    Returns = np.zeros(repeat)
     for i in xrange(repeat):
       cur_return = 0.
-      APs = np.zeros(repeat)
-      Returns = np.zeros(repeat)
       
       terminal = False
       init_state = env.setSession(q,ans,ans_index,True)
@@ -397,15 +398,17 @@ def random_action_baseline():
         reward, state = env.step(act)
         cur_return += reward
         terminal, AP = env.game_over()
+      print AP,'\t',cur_return
       APs[i] = AP
       Returns[i] = cur_return
     EAPs[idx] = np.mean(APs)
     EReturns[idx] = np.mean(Returns)
+    print '\n',EAPs[idx],'\t',EReturns[idx],'\n'
     f.write( '{}\t{}\t{}\n'.format(idx,EAPs[idx],EReturns[idx]) )
     f.flush()
   f.write('\nResults\n{}\t{}'.format( np.mean(EAPs),np.mean(EReturns) ) )
   f.close()
-#  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
+  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
   launch()
