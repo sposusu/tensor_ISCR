@@ -1,4 +1,5 @@
 from util import readKeytermlist, readRequestlist, readTopicWords, readTopicList
+from util import readDocModel, IndexToDocName
 
 class Simulator(object):
   """

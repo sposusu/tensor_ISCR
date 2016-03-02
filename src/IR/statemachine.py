@@ -54,8 +54,8 @@ class StateMachine(object):
 
     # Model for state estimation
     self.approximator = Approximator()
-    
-    # Mean and std for feature normalization	
+
+    # Mean and std for feature normalization
     with h5py.File("../Data/stateestimation/norm.h5") as norm:
       self.mean = norm['mean'][:]
       self.std = norm['std'][:]
@@ -75,17 +75,17 @@ class StateMachine(object):
     """
     feature = self.featureExtraction(ret,action_type,curtHorizon,\
                                     posmodel,negmodel,posprior,negprior)
-    estimatedMAP = 0
+    estimatedMAP = 0.
 #    estimatedMAP = self.approximator.predict_one(feature)
 
     feature = np.asarray(feature).reshape(1,len(feature))
 
     if normalize_feature:
       with np.errstate(divide='ignore', invalid='ignore'):
-	feature = np.true_divide(feature-self.mean , self.std)
+        feature = np.true_divide(feature-self.mean , self.std)
     	feature[feature == np.inf] = 0
     	feature = np.nan_to_num(feature)
-	print 'Done'
+
     return feature, estimatedMAP
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
@@ -135,7 +135,7 @@ class StateMachine(object):
     ieDocT20 = renormalize(ieDocT20)
 
     # bias term
-    feature.append(1.0)
+    # feature.append(1.0)
 
     # dialogue turn
     feature.append(float(curtHorizon))
@@ -194,7 +194,7 @@ class StateMachine(object):
     feature.append(qf50)
 
     # retrieved number
-    feature.append(len(ret))
+    #feature.append(len(ret))
 
     # query scope
     feature.append(QueryScope(posprior,self.inv_index))
@@ -237,9 +237,6 @@ class StateMachine(object):
     for key, val in ret[:49]:
       feature.append(-1*val)
 
-    
-
-    #return np.array(my_feature)
     return feature
 
 

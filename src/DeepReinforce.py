@@ -24,11 +24,11 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 ##########################
 
 recognitions = [ ('onebest','CMVN'), 
-		 ('onebest','tandem'),
+		             ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[3]
+rec_type = recognitions[2]
 
 train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
@@ -84,7 +84,7 @@ batch_accumulator = 'sum'
 rng = np.random.RandomState()
 ###############################
 epsilon_start = 1.0
-epsilon_min = 0.1
+epsilon_min = 0.3
 replay_memory_size = 100000
 experiment_prefix = 'result/ret'
 replay_start_size = 500
@@ -93,8 +93,10 @@ update_frequency = 1
 ###############################
 num_epoch = 50
 epsilon_decay = num_epoch * 500
-step_per_epoch = 2500
+step_per_epoch = 1000
 #step_per_epoch = 10
+
+exp_name = 'freeze_interval_500_'
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -133,7 +135,8 @@ except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 
-exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log_deep_4_1024"
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log_deep_2_1024"
+
 #exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
@@ -180,6 +183,7 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
+      random.shuffle(data)
 
   def run_epoch(self,test_flag=False):
     ## PROGRESS BAR SETTING
@@ -213,7 +217,7 @@ class experiment():
 
         if self.agent.episode_reward > self.best_return[idx]:
           self.best_return[idx] = self.agent.episode_reward
-          self.best_seq[idx] = self.agent.act_seq
+          #self.best_seq[idx] = self.agent.act_seq
 #          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
 
         if steps_left <= 0:
