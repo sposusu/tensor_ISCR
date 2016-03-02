@@ -2,9 +2,10 @@ import cPickle as pickle
 from collections import defaultdict
 import datetime
 import logging
-import os
+import os,sys
 import pdb
 import random
+from random import shuffle
 import time
 from termcolor import cprint
 print_red = lambda x: cprint(x, 'red')
@@ -34,17 +35,11 @@ train_data = 'train.fold1.pkl'
 test_data  = 'test.fold1.pkl'
 
 dir='../../ISDR-CMDP/'
-#data_dir = '10fold/query/CMVN'
-#answers = 'PTV.ans'
 
 lex = 'PTV.lex'
-#background = 'background/onebest.CMVN.bg'
 background = 'background/' + '.'.join(rec_type) + '.bg'
-#inv_index = 'index/onebest/PTV.onebest.CMVN.index'
 inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
-#doclengs = 'doclength/onebest.CMVN.length'
 doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
-#docmodeldir = 'docmodel/onebest/CMVN/'
 docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
 
 newdir = '../Data/query/'
@@ -60,43 +55,55 @@ def list2tuple(data):
 
 training_data = list2tuple(training_data)
 testing_data  = list2tuple(testing_data)
-data = []
-data.extend(testing_data)
-data.extend(training_data)
-###############################
-input_width, input_height = [89,1]
-#input_width, input_height = [164,1]
+
+data = testing_data + training_data
+
+############## NETWORK ################# 
+input_width, input_height = [87,1]
 num_actions = 5
 
-phi_length = 1 # phi length?  input 4 frames at once num_frames
+phi_length = 1 # input 4 frames at once num_frames
 discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
-momentum = 0
+momentum = 0.
+nesterov_momentum = 0.
 clip_delta = 1.0
-freeze_interval = 500 #???  no freeze?
-batch_size = 32
+freeze_interval = 100 #???  no freeze?
+batch_size = 128
 network_type = 'rl_dnn'
-#network_type = 'linear'
-update_rule = 'deepmind_rmsprop' # need update
+
+"""
+Update Rules:
+1. deepmind_rmsprop
+2. rmsprop
+3. adagrad
+4. adadelta
+5. sgd
+
+Can combine with momentum ( default: 0.9 ) 
+1. momentum
+2. nesterov_momentum
+Note: Can only set one type of momentum 
+"""
+update_rule = 'deepmind_rmsprop'
+
 batch_accumulator = 'sum'
 rng = np.random.RandomState()
-###############################
+############# REINFORCE ##################
 epsilon_start = 1.0
-epsilon_min = 0.3
-replay_memory_size = 100000
+epsilon_min = 0.1
+replay_memory_size = 10000
 experiment_prefix = 'result/ret'
-replay_start_size = 500
-#replay_start_size = 1
+replay_start_size = 1000
 update_frequency = 1
 ###############################
-num_epoch = 50
+num_epoch = 80
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
-#step_per_epoch = 10
 
-exp_name = 'freeze_interval_500_'
+exp_name = ''
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -114,10 +121,10 @@ print "number of testing data: ", num_tx_query
 # test no random --  done (epsilon = 0,phi = 1,init episode no random)
 # mix tr tx -- done
 # test progress bar -- done
-# check 4 baseline
+# check 4 baseline -- done?
 # check dict copy?
 # print action percetage -- done
-# print best action seq
+# print best action seq -- done
 # overfit one query
 # simulate platform
 # accelerate
@@ -127,7 +134,6 @@ print "number of testing data: ", num_tx_query
 # parametor -- done
 # TRAIN : best actions seq, loss, epsilon
 # TEST : action AP Return -- done
-# filename exp name
 exp_log_root = '../logs/'
 try:
   os.makedirs(exp_log_root)
@@ -135,9 +141,7 @@ except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log_deep_2_1024"
-
-#exp_log_name = exp_log_root + '_'.join(rec_type) + '_' + cur_datetime + ".log"
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
@@ -146,18 +150,23 @@ logging.info('clip_delta : %f', clip_delta)
 logging.info('freeze_interval : %f', freeze_interval)
 logging.info('replay_memory_size : %d', replay_memory_size)
 
+logging.info('batch_size : %d',batch_size)
+
 logging.info('num_epoch : %d', num_epoch)
 logging.info('step_per_epoch : %d', step_per_epoch)
 logging.info('epsilon_decay : %d', epsilon_decay)
 logging.info('network_type : %s', network_type)
 logging.info('input_width : %d', input_width)
+logging.info('batch_size : %d', batch_size)
 
 print 'freeze_interval : ', freeze_interval
 print 'replay_memory_size : ', replay_memory_size
+print 'batch_size : ', batch_size
 print 'step_per_epoch : ', step_per_epoch
 print 'network_type : ', network_type
 print 'feature dimension : ', input_width
 print 'exp_log_name : ', exp_log_name
+print 'batch_size : ', batch_size
 
 ###############################
 class experiment():
@@ -169,10 +178,15 @@ class experiment():
 
   def run(self):
     print_red( 'Init Model')
+
     self.agent.start_testing()
     self.run_epoch(True)
     self.agent.finish_testing(0)
+
     for epoch in xrange(num_epoch):
+
+      shuffle(data)
+
       print_red( 'Running epoch {0}'.format(epoch+1))
       logging.info('epoch {0}'.format(epoch))
       ## TRAIN ##
@@ -184,6 +198,7 @@ class experiment():
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
       random.shuffle(data)
+
 
   def run_epoch(self,test_flag=False):
     ## PROGRESS BAR SETTING
@@ -197,11 +212,17 @@ class experiment():
     Losses = []
     self.act_stat = [0,0,0,0,0]
 
+    epoch_data = []
+    if(test_flag):
+      epoch_data = data
+    else:
+      epoch_data = training_data
+
     steps_left = step_per_epoch
     while steps_left > 0:
       #if True:
       #  q, ans, ans_index = training_data[0]
-      for idx,(q, ans, ans_index) in enumerate(data):
+      for idx,(q, ans, ans_index) in enumerate(epoch_data):
         logging.debug( 'ans_index {0}'.format(ans_index) )
         n_steps,AP = self.run_episode(q,ans,ans_index,steps_left,test_flag)
         steps_left -= n_steps
@@ -240,11 +261,6 @@ class experiment():
 
   def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
     state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
-#    init_state = np.random.randn(1,89)*10000
-#    print init_state
-#    state = np.zeros((1,164))
-#    state[0][ans_index] = 1.
-#    state[0][-1] = 0
 
     action     = self.agent.start_episode(state)
     if test_flag and action != 4:
@@ -266,11 +282,6 @@ class experiment():
         self.agent.end_episode(reward, terminal)
         break
 
-#      state = np.zeros((1,164))
-#      state[0][ans_index] = 1.
-#      state[0][-1] = num_steps
-#      state = np.random.randn(1,89)
-#      print state
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
 
@@ -284,6 +295,7 @@ def launch():
                                          rms_decay,
                                          rms_epsilon,
                                          momentum,
+                                         nesterov_momentum,
                                          clip_delta,
                                          freeze_interval,
                                          batch_size,
@@ -307,54 +319,97 @@ def launch():
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
+def get_seqs():
+  seqs = []
+  # 1
+  for a in xrange(4):
+    seqs.append([a]) 
+
+  # 2
+  for a in xrange(4):
+    for b in xrange(4):
+      seqs.append([a,b])
+
+  # 3
+  for a in xrange(4):
+    for b in xrange(4):
+      for c in xrange(4):
+        seqs.append([a,b,c])
+
+  # 4
+  for a in xrange(4):
+    for b in xrange(4):
+      for c in xrange(4):
+        for d in xrange(4):
+          seqs.append([a,b,c,d])
+  return seqs
+ 
+
 def test_action():
   env = Environment(lex,background,inv_index,\
                     doclengs,docmodeldir,dir)
-  best_returns = defaultdict(float)
+  best_returns = np.zeros(163)
   best_seqs = defaultdict(list)
+  APs = np.zeros(163)
+  seqs = get_seqs()
+
   for idx,(q, ans, ans_index) in enumerate(data):
-    seqs = []
-    # 1
-    for a in xrange(4):
-	  seqs.append([a]) 
-
-    # 2
-    for a in xrange(4):
-      for b in xrange(4):
-        seqs.append([a,b])
-
-    # 3
-    for a in xrange(4):
-      for b in xrange(4):
-        for c in xrange(4):
-          seqs.append([a,b,c])
-
-    # 4
-    for a in xrange(4):
-      for b in xrange(4):
-        for c in xrange(4):
-          for d in xrange(4):
-            seqs.append([a,b,c,d])
-
+    print '\nQuery ',idx
     for seq in seqs:
-      print 'Running',seq
       cur_return = 0.
       init_state = env.setSession(q,ans,ans_index,True)
       for act in seq:
         reward, state = env.step(act)
         cur_return += reward
       terminal, AP = env.game_over()
+      sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
 
-      if cur_return > best_returns[idx]: 
+      if cur_return > best_returns[idx]:
         best_returns[idx] = cur_return
         best_seqs[idx] = seq
+        APs[idx] = AP
+    print '\rBest seq :',best_seqs[idx],'    Best Return : ',best_returns[idx],'    AP : ',APs[idx]
 
-    print best_returns
-    print best_seqs 
-  
-  with open('best_seq_return.pkl','w') as f:
-	pickle.dump( (best_returns, best_seqs),f )    
+  filename = '.'.join(rec_type) + '_best_seq_return.pkl'
+  with open(filename,'w') as f:
+	pickle.dump( (best_returns, best_seqs,APs),f )
+  print 'MAP = ', np.means(APs),'Return = ',np.means(Returns)
+
+def random_action_baseline():
+  filename = '.'.join(rec_type) + '_random_action_baseline.log'
+  f = open(filename,'w')
+  f.write('Index\tMAP\tReturn')
+  env = Environment(lex,background,inv_index,\
+                    doclengs,docmodeldir,dir)
+  repeat = 100
+  EAPs = np.zeros(163)
+  EReturns = np.zeros(163)
+
+  for idx,(q, ans, ans_index) in enumerate(data):
+    print 'Query ',idx
+    for i in xrange(repeat):
+      cur_return = 0.
+      APs = np.zeros(repeat)
+      Returns = np.zeros(repeat)
+      
+      terminal = False
+      init_state = env.setSession(q,ans,ans_index,True)
+      while( not terminal ):
+        act = np.random.randint(5)
+        reward, state = env.step(act)
+        cur_return += reward
+        terminal, AP = env.game_over()
+      APs[i] = AP
+      Returns[i] = cur_return
+    EAPs[idx] = np.mean(APs)
+    EReturns[idx] = np.mean(Returns)
+    f.write( '{}\t{}\t{}\n'.format(idx,EAPs[idx],EReturns[idx]) )
+    f.flush()
+  f.write('\nResults\n{}\t{}'.format( np.mean(EAPs),np.mean(EReturns) ) )
+  f.close()
+#  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
   launch()
 #  test_action()
+#  random_action_baseline()

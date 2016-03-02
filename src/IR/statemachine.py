@@ -133,7 +133,7 @@ class StateMachine(object):
 
     ieDocT10 = renormalize(ieDocT10)
     ieDocT20 = renormalize(ieDocT20)
-
+    
     # bias term
     # feature.append(1.0)
 
@@ -215,7 +215,6 @@ class StateMachine(object):
     maxIdf, avgIdf = IDFscore(posmodel,self.inv_index)
     feature.append(maxIdf)
     feature.append(avgIdf)
-
     # Statistics, top 5, 10, 20, 50, 100
     means, vars = Variability(ret,[5,10,20,50,100])
     for mean in means:

@@ -144,6 +144,8 @@ class NeuralAgent(object):
 
         self.last_img = observation
 
+        self.act_seq = [ return_action ]
+
         return return_action
 
 
@@ -205,6 +207,7 @@ class NeuralAgent(object):
 
         self.last_action = action
         self.last_img = observation
+        self.act_seq.append(action)
 
         return action
 
@@ -219,6 +222,7 @@ class NeuralAgent(object):
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
 #            logging.debug( self.network.q_vals(phi) )
+#            print( 'q_val : '+ str(self.network.q_vals(phi)) +'\taction : '+str(action) )
         else:
             print 'random action'
             action = self.rng.randint(0, self.num_actions)

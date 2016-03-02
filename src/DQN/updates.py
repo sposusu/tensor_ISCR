@@ -125,8 +125,3 @@ def deepmind_rmsprop(loss_or_grads, params, learning_rate,
 
     return updates
 
-def rmsprop_nag(loss_or_grads, params, learning_rate,
-                     rho, epsilon):
-
-  pass
-    """RMSProp updates [1]_.
