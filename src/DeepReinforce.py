@@ -1,22 +1,18 @@
 import cPickle as pickle
-from collections import defaultdict
-import datetime
-import logging
+import numpy as np
+import datetime,logging
 import os,sys
 import pdb
 import random
-from random import shuffle
 import time
-from termcolor import cprint
-print_red = lambda x: cprint(x, 'red')
-print_blue = lambda x: cprint(x, 'blue')
-print_yellow = lambda x: cprint(x, 'yellow')
-import numpy as np
 import progressbar
-from progressbar import ProgressBar, Percentage, Bar, ETA
+from random import shuffle
+from termcolor import cprint
+from progressbar import ProgressBar,Percentage,Bar,ETA
+from collections import defaultdict
 
 from DQN import q_network
-import DQN.agent as agent
+from DQN import agent
 from IR.environment import *
 from IR.util import readFoldQueries,readLex,readInvIndex
 
@@ -30,22 +26,17 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','tandem') ]
 
 rec_type = recognitions[0]
-
-train_data = 'train.fold3.pkl'
-test_data  = 'test.fold3.pkl'
-
+fold = 1 
+train_data = 'train.fold'+str(fold)+'.pkl'
+test_data  = 'test.fold'+str(fold)+'.pkl'
 dir='../../ISDR-CMDP/'
-
 lex = 'PTV.lex'
 background = 'background/' + '.'.join(rec_type) + '.bg'
 inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
 doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
 docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
-
 newdir = '../Data/query/'
 
-training_data = pickle.load(open(newdir+train_data,'r'))
-testing_data  = pickle.load(open(newdir+test_data,'r'))
 
 def list2tuple(data):
   result = []
@@ -53,8 +44,9 @@ def list2tuple(data):
     result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
   return result
 
-training_data = list2tuple(training_data)
-testing_data  = list2tuple(testing_data)
+training_data = list2tuple(pickle.load(open(newdir+train_data,'r')))
+testing_data  = list2tuple(pickle.load(open(newdir+test_data,'r')))
+
 data = testing_data + training_data
 
 ############## NETWORK ################# 
@@ -106,33 +98,13 @@ exp_name = ''
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
-num_query = len(data)
-print "recognition type: ", rec_type
-print "number of queries: ", num_query
 print "number of trainig data: ", num_tr_query
 print "number of testing data: ", num_tx_query
 # TODO
-# map -> ap  -- done
-# action 2   -- done
-# count num_steps -- done
-# testing MAP,ans -- done (no state estimate)
-# test print AP -- done (termcolor)
-# test no random --  done (epsilon = 0,phi = 1,init episode no random)
-# mix tr tx -- done
-# test progress bar -- done
-# check 4 baseline -- done?
-# check dict copy?
-# print action percetage -- done
-# print best action seq -- done
 # overfit one query
 # simulate platform
 # accelerate
-###############################
-# logging
-# TODO
-# parametor -- done
-# TRAIN : best actions seq, loss, epsilon
-# TEST : action AP Return -- done
+############ LOGGING ###################
 exp_log_root = '../logs/'
 try:
   os.makedirs(exp_log_root)
@@ -142,30 +114,32 @@ cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+def print_red(x):  # epoch
+  cprint(x, 'red')
+  logging.info(x)
+def print_blue(x): # train info
+  cprint(x, 'blue')
+  logging.info(x)
+def print_yellow(x): # test info
+  cprint(x, 'yellow')
+  logging.info(x)
+def print_green(x):  # parameter
+  cprint(x, 'green')
+  logging.info(x)
 
-logging.info('learning_rate : %f', learning_rate)
-logging.info('clip_delta : %f', clip_delta)
-logging.info('freeze_interval : %f', freeze_interval)
-logging.info('replay_memory_size : %d', replay_memory_size)
-
-logging.info('batch_size : %d',batch_size)
-
-logging.info('num_epoch : %d', num_epoch)
-logging.info('step_per_epoch : %d', step_per_epoch)
-logging.info('epsilon_decay : %d', epsilon_decay)
-logging.info('network_type : %s', network_type)
-logging.info('input_width : %d', input_width)
-logging.info('batch_size : %d', batch_size)
-
-print 'freeze_interval : ', freeze_interval
-print 'replay_memory_size : ', replay_memory_size
-print 'batch_size : ', batch_size
-print 'step_per_epoch : ', step_per_epoch
-print 'network_type : ', network_type
-print 'feature dimension : ', input_width
+print_green('learning_rate : {}'.format(learning_rate))
+print_green('clip_delta : {}'.format(clip_delta))
+print_green('freeze_interval : {}'.format(freeze_interval))
+print_green('replay_memory_size : {}'.format(replay_memory_size))
+print_green('batch_size : {}'.format(batch_size))
+print_green('num_epoch : {}'.format(num_epoch))
+print_green('step_per_epoch : {}'.format(step_per_epoch))
+print_green('epsilon_decay : {}'.format(epsilon_decay))
+print_green('network_type : {}'.format(network_type))
+print_green('input_width : {}'.format(input_width))
+print_green('batch_size : {}'.format(batch_size))
+print_green("recognition type: {}".format(rec_type))
 print 'exp_log_name : ', exp_log_name
-print 'batch_size : ', batch_size
-
 ###############################
 class experiment():
   def __init__(self,agent,env):
@@ -182,11 +156,9 @@ class experiment():
     self.agent.finish_testing(0)
 
     for epoch in xrange(num_epoch):
-
+      print_red( 'Running epoch {0}'.format(epoch+1))
       shuffle(data)
 
-      print_red( 'Running epoch {0}'.format(epoch+1))
-      logging.info('epoch {0}'.format(epoch))
       ## TRAIN ##
       self.run_epoch()
       self.agent.finish_epoch(epoch+1)
@@ -198,8 +170,13 @@ class experiment():
 
 
   def run_epoch(self,test_flag=False):
+    epoch_data = training_data
+    if(test_flag):
+      epoch_data = testing_data
+    print 'number of queries',len(epoch_data)
+
     ## PROGRESS BAR SETTING
-    setting = [['Training',step_per_epoch], ['Testing',num_query]]
+    setting = [['Training',step_per_epoch], ['Testing',num_tx_query]]
     setting = setting[test_flag]
     widgets = [ setting[0] , Percentage(), Bar(), ETA() ]
 
@@ -209,13 +186,6 @@ class experiment():
     Losses = []
     self.act_stat = [0,0,0,0,0]
 
-    epoch_data = []
-    if(test_flag):
-#      epoch_data = data
-      epoch_data = testing_data
-    else:
-      epoch_data = training_data
-      print 'number of training queries',len(epoch_data)
 
     steps_left = step_per_epoch
     while steps_left > 0:
@@ -283,6 +253,10 @@ class experiment():
 
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
+def setEnvironment():
+  
+  print 'Creating Environment and compiling State Estimator...'
+  return Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
 
 def launch():
   t = time.time()
@@ -309,10 +283,7 @@ def launch():
                                   replay_start_size,
                                   update_frequency,
                                   rng)
-
-  print 'Creating Environment and compiling State Estimator...'
-  env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir)
+  env = setEnvironment()
   print 'Initializing experiment...'
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
@@ -345,8 +316,7 @@ def get_seqs():
  
 
 def test_action():
-  env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir)
+  env = setEnvironment()
   best_returns = np.zeros(163)
   best_seqs = defaultdict(list)
   APs = np.zeros(163)
@@ -369,17 +339,16 @@ def test_action():
         APs[idx] = AP
     print '\rBest seq :',best_seqs[idx],'    Best Return : ',best_returns[idx],'    AP : ',APs[idx]
 
-  filename = '.'.join(rec_type) + '_best_seq_return.pkl'
+  filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
   with open(filename,'w') as f:
 	pickle.dump( (best_returns, best_seqs,APs),f )
   print 'MAP = ', np.means(APs),'Return = ',np.means(Returns)
 
 def random_action_baseline():
-  filename = '.'.join(rec_type) + '_random_action_baseline.log'
+  filename =  'result/' + '.'.join(rec_type) + '_random_action_baseline.log'
   f = open(filename,'w')
   f.write('Index\tMAP\tReturn\n')
-  env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir)
+  env = setEnvironment()
   repeat = 10
   EAPs = np.zeros(163)
   EReturns = np.zeros(163)
