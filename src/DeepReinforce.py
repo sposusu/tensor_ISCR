@@ -67,7 +67,7 @@ discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99 # rms decay
 rms_epsilon = 0.1
-momentum = 0.
+momentum = 0.9
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #???  no freeze?
@@ -103,7 +103,7 @@ num_epoch = 80
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 
-exp_name = ''
+exp_name = 'deemind_rmsprop_momentum'
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -149,14 +149,17 @@ logging.info('clip_delta : %f', clip_delta)
 logging.info('freeze_interval : %f', freeze_interval)
 logging.info('replay_memory_size : %d', replay_memory_size)
 
-logging.info('batch_size : %d',batch_size)
-
 logging.info('num_epoch : %d', num_epoch)
 logging.info('step_per_epoch : %d', step_per_epoch)
 logging.info('epsilon_decay : %d', epsilon_decay)
 logging.info('network_type : %s', network_type)
 logging.info('input_width : %d', input_width)
 logging.info('batch_size : %d', batch_size)
+logging.info('update rule: %s', update_rule)
+if momentum:
+  logging.info('momentum : %s',momentum)
+if nesterov_momentum:
+  logging.info('nesterov_momentum: %s',nesterov_momentum)
 
 print 'freeze_interval : ', freeze_interval
 print 'replay_memory_size : ', replay_memory_size
@@ -166,6 +169,9 @@ print 'network_type : ', network_type
 print 'feature dimension : ', input_width
 print 'exp_log_name : ', exp_log_name
 print 'batch_size : ', batch_size
+print 'update_rule ', update_rule
+print 'momentum : ', momentum
+print 'nesterov_momentum : ', nesterov_momentum
 
 ###############################
 class experiment():
