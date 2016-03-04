@@ -7,7 +7,7 @@ wget speech.ee.ntu.edu.tw/~tlkagk/ISDR-CMDP.zip
 unzip ISDR-CMDP.zip
 rm ISDR-CMDP.zip
 
-cd Interactive Retrieval
+cd InteractiveRetrieval
 
 # hdf5 prerequisites
 sudo apt-get install libhdf5-dev
