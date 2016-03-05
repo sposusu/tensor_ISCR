@@ -210,7 +210,7 @@ def readTopicWords(cpsID):
   topicWordList = []
   for i in range(128):
     words = {}
-    filename = '../../ISDR-CMDP/lda/'+cpsID+'/'+str(i)
+    filename = '../../ISDR-CMDP/lda/' + cpsID + '/'+str(i)
     fin = file(filename)
     for line in fin.readlines():
       if len(line.split('\t'))<=1:

@@ -211,10 +211,9 @@ class experiment():
       logging.info( 'MAP = %f\tReturn = %f',MAP,Return )
       
       final_returns = []
-      for idx in Baseline_returns.keys():
-	print np.mean(Baseline_returns[idx])
+      for idx in Baseline_APs.keys():
         print np.mean(Baseline_APs[idx])
-        Baseline_returns[idx] = []
+        logging.info('Turn {0}, MAP {1}'.format(idx,np.mean(Baseline_APs[idx])))
         Baseline_APs[idx] = [] 
     else:
       Loss = np.mean(Losses)
@@ -258,7 +257,6 @@ class experiment():
     AP = session_APs[max_idx] 
     
     for idx,r in enumerate(session_rewards):
-	Baseline_returns[idx].append(r)
 	Baseline_APs[idx].append(session_APs[idx])	
     return num_steps, AP
 
