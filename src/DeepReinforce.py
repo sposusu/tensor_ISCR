@@ -116,12 +116,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-<<<<<<< HEAD
-
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log"
-=======
 exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold)+ '_' + cur_datetime + ".log"
->>>>>>> 57168010e1e1acddc355697eecf9fc7bf6c52a2d
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
@@ -208,15 +203,9 @@ class experiment():
           Losses.append(self.agent.episode_loss)
           pbar.update(step_per_epoch-steps_left)
 
-<<<<<<< HEAD
-        if self.agent.episode_reward > self.best_return[idx]:
-          self.best_return[idx] = self.agent.episode_reward
-          #self.best_seq[idx] = self.agent.act_seq
-=======
         if self.agent.episode_reward > self.best_return[ans_index]:
           self.best_return[ans_index] = self.agent.episode_reward
           self.best_seq[ans_index] = self.agent.act_seq
->>>>>>> 57168010e1e1acddc355697eecf9fc7bf6c52a2d
 #          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
 
         if steps_left <= 0:
