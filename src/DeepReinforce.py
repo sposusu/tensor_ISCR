@@ -318,7 +318,6 @@ def test_action():
 
   for idx,(q, ans, ans_index) in enumerate(data):
     print '\nQuery ',idx
-    if True:
     for seq in seqs:
       cur_return = 0.
       init_state = env.setSession(q,ans,ans_index,True)
