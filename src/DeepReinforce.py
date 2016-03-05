@@ -310,13 +310,14 @@ def get_seqs():
 
 def test_action():
   env = setEnvironment()
-  best_returns = np.zeros(163)
+  best_returns = - np.ones(163)
   best_seqs = defaultdict(list)
   APs = np.zeros(163)
   seqs = get_seqs()
 
   for idx,(q, ans, ans_index) in enumerate(data):
     print '\nQuery ',idx
+    if True:
     for seq in seqs:
       cur_return = 0.
       init_state = env.setSession(q,ans,ans_index,True)
@@ -330,12 +331,12 @@ def test_action():
         best_returns[idx] = cur_return
         best_seqs[idx] = seq
         APs[idx] = AP
-    print '\rBest seq :',best_seqs[idx],'    Best Return : ',best_returns[idx],'    AP : ',APs[idx]
+    print '\rBest seq :', best_seqs[idx],'    Best Return : ', best_returns[idx],'    AP : ', APs[idx]
 
   filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
   with open(filename,'w') as f:
-	pickle.dump( (best_returns, best_seqs,APs),f )
-  print 'MAP = ', np.means(APs),'Return = ',np.means(Returns)
+    pickle.dump( (best_returns, best_seqs,APs),f )
+  print 'MAP = ', np.mean(APs),'Return = ',np.mean(Returns)
 
 def random_action_baseline():
   filename =  'result/' + '.'.join(rec_type) + '_random_action_baseline.log'
@@ -374,6 +375,6 @@ def random_action_baseline():
   print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
-  launch()
-#  test_action()
+#  launch()
+  test_action()
 #  random_action_baseline()

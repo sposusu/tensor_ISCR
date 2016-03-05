@@ -9,4 +9,4 @@ rm ISDR-CMDP.zip
 cd InteractiveRetrieval
 pip install -r requirements.txt
 
-echo 'Now you can "cd src && make" to run the experiment'
+echo 'Now you can "cd src && ./cross_validation.sh" to run the experiment'
