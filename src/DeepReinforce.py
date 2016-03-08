@@ -41,7 +41,8 @@ def load_data():
   newdir = '../Data/query/'
   print 'loading queries from ',newdir,'...'
   data = pickle.load(open(newdir+'data.pkl','r'))
-  if fold == -1:
+  if fold == '-1':
+    print 'train = test = all queries'
     return data,data
   kf = KFold(163, n_folds=10)
   tr,tx = list(kf)[int(fold)-1]
