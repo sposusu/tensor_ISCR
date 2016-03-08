@@ -20,7 +20,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[0]
+rec_type = recognitions[2]
 fold = 1
 fold = sys.argv[1]
 exp_name = ''
@@ -60,7 +60,7 @@ momentum = 0.
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 128
+batch_size = 256
 network_type = 'rl_dnn'
 
 """
@@ -375,6 +375,6 @@ def random_action_baseline():
   print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
-#  launch()
-  test_action()
+  launch()
+#  test_action()
 #  random_action_baseline()
