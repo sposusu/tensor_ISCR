@@ -41,6 +41,8 @@ def load_data():
   newdir = '../Data/query/'
   print 'loading queries from ',newdir,'...'
   data = pickle.load(open(newdir+'data.pkl','r'))
+  if fold == -1:
+    return data,data
   kf = KFold(163, n_folds=10)
   tr,tx = list(kf)[int(fold)-1]
   training_data = [ data[i] for i in tr ]
@@ -94,9 +96,11 @@ num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 # TODO
-# overfit one query
+# overfit train query
 # simulate platform
 # accelerate GPU?
+# more raw feature
+# deep retrieval
 ############ LOGGING ###################
 def print_red(x):  # epoch
   cprint(x, 'red')
@@ -280,7 +284,6 @@ def launch():
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
-
 
 if __name__ == "__main__":
   launch()
