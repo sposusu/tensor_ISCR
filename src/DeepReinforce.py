@@ -20,7 +20,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 fold = 1
 fold = sys.argv[1]
 exp_name = ''
@@ -48,7 +48,7 @@ num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 num_query = len(data)
 ############## NETWORK #################
-input_width, input_height = [87,1]
+input_width, input_height = [49,1]
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
@@ -88,11 +88,11 @@ experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 300
+num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 
-exp_name = 'epoch_300_'
+exp_name = 'epoch_150_raw_feature_49'
 
 # TODO
 # cross validate
@@ -119,7 +119,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold)+ '_' + cur_datetime + ".log"
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold) + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
@@ -322,19 +322,19 @@ def test_action():
   for idx,(q, ans, ans_index) in enumerate(data):
     print '\nQuery ',idx
     if True:
-    for seq in seqs:
-      cur_return = 0.
-      init_state = env.setSession(q,ans,ans_index,True)
-      for act in seq:
-        reward, state = env.step(act)
-        cur_return += reward
-      terminal, AP = env.game_over()
-      sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
+      for seq in seqs:
+        cur_return = 0.
+        init_state = env.setSession(q,ans,ans_index,True)
+        for act in seq:
+          reward, state = env.step(act)
+          cur_return += reward
+        terminal, AP = env.game_over()
+        sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
 
-      if cur_return > best_returns[idx]:
-        best_returns[idx] = cur_return
-        best_seqs[idx] = seq
-        APs[idx] = AP
+        if cur_return > best_returns[idx]:
+          best_returns[idx] = cur_return
+          best_seqs[idx] = seq
+          APs[idx] = AP
     print '\rBest seq :', best_seqs[idx],'    Best Return : ', best_returns[idx],'    AP : ', APs[idx]
 
   filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
@@ -379,6 +379,6 @@ def random_action_baseline():
   print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
-#  launch()
-  test_action()
+  launch()
+#  test_action()
 #  random_action_baseline()
