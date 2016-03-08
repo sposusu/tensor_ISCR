@@ -26,8 +26,6 @@ fold = 1
 fold = sys.argv[1]
 exp_name = 'epoch_150_raw_feature_100'
  
-#train_data = 'train.fold'+str(fold)+'.pkl'
-#test_data  = 'test.fold'+str(fold)+'.pkl'
 dir='../../ISDR-CMDP/'
 lex = 'PTV.lex'
 background = 'background/' + '.'.join(rec_type) + '.bg'
@@ -36,24 +34,14 @@ doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
 docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
 newdir = '../Data/query/'
 
-#def list2tuple(data):
-#  result = []
-#  for idx in range(len(data[0])):
-#    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
-#  return result
 data = pickle.load(open(newdir+'data.pkl','r'))
 kf = KFold(163, n_folds=10)
 tr,tx = list(kf)[int(fold)-1]
 training_data = [ data[i] for i in tr ]
 testing_data = [ data[i] for i in tx ]
-#training_data = list2tuple(pickle.load(open(newdir+train_data,'r')))
-#testing_data  = list2tuple(pickle.load(open(newdir+test_data,'r')))
-#data = testing_data + training_data
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 num_query = len(data)
-#with open("../Data/query/data.pkl",'w') as f:
-#  pickle.dump( data,f )
 ############## NETWORK #################
 input_width, input_height = [49,1]
 num_actions = 5
@@ -99,10 +87,9 @@ num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 # TODO
-# cross validate
 # overfit one query
 # simulate platform
-# accelerate
+# accelerate GPU?
 ############ LOGGING ###################
 def print_red(x):  # epoch
   cprint(x, 'red')
@@ -316,15 +303,30 @@ def get_seqs():
   return seqs
  
 
+from multiprocessing import Pool 
+seqs = []
 def test_action():
+  pool = Pool()
+  result1 = pool.apply_async(solve1, [A])    # evaluate "solve1(A)" asynchronously
+  result2 = pool.apply_async(solve2, [B])    # evaluate "solve2(B)" asynchronously
+
   env = setEnvironment()
   best_returns = - np.ones(163)
   best_seqs = defaultdict(list)
   APs = np.zeros(163)
   seqs = get_seqs()
 
-  for idx,(q, ans, ans_index) in enumerate(data):
+  for idx in xrange(len(data)):
     print '\nQuery ',idx
+    best_returns[idx], best_seqs[idx], APs[idx] = test_one_action(idx)
+
+  filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
+  with open(filename,'w') as f:
+    pickle.dump( (best_returns, best_seqs,APs),f )
+  print 'MAP = ', np.mean(APs),'Return = ',np.mean(Returns)
+
+def test_one_action(idx):
+  print '\nQuery ',idx
     for seq in seqs:
       cur_return = 0.
       init_state = env.setSession(q,ans,ans_index,True)
@@ -339,11 +341,8 @@ def test_action():
         best_seqs[idx] = seq
         APs[idx] = AP
     print '\rBest seq :', best_seqs[idx],'    Best Return : ', best_returns[idx],'    AP : ', APs[idx]
-
-  filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
-  with open(filename,'w') as f:
-    pickle.dump( (best_returns, best_seqs,APs),f )
-  print 'MAP = ', np.mean(APs),'Return = ',np.mean(Returns)
+  return
+  
 
 def random_action_baseline():
   filename =  'result/' + '.'.join(rec_type) + '_random_action_baseline.log'
@@ -382,6 +381,6 @@ def random_action_baseline():
   print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
 
 if __name__ == "__main__":
-  launch()
-#  test_action()
+#  launch()
+  test_action()
 #  random_action_baseline()
