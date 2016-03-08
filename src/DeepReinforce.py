@@ -12,6 +12,7 @@ from DQN import q_network
 from DQN import agent
 from IR.environment import *
 from IR.util import readFoldQueries,readLex,readInvIndex
+from sklearn.cross_validation import KFold
 ##########################
 #       filename         #
 ##########################
@@ -23,10 +24,10 @@ recognitions = [ ('onebest','CMVN'),
 rec_type = recognitions[2]
 fold = 1
 fold = sys.argv[1]
-exp_name = ''
+exp_name = 'epoch_150_raw_feature_100'
  
-train_data = 'train.fold'+str(fold)+'.pkl'
-test_data  = 'test.fold'+str(fold)+'.pkl'
+#train_data = 'train.fold'+str(fold)+'.pkl'
+#test_data  = 'test.fold'+str(fold)+'.pkl'
 dir='../../ISDR-CMDP/'
 lex = 'PTV.lex'
 background = 'background/' + '.'.join(rec_type) + '.bg'
@@ -35,20 +36,26 @@ doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
 docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
 newdir = '../Data/query/'
 
-def list2tuple(data):
-  result = []
-  for idx in range(len(data[0])):
-    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
-  return result
-
-training_data = list2tuple(pickle.load(open(newdir+train_data,'r')))
-testing_data  = list2tuple(pickle.load(open(newdir+test_data,'r')))
-data = testing_data + training_data
+#def list2tuple(data):
+#  result = []
+#  for idx in range(len(data[0])):
+#    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
+#  return result
+data = pickle.load(open(newdir+'data.pkl','r'))
+kf = KFold(163, n_folds=10)
+tr,tx = list(kf)[int(fold)-1]
+training_data = [ data[i] for i in tr ]
+testing_data = [ data[i] for i in tx ]
+#training_data = list2tuple(pickle.load(open(newdir+train_data,'r')))
+#testing_data  = list2tuple(pickle.load(open(newdir+test_data,'r')))
+#data = testing_data + training_data
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
 num_query = len(data)
+#with open("../Data/query/data.pkl",'w') as f:
+#  pickle.dump( data,f )
 ############## NETWORK #################
-input_width, input_height = [87,1]
+input_width, input_height = [49,1]
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
@@ -88,7 +95,7 @@ experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 80
+num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 # TODO
@@ -116,7 +123,7 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold)+ '_' + cur_datetime + ".log"
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold) + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 

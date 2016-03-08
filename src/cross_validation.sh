@@ -2,5 +2,5 @@
 
 for i in {1..10}
 do
-  python DeepReinforce.py ${i} &
+  python old_DeepReinforce.py ${i} &
 done
