@@ -16,11 +16,11 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 #       filename         #
 ##########################
 recognitions = [ ('onebest','CMVN'), 
-		             ('onebest','tandem'),
+		 ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[0]
+rec_type = recognitions[2]
 fold = 1
 fold = sys.argv[1]
 exp_name = ''
@@ -56,11 +56,11 @@ discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99
 rms_epsilon = 0.1
-momentum = 0.9
+momentum = 0.0
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 128
+batch_size = 256
 network_type = 'rl_dnn'
 
 """
@@ -88,11 +88,11 @@ experiment_prefix = 'result/ret'
 replay_start_size = 500
 update_frequency = 1
 ###############################
-num_epoch = 80
+num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
 
-exp_name = ''
+exp_name = 'epoch_150_'
 
 num_tr_query = len(training_data)
 num_tx_query = len(testing_data)
@@ -127,12 +127,8 @@ try:
 except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-<<<<<<< HEAD
 
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) + '_' + cur_datetime + ".log"
-=======
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold)+ '_' + cur_datetime + ".log"
->>>>>>> 57168010e1e1acddc355697eecf9fc7bf6c52a2d
+exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold) + ".log"
 
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
@@ -220,15 +216,9 @@ class experiment():
           Losses.append(self.agent.episode_loss)
           pbar.update(step_per_epoch-steps_left)
 
-<<<<<<< HEAD
-        if self.agent.episode_reward > self.best_return[idx]:
-          self.best_return[idx] = self.agent.episode_reward
-          #self.best_seq[idx] = self.agent.act_seq
-=======
         if self.agent.episode_reward > self.best_return[ans_index]:
           self.best_return[ans_index] = self.agent.episode_reward
           self.best_seq[ans_index] = self.agent.act_seq
->>>>>>> 57168010e1e1acddc355697eecf9fc7bf6c52a2d
 #          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
 
         if steps_left <= 0:
