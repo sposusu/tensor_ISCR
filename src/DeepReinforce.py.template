@@ -61,7 +61,7 @@ discount = 1.
 learning_rate = 0.00025
 rms_decay = 0.99
 rms_epsilon = 0.1
-momentum = 0.
+momentum = 0.0
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
@@ -96,6 +96,17 @@ update_frequency = 1
 num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
+
+exp_name = 'epoch_150_'
+
+num_tr_query = len(training_data)
+num_tx_query = len(testing_data)
+num_query = len(data)
+
+print "recognition type: ", rec_type
+print "number of queries: ", num_query
+print "number of trainig data: ", num_tr_query
+print "number of testing data: ", num_tx_query
 # TODO
 # overfit train query
 # simulate platform
@@ -142,6 +153,7 @@ def setLogging():
   print "number of trainig data: ", len(training_data)
   print "number of testing data: ", len(testing_data)
   print 'exp_log_name : ', exp_log_name
+
 ###############################
 class experiment():
   def __init__(self,agent,env):
