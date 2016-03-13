@@ -17,45 +17,43 @@ from sklearn.cross_validation import KFold
 #       filename         #
 ##########################
 recognitions = [ ('onebest','CMVN'), 
-		             ('onebest','tandem'),
+                 ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
 rec_type = recognitions[2]
-fold = 1
 fold = sys.argv[1]
-exp_name = 'epoch_150_raw_feature_100'
+exp_name = 'scores_300_batch_512_'
  
-#train_data = 'train.fold'+str(fold)+'.pkl'
-#test_data  = 'test.fold'+str(fold)+'.pkl'
-dir='../../ISDR-CMDP/'
-lex = 'PTV.lex'
-background = 'background/' + '.'.join(rec_type) + '.bg'
-inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
-doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
-docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
-newdir = '../Data/query/'
+def setEnvironment():  
+  print 'Creating Environment and compiling State Estimator...'
 
-#def list2tuple(data):
-#  result = []
-#  for idx in range(len(data[0])):
-#    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
-#  return result
-data = pickle.load(open(newdir+'data.pkl','r'))
-kf = KFold(163, n_folds=10)
-tr,tx = list(kf)[int(fold)-1]
-training_data = [ data[i] for i in tr ]
-testing_data = [ data[i] for i in tx ]
-#training_data = list2tuple(pickle.load(open(newdir+train_data,'r')))
-#testing_data  = list2tuple(pickle.load(open(newdir+test_data,'r')))
-#data = testing_data + training_data
-num_tr_query = len(training_data)
-num_tx_query = len(testing_data)
-num_query = len(data)
-#with open("../Data/query/data.pkl",'w') as f:
-#  pickle.dump( data,f )
+  dir='../../ISDR-CMDP/'
+  lex = 'PTV.lex'
+  background = 'background/' + '.'.join(rec_type) + '.bg'
+  inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
+  doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
+  docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+  print '...done'
+  return Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
+
+def load_data():
+  newdir = '../Data/query/'
+  print 'loading queries from ',newdir,'...'
+  data = pickle.load(open(newdir+'data.pkl','r'))
+  if fold == '-1':
+    print 'train = test = all queries'
+    return data,data
+  kf = KFold(163, n_folds=10)
+  tr,tx = list(kf)[int(fold)-1]
+  training_data = [ data[i] for i in tr ]
+  testing_data = [ data[i] for i in tx ]
+  print '...done'
+  return training_data, testing_data
+
+training_data, testing_data = load_data()
 ############## NETWORK #################
-input_width, input_height = [49,1]
+input_width, input_height = [300,1]
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
@@ -67,7 +65,7 @@ momentum = 0.
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 256
+batch_size = 512
 network_type = 'rl_dnn'
 
 """
@@ -98,14 +96,12 @@ update_frequency = 1
 num_epoch = 150
 epsilon_decay = num_epoch * 500
 step_per_epoch = 1000
-
-exp_name = 'epoch_150_raw_feature_49'
-
 # TODO
-# cross validate
-# overfit one query
+# overfit train query
 # simulate platform
-# accelerate
+# accelerate GPU?
+# more raw feature
+# deep retrieval
 ############ LOGGING ###################
 def print_red(x):  # epoch
   cprint(x, 'red')
@@ -143,8 +139,8 @@ def setLogging():
   print_green('input_width : {}'.format(input_width))
   print_green('batch_size : {}'.format(batch_size))
   print_green("recognition type: {}".format(rec_type))
-  print "number of trainig data: ", num_tr_query
-  print "number of testing data: ", num_tx_query
+  print "number of trainig data: ", len(training_data)
+  print "number of testing data: ", len(testing_data)
   print 'exp_log_name : ', exp_log_name
 ###############################
 class experiment():
@@ -154,7 +150,7 @@ class experiment():
     self.agent = agent
     self.env = env
     self.best_seq = {}
-    self.best_return = np.zeros(num_query)
+    self.best_return = np.zeros(163)
 
   def run(self):
     print_red( 'Init Model')
@@ -175,7 +171,6 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
-      random.shuffle(data)
 
 
   def run_epoch(self,test_flag=False):
@@ -185,7 +180,7 @@ class experiment():
     print 'number of queries',len(epoch_data)
 
     ## PROGRESS BAR SETTING
-    setting = [['Training',step_per_epoch], ['Testing',num_tx_query]]
+    setting = [['Training',step_per_epoch], ['Testing',len(epoch_data)]]
     setting = setting[test_flag]
     widgets = [ setting[0] , Percentage(), Bar(), ETA() ]
 
@@ -259,9 +254,6 @@ class experiment():
       action = self.agent.step(reward, state)			# AGENT STEP
     return num_steps, AP
 
-def setEnvironment():  
-  print 'Creating Environment and compiling State Estimator...'
-  return Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
 
 def launch():
   t = time.time()
@@ -293,110 +285,5 @@ def launch():
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
-def get_seqs():
-  seqs = []
-  # 1
-  for a in xrange(4):
-    seqs.append([a]) 
-
-  # 2
-  for a in xrange(4):
-    for b in xrange(4):
-      seqs.append([a,b])
-
-  # 3
-  for a in xrange(4):
-    for b in xrange(4):
-      for c in xrange(4):
-        seqs.append([a,b,c])
-
-  # 4
-  for a in xrange(4):
-    for b in xrange(4):
-      for c in xrange(4):
-        for d in xrange(4):
-          seqs.append([a,b,c,d])
-  return seqs
- 
-
-def test_action():
-  env = setEnvironment()
-  best_returns = - np.ones(163)
-  best_seqs = defaultdict(list)
-  APs = np.zeros(163)
-  seqs = get_seqs()
-
-  for idx,(q, ans, ans_index) in enumerate(data):
-    print '\nQuery ',idx
-<<<<<<< HEAD
-    if True:
-      for seq in seqs:
-        cur_return = 0.
-        init_state = env.setSession(q,ans,ans_index,True)
-        for act in seq:
-          reward, state = env.step(act)
-          cur_return += reward
-        terminal, AP = env.game_over()
-        sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
-=======
-    for seq in seqs:
-      cur_return = 0.
-      init_state = env.setSession(q,ans,ans_index,True)
-      for act in seq:
-        reward, state = env.step(act)
-        cur_return += reward
-      terminal, AP = env.game_over()
-      sys.stderr.write('\rActions Sequence {}    Return = {}'.format(seq,cur_return))
->>>>>>> e27c23d475af0dfcbeddb880598333d468259403
-
-        if cur_return > best_returns[idx]:
-          best_returns[idx] = cur_return
-          best_seqs[idx] = seq
-          APs[idx] = AP
-    print '\rBest seq :', best_seqs[idx],'    Best Return : ', best_returns[idx],'    AP : ', APs[idx]
-
-  filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
-  with open(filename,'w') as f:
-    pickle.dump( (best_returns, best_seqs,APs),f )
-  print 'MAP = ', np.mean(APs),'Return = ',np.mean(Returns)
-
-def random_action_baseline():
-  filename =  'result/' + '.'.join(rec_type) + '_random_action_baseline.log'
-  f = open(filename,'w')
-  f.write('Index\tMAP\tReturn\n')
-
-  env = setEnvironment()
-  repeat = 100
-  EAPs = np.zeros(163)
-  EReturns = np.zeros(163)
-
-  for idx,(q, ans, ans_index) in enumerate(data):
-    print 'Query ',idx
-    APs = np.zeros(repeat)
-    Returns = np.zeros(repeat)
-    for i in xrange(repeat):
-      cur_return = 0.
-      
-      terminal = False
-      init_state = env.setSession(q,ans,ans_index,True)
-      while( not terminal ):
-        act = np.random.randint(5)
-        reward, state = env.step(act)
-        cur_return += reward
-        terminal, AP = env.game_over()
-      print AP,'\t',cur_return
-      APs[i] = AP
-      Returns[i] = cur_return
-    EAPs[idx] = np.mean(APs)
-    EReturns[idx] = np.mean(Returns)
-    print '\n',EAPs[idx],'\t',EReturns[idx],'\n'
-    f.write( '{}\t{}\t{}\n'.format(idx,EAPs[idx],EReturns[idx]) )
-    f.flush()
-  f.write('\nResults\n{}\t{}'.format( np.mean(EAPs),np.mean(EReturns) ) )
-  f.close()
-  print 'MAP : ',np.mean(EAPs),'\tReturn : ',np.mean(EReturns)
-
 if __name__ == "__main__":
   launch()
-#  test_action()
-#  random_action_baseline()
