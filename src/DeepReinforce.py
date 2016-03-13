@@ -21,9 +21,9 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 fold = sys.argv[1]
-exp_name = 'testing...'
+exp_name = 'scores_100_delta_batch_512_'
  
 def setEnvironment():  
   print 'Creating Environment and compiling State Estimator...'
@@ -53,7 +53,7 @@ def load_data():
 
 training_data, testing_data = load_data()
 ############## NETWORK #################
-input_width, input_height = [87,1]
+input_width, input_height = [199,1]
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
@@ -65,7 +65,7 @@ momentum = 0.
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 256
+batch_size = 512
 network_type = 'rl_dnn'
 
 """
