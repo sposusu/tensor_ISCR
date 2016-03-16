@@ -171,8 +171,6 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
-      random.shuffle(data)
-
 
   def run_epoch(self,test_flag=False):
     epoch_data = training_data

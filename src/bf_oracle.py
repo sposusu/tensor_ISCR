@@ -9,7 +9,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 fold = 1
 def setEnvironment():
   print 'Creating Environment and compiling State Estimator...'
@@ -38,7 +38,7 @@ tr,tx = load_data()
 data = tx + tr
 
 def get_seqs():
-  seqs = []
+  seqs = [[4]]
   # 1
   for a in xrange(4):
     seqs.append([a])
@@ -67,7 +67,10 @@ best_seqs = defaultdict(list)
 APs = np.zeros(163)
 seqs = get_seqs()
 env = setEnvironment()
-
+logname = 'result/' + '.'.join(rec_type) + '_best_seq_return.log'
+lf = open(logname,'w')
+lf.write('Index\tBest sequence\tBest return\tAP\n')
+lf.flush()
 def test_one_action(idx):
   q, ans, ans_index = data[idx]
   for seq in seqs:
@@ -83,7 +86,8 @@ def test_one_action(idx):
       best_returns[idx] = cur_return
       best_seqs[idx] = seq
       APs[idx] = AP
-  print '\rBest seq :', best_seqs[idx],'    Best Return : ', best_returns[idx],'    AP : ', APs[idx]
+  lf.write( '{}\t{}\t{}\t{}\n'.format(idx, best_seqs[idx], best_returns[idx], APs[idx]))
+  lf.flush()
   return best_seqs[idx],best_returns[idx],APs[idx]
 
 def test_action():
@@ -97,7 +101,7 @@ def test_action():
   filename = 'result/' + '.'.join(rec_type) + '_best_seq_return.pkl'
   with open(filename,'w') as f:
     pickle.dump( (best_returns, best_seqs,APs),f )
-  print 'MAP = ', np.mean(APs),'Return = ',np.mean(Returns)
+  print 'MAP = ', np.mean(APs),'Return = ',np.mean(best_returns)
 
 if __name__ == "__main__":
   test_action()
