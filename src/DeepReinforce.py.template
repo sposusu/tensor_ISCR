@@ -21,9 +21,9 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 fold = sys.argv[1]
-exp_name = 'testing...'
+exp_name = 'testing..._'
  
 def setEnvironment():  
   print 'Creating Environment and compiling State Estimator...'
@@ -65,7 +65,7 @@ momentum = 0.
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 256
+batch_size = 512
 network_type = 'rl_dnn'
 
 """
@@ -171,6 +171,10 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
+<<<<<<< HEAD:src/DeepReinforce.py
+=======
+
+>>>>>>> 56336ed4b6df9274495b8ed5b257dbb72b5af2bc:src/DeepReinforce.py.template
 
   def run_epoch(self,test_flag=False):
     epoch_data = training_data
