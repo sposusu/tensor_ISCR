@@ -23,7 +23,7 @@ recognitions = [ ('onebest','CMVN'),
 
 rec_type = recognitions[0]
 fold = sys.argv[1]
-exp_name = 'testing..._'
+exp_name = 'raw_deep'+sys.argv[2]+'_'
  
 def setEnvironment():  
   print 'Creating Environment and compiling State Estimator...'
@@ -53,7 +53,9 @@ def load_data():
 
 training_data, testing_data = load_data()
 ############## NETWORK #################
-input_width, input_height = [87,1]
+network_width, network_height = [1024,int(sys.argv[2])]        # change network shape
+input_width = 0               # auto change
+input_height = 1              # change feature
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
@@ -65,7 +67,7 @@ momentum = 0.
 nesterov_momentum = 0.
 clip_delta = 1.0
 freeze_interval = 100 #no freeze?
-batch_size = 512
+batch_size = 256
 network_type = 'rl_dnn'
 
 """
@@ -139,6 +141,7 @@ def setLogging():
   print_green('input_width : {}'.format(input_width))
   print_green('batch_size : {}'.format(batch_size))
   print_green("recognition type: {}".format(rec_type))
+  print_green("network shape: {}".format([network_width,network_height]))
   print "number of trainig data: ", len(training_data)
   print "number of testing data: ", len(testing_data)
   print 'exp_log_name : ', exp_log_name
@@ -171,10 +174,6 @@ class experiment():
       self.agent.start_testing()
       self.run_epoch(True)
       self.agent.finish_testing(epoch+1)
-<<<<<<< HEAD:src/DeepReinforce.py
-=======
-
->>>>>>> 56336ed4b6df9274495b8ed5b257dbb72b5af2bc:src/DeepReinforce.py.template
 
   def run_epoch(self,test_flag=False):
     epoch_data = training_data
@@ -260,8 +259,12 @@ class experiment():
 
 def launch():
   t = time.time()
+  env = setEnvironment()
+  global input_width
+  input_width = env.dialoguemanager.statemachine.feat_len
+
   print 'Compiling Network...'
-  network = q_network.DeepQLearner(input_width, input_height, num_actions,
+  network = q_network.DeepQLearner(input_width, input_height, network_width, network_height, num_actions,
                                          phi_length,
                                          discount,
                                          learning_rate,
@@ -283,7 +286,6 @@ def launch():
                                   replay_start_size,
                                   update_frequency,
                                   rng)
-  env = setEnvironment()
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()

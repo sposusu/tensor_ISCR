@@ -65,6 +65,7 @@ class StateMachine(object):
     self.mu = mu
     self.delta = delta
     self.alpha = alpha
+    self.feat_len = 100
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
@@ -236,7 +237,9 @@ class StateMachine(object):
     for key, val in ret[:49]:
       feature.append(-1*val)
 
-    return feature
+
+    return [ -1 * x[1] for x in ret[:100] ]
+#    return feature
 
 
 def readDocModel(fname):
