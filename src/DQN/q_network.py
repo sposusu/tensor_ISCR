@@ -468,7 +468,7 @@ class DeepQLearner:
     def build_rl_network_dnn(self, input_width, input_height, output_dim,
                             num_frames, batch_size):
 
-        _num_units = 1024
+        _num_units = 512
         var = 0.01
         bias = 0.1
 

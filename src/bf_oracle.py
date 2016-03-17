@@ -9,7 +9,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
-rec_type = recognitions[2]
+rec_type = recognitions[0]
 fold = 1
 def setEnvironment():
   print 'Creating Environment and compiling State Estimator...'
