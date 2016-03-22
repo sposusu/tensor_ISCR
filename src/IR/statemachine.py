@@ -238,8 +238,8 @@ class StateMachine(object):
       feature.append(-1*val)
 
 
-    return [ -1 * x[1] for x in ret[:100] ]
-#    return feature
+#    return [ -1 * x[1] for x in ret[:100] ]
+    return feature
 
 
 def readDocModel(fname):
