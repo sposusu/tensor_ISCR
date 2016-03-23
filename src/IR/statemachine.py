@@ -65,7 +65,7 @@ class StateMachine(object):
     self.mu = mu
     self.delta = delta
     self.alpha = alpha
-    self.feat_len = 100
+    self.feat_len = 87
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
