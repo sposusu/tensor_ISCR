@@ -28,11 +28,13 @@ def print_green(x):  # parameter
   logging.info(x)
 ########### argparse #########
 parser = argparse.ArgumentParser(description='Interactive Retrieval')
+# retrieval
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
-parser.add_argument("--prefix", help="experiment name prefix",default="")
-parser.add_argument("--feature", help="feature type", default="87dim selected feature") # not implement yet
+parser.add_argument("--prefix", help="experiment name prefix",default="")   # TODO store in folder
+parser.add_argument("--feature", help="feature type", default="87dim selected feature") # TODO not implement yet
 
+# experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
 parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
 parser.add_argument("--test", help="testing mode",action="store_true")
@@ -55,17 +57,15 @@ parser.add_argument("--freeze_interval", type=int, help="freeze interval", defau
 parser.add_argument("--update_frequency", type=int, help="update frequency", default=1)
 
 args = parser.parse_args()
-#for arg in vars(args):
-#  print_green('{} : {}'.format(arg,vars(args)[arg]))
 ##########################
-#       filename         #
+#       SETTING          #
 ##########################
-recognitions = [ ('onebest','CMVN'), 
+def setRetrievalModule():  
+  recognitions = [ ('onebest','CMVN'), 
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
-rec_type = recognitions[args.type]
-def setEnvironment():  
+  rec_type = recognitions[args.type]
   print 'Creating Environment and compiling State Estimator...'
 
   dir='../../ISDR-CMDP/'
@@ -74,10 +74,46 @@ def setEnvironment():
   inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
   doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
   docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
-  print '...done'
-  return Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
 
-def load_data():
+  env = Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
+  # feature
+  global input_width
+  input_width = env.dialoguemanager.statemachine.feat_len
+
+  # Logging
+  exp_log_root = '../logs/'
+  try:
+    os.makedirs(exp_log_root)
+  except:
+    pass
+  cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
+  exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+  print_green('exp_log_name : {}'.format(exp_log_name))
+  print_green("recognition type: {}".format(rec_type))
+
+  print '...done'
+  return env
+
+def setDialogueManager():
+  if args.nn_file is None:
+    print 'Compiling Network...'
+    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height, num_actions,
+                                         phi_length,discount,args.learning_rate,rms_decay,
+                                         rms_epsilon,momentum,nesterov_momentum,
+                                         args.clip_delta,args.freeze_interval,args.batch_size,
+                                         network_type, args.update_rule, batch_accumulator, rng)
+  else:
+    print 'Loading Pre-trained Network...'
+    handle = open(args.nn_file, 'r')
+    network = pickle.load(handle)
+    
+  print 'Creating Agent and Simulator...'
+  return agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
+                                  args.replay_memory_size,experiment_prefix,args.replay_start_size,
+                                  args.update_frequency,rng)
+ 
+def load_query():
   newdir = '../Data/query/'
   print 'loading queries from ',newdir,'...'
   data = pickle.load(open(newdir+'data.pkl','r'))
@@ -90,9 +126,8 @@ def load_data():
   testing_data = [ data[i] for i in tx ]
   print '...done'
   return training_data, testing_data
-training_data, testing_data = load_data()
-
-############## NETWORK #################
+############## NETWORK #################  TODO add to argparse
+experiment_prefix = 'result/ret'  # TODO fix it
 input_width = 0               # auto change
 input_height = 1              # change feature
 num_actions = 5
@@ -120,17 +155,6 @@ Note: Can only set one type of momentum
 # accelerate GPU?
 # deep retrieval
 ############ LOGGING ###################
-
-exp_log_root = '../logs/'
-try:
-  os.makedirs(exp_log_root)
-except:
-  pass
-cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
-experiment_prefix = 'result/ret'
-logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
-
 def setLogging():
   print_green('learning_rate : {}'.format(args.learning_rate))
   print_green('batch_size : {}'.format(args.batch_size))
@@ -141,11 +165,7 @@ def setLogging():
   print_green('step_per_epoch : {}'.format(args.step_per_epoch))
   print_green('epsilon_decay : {}'.format(args.epsilon_decay))
   print_green('input_width(feature length) : {}'.format(input_width))
-  print_green("recognition type: {}".format(rec_type))
   print_green("network shape: {}".format([args.model_width,args.model_height]))
-  print_green("number of training data: {}".format(len(training_data)))
-  print_green("number of testing data: {}".format(len(testing_data)))
-  print_green('exp_log_name : {}'.format(exp_log_name))
 ###############################
 class experiment():
   def __init__(self,agent,env):
@@ -154,7 +174,8 @@ class experiment():
     self.agent = agent
     self.env = env
     self.best_seq = {}
-    self.best_return = np.zeros(163)
+    self.best_return = np.zeros(163) # to be removed
+    self.training_data, self.testing_data = load_query()
 
   def run(self):
     print_red( 'Init Model')
@@ -166,7 +187,7 @@ class experiment():
       return
     for epoch in xrange(arg.num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
-      shuffle(training_data)
+      shuffle(self.training_data)
 
       ## TRAIN ##
       self.run_epoch()
@@ -178,9 +199,9 @@ class experiment():
       self.agent.finish_testing(epoch+1)
 
   def run_epoch(self,test_flag=False):
-    epoch_data = training_data
+    epoch_data = self.training_data
     if(test_flag):
-      epoch_data = testing_data
+      epoch_data = self.testing_data
     print 'number of queries',len(epoch_data)
 
     ## PROGRESS BAR SETTING
@@ -260,46 +281,17 @@ class experiment():
 
 
 def launch():
-  t = time.time()
-  env = setEnvironment()
-  global input_width
-  input_width = env.dialoguemanager.statemachine.feat_len
-  
-  if args.nn_file is None:
-    print 'Compiling Network...'
-    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height, num_actions,
-                                         phi_length,
-                                         discount,
-                                         args.learning_rate,
-                                         rms_decay,
-                                         rms_epsilon,
-                                         momentum,
-                                         nesterov_momentum,
-                                         args.clip_delta,
-                                         args.freeze_interval,
-                                         args.batch_size,
-                                         network_type,
-                                         args.update_rule,
-                                         batch_accumulator,
-                                         rng)
+  if args.test:
+    print_red("TESTING MODE")
   else:
-    handle = open(args.nn_file, 'r')
-    network = pickle.load(handle)
-    
-  print 'Creating Agent and Simulator...'
-  agt = agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
-                                  args.replay_memory_size,
-                                  experiment_prefix,
-                                  args.replay_start_size,
-                                  args.update_frequency,
-                                  rng)
+    print_red( "TRAINING MODE")
+
+  t = time.time()
+  env = setRetrievalModule()
+  agt = setDialogueManager()
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
 if __name__ == "__main__":
-  if args.test:
-    print_red("TESTING MODE")
-  else:
-    print_red( "TRAINING MODE")
   launch()
