@@ -2,8 +2,7 @@ import cPickle as pickle
 import numpy as np
 import datetime,logging
 import os,sys,pdb,random,time
-import progressbar
-import argparse
+import progressbar,argparse
 from random import shuffle
 from termcolor import cprint
 from progressbar import ProgressBar,Percentage,Bar,ETA
@@ -32,16 +31,29 @@ parser = argparse.ArgumentParser(description='Interactive Retrieval')
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
 parser.add_argument("--prefix", help="experiment name prefix",default="")
-
-parser.add_argument("--model_width", type=int, help="model width", default=1024)
-parser.add_argument("--model_height", type=int, help="model height", default=2)
-parser.add_argument("--batchsize", type=int, help="batch size", default=256)
-parser.add_argument("-lr","--learning_rate", type=int, help="learning rate", default=0.00025)
+parser.add_argument("--feature", help="feature type", default="87dim selected feature") # not implement yet
 
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
-parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000)
+parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
 parser.add_argument("--test", help="testing mode",action="store_true")
 parser.add_argument("-nn","--nn_file", help="pre-trained model")
+
+# neural network
+parser.add_argument("--model_width", type=int, help="model width", default=1024)
+parser.add_argument("--model_height", type=int, help="model height", default=2)
+parser.add_argument("--batch_size", type=int, help="batch size", default=256)
+parser.add_argument("-lr","--learning_rate", type=float, help="learning rate", default=0.00025)
+parser.add_argument("--clip_delta", type=float, help="clip delta", default=1.0)
+parser.add_argument("--update_rule", help="deepmind_rmsprop/rmsprop/adagrad/adadelta/sgd", default="deepmind_rmsprop")
+# reinforce
+parser.add_argument("--replay_start_size", type=int, help="replay start size", default=500)   # 5,0000 
+parser.add_argument("--replay_memory_size", type=int, help="replay memory size", default=10000)   # 100,0000
+parser.add_argument("--epsilon_decay", type=int, help="epsilon decay", default=100000)  # 100,0000
+parser.add_argument("--epsilon_min", type=float, help="epsilon min", default=0.1)
+parser.add_argument("--epsilon_start", type=float, help="epsilon start", default=1.0)
+parser.add_argument("--freeze_interval", type=int, help="freeze interval", default=100)   # 10000
+parser.add_argument("--update_frequency", type=int, help="update frequency", default=1)
+
 args = parser.parse_args()
 #for arg in vars(args):
 #  print_green('{} : {}'.format(arg,vars(args)[arg]))
@@ -78,54 +90,31 @@ def load_data():
   testing_data = [ data[i] for i in tx ]
   print '...done'
   return training_data, testing_data
-
 training_data, testing_data = load_data()
+
 ############## NETWORK #################
-#network_width, network_height = [args.model_width,args.model_height]        # change network shape
 input_width = 0               # auto change
 input_height = 1              # change feature
 num_actions = 5
 
 phi_length = 1 # input 4 frames at once num_frames
 discount = 1.
-learning_rate = args.learning_rate
 rms_decay = 0.99
 rms_epsilon = 0.1
 momentum = 0.
 nesterov_momentum = 0.
-clip_delta = 1.0
-freeze_interval = 100 #no freeze?
-batch_size = args.batchsize
 network_type = 'rl_dnn'
+batch_accumulator = 'sum'
+rng = np.random.RandomState()
 
 """
 Update Rules:
-1. deepmind_rmsprop
-2. rmsprop
-3. adagrad
-4. adadelta
-5. sgd
-
 Can combine with momentum ( default: 0.9 ) 
 1. momentum
 2. nesterov_momentum
 Note: Can only set one type of momentum 
 """
-update_rule = 'deepmind_rmsprop'
-
-batch_accumulator = 'sum'
-rng = np.random.RandomState()
-############# REINFORCE ##################
-epsilon_start = 1.0
-epsilon_min = 0.1
-replay_memory_size = 10000
-experiment_prefix = 'result/ret'
-replay_start_size = 500
-update_frequency = 1
 ###############################
-num_epoch = args.num_epoch
-epsilon_decay = num_epoch * 500
-step_per_epoch = args.step_per_epoch
 # TODO
 # simulate platform
 # accelerate GPU?
@@ -139,20 +128,19 @@ except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+experiment_prefix = 'result/ret'
 logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
 
 def setLogging():
-  print_green('learning_rate : {}'.format(learning_rate))
-  print_green('batch_size : {}'.format(batch_size))
-  print_green('clip_delta : {}'.format(clip_delta))
-  print_green('freeze_interval : {}'.format(freeze_interval))
-  print_green('replay_memory_size : {}'.format(replay_memory_size))
-  print_green('batch_size : {}'.format(batch_size))
+  print_green('learning_rate : {}'.format(args.learning_rate))
+  print_green('batch_size : {}'.format(args.batch_size))
+  print_green('clip_delta : {}'.format(args.clip_delta))
+  print_green('freeze_interval : {}'.format(args.freeze_interval))
+  print_green('replay_memory_size : {}'.format(args.replay_memory_size))
   print_green('num_epoch : {}'.format(args.num_epoch))
   print_green('step_per_epoch : {}'.format(args.step_per_epoch))
-  print_green('epsilon_decay : {}'.format(epsilon_decay))
-  print_green('network_type : {}'.format(network_type))
-  print_green('input_width : {}'.format(input_width))
+  print_green('epsilon_decay : {}'.format(args.epsilon_decay))
+  print_green('input_width(feature length) : {}'.format(input_width))
   print_green("recognition type: {}".format(rec_type))
   print_green("network shape: {}".format([args.model_width,args.model_height]))
   print_green("number of training data: {}".format(len(training_data)))
@@ -176,7 +164,7 @@ class experiment():
     self.agent.finish_testing(0)
     if args.test:
       return
-    for epoch in xrange(num_epoch):
+    for epoch in xrange(arg.num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
       shuffle(training_data)
 
@@ -196,7 +184,7 @@ class experiment():
     print 'number of queries',len(epoch_data)
 
     ## PROGRESS BAR SETTING
-    setting = [['Training',step_per_epoch], ['Testing',len(epoch_data)]]
+    setting = [['Training',args.step_per_epoch], ['Testing',len(epoch_data)]]
     setting = setting[test_flag]
     widgets = [ setting[0] , Percentage(), Bar(), ETA() ]
 
@@ -206,7 +194,7 @@ class experiment():
     Losses = []
     self.act_stat = [0,0,0,0,0]
 
-    steps_left = step_per_epoch
+    steps_left = args.step_per_epoch
     while steps_left > 0:
       #if True:
       #  q, ans, ans_index = training_data[0]
@@ -282,16 +270,16 @@ def launch():
     network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height, num_actions,
                                          phi_length,
                                          discount,
-                                         learning_rate,
+                                         args.learning_rate,
                                          rms_decay,
                                          rms_epsilon,
                                          momentum,
                                          nesterov_momentum,
-                                         clip_delta,
-                                         freeze_interval,
-                                         batch_size,
+                                         args.clip_delta,
+                                         args.freeze_interval,
+                                         args.batch_size,
                                          network_type,
-                                         update_rule,
+                                         args.update_rule,
                                          batch_accumulator,
                                          rng)
   else:
@@ -299,11 +287,11 @@ def launch():
     network = pickle.load(handle)
     
   print 'Creating Agent and Simulator...'
-  agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
-                                  replay_memory_size,
+  agt = agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
+                                  args.replay_memory_size,
                                   experiment_prefix,
-                                  replay_start_size,
-                                  update_frequency,
+                                  args.replay_start_size,
+                                  args.update_frequency,
                                   rng)
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
@@ -312,7 +300,6 @@ def launch():
 if __name__ == "__main__":
   if args.test:
     print_red("TESTING MODE")
-    
   else:
     print_red( "TRAINING MODE")
   launch()
