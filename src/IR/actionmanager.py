@@ -23,7 +23,7 @@ def genCostTable():
 
 def genActionTable():
   at = {}
-  at[-1] = 'none'
+  at[-1] = 'firstpass'
   at[0]  = 'doc'
   at[1]  = 'keyterm'
   at[2]  = 'request'
@@ -51,7 +51,7 @@ class ActionManager(object):
     # Since agent only returns integer as action
     self.actionTable  = genActionTable()
     self.costTable    = genCostTable()
-    
+
   def __call__(self, query):
     self.posmodel = deepcopy(query)
     self.negmodel = None
@@ -64,41 +64,39 @@ class ActionManager(object):
     self.posprior = deepcopy(self.posmodel)
     self.negprior = {}
 
-
   def expand_query(self,params):
-    assert isinstance(params,dict)
+    assert isinstance(params,dict),params
 
     action = params['action']
 
-    if action == 'none':
+    if action == 'firstpass':
       query = params['query']
       self.__call__(query)
 
     elif action == 'doc':
       doc = params['doc']
       if doc:
+        doc = int(doc)
         self.posdocs.append(self.docmodeldir+IndexToDocName(doc))
       	self.poslengs.append(self.doclengs[doc])
 
     elif action == 'keyterm':
       if 'keyterm' in params:
-        keyterm, isrel = params['keyterm']
+        keyterm = int(params['keyterm'])
+        isrel = params['isrel'] == 'True'
         if isrel:
           self.posprior[ keyterm ] = 1.
         else:
           self.negprior[ keyterm ] = 1.
 
     elif action == 'request':
-      request = params['request']
+      request = int(params['request'])
       self.posprior[ request ] = 1.0
 
     elif action == 'topic':
-      topicIdx = params['topic']
-      try:
-        self.topiclist[ topicIdx ]
-        self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
-      except:
-        print 'Index out of range error'
+      topicIdx = int(params['topic'])
+      self.topiclist[ topicIdx ]
+      self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
       self.poslengs.append(self.topicleng)
 
     elif action == 'show':

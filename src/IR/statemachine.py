@@ -65,6 +65,7 @@ class StateMachine(object):
     self.mu = mu
     self.delta = delta
     self.alpha = alpha
+    self.feat_len = 87
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
@@ -90,9 +91,8 @@ class StateMachine(object):
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):
-    #feature = []
-    return [ -1 * x[1] for x in ret[:25] ]
-    """
+    feature = []
+
     # Extract Features
     docs = []
     doclengs = []
@@ -134,7 +134,7 @@ class StateMachine(object):
 
     ieDocT10 = renormalize(ieDocT10)
     ieDocT20 = renormalize(ieDocT20)
-    
+
     # bias term
     # feature.append(1.0)
 
@@ -232,17 +232,12 @@ class StateMachine(object):
     Vars = [100,200,500]
     for v in Vars:
       feature.append(FitGaussDistribution(ret,0,v))
-    """
+
     # top N scores
-    top_scores = [ -1 * x[1] for x in ret[:300] ]
+    top_scores = [ -1 * x[1] for x in ret[:49] ]
     #deltas = [ -1 * val1 + val2 for val1, val2 in zip(top_scores[:-1],top_scores[1:]) ]
-    feature = top_scores# + deltas
-    """
-    for key, val in ret[:100]:
-      feature.append(-1*val)
-    for (key1, val1), (key2,val2) in zip(ret[:99],ret[1:100]):
-      feature.append(-1*val + 1 * val2)
-    """
+    feature += top_scores# + deltas
+
     return feature
 
 

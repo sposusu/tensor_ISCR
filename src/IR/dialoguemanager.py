@@ -49,8 +49,9 @@ class DialogueManager(object):
       Return:
         state(firstpass): 1 dim vector
     """
+
     self.query = query
-#    self.ans   = ( None if test_flag else ans )
+    #self.ans   = ( None if test_flag else ans )
     self.ans   = ans
 
     # Interaction Parameters, action and current turn number
@@ -92,20 +93,17 @@ class DialogueManager(object):
 
     # Record mean average precision
     # Train state estimator
+    #if not self.test_flag:
     self.lastMAP = self.MAP
-
-#    if not self.test_flag:
     self.MAP = self.evalAP(self.ret,self.ans)
-#    else:
-#      self.MAP = estimatedMAP
-
-#    logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
 
     return feature
 
   def request(self,action_type):
     '''
+
       Sends request to simulator for more query info
+
     '''
     self.cur_action = action_type
     request = {}
@@ -115,14 +113,14 @@ class DialogueManager(object):
 
   def expand_query(self,response):
     '''
+
       Passes response to action manager for query expansion
+
     '''
     posmodel, negmodel = self.actionmanager.expand_query(response)
 
     self.posmodel = posmodel
     self.negmodel = negmodel
-#    print "positive model ",self.posmodel
-#    print "negtive model ",self.negmodel
 
     return posmodel, negmodel
 
@@ -143,12 +141,12 @@ class DialogueManager(object):
     else:
       reward = self.actionmanager.costTable[ self.cur_action ] + \
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
-#      print 'action : ', self.cur_action,'cost : ',self.actionmanager.costTable[ self.cur_action ] ,"\tlast MAP : ", self.lastMAP, "\tMAP : ", self.MAP, "\treward : ", reward
+
     return reward
 
   def show(self):
     self.terminal = True
-    params = { 'ret': self.ret }
+    params = {'ret': self.ret }
     return params
 
   def game_over(self):

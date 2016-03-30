@@ -2,7 +2,7 @@ import cPickle as pickle
 import numpy as np
 import datetime,logging
 import os,sys,pdb,random,time
-import progressbar
+import progressbar,argparse
 from random import shuffle
 from termcolor import cprint
 from progressbar import ProgressBar,Percentage,Bar,ETA
@@ -13,98 +13,7 @@ from DQN import agent
 from IR.environment import *
 from IR.util import readFoldQueries,readLex,readInvIndex
 from sklearn.cross_validation import KFold
-##########################
-#       filename         #
-##########################
-recognitions = [ ('onebest','CMVN'), 
-                 ('onebest','tandem'),
-                 ('lattice','CMVN'),
-                 ('lattice','tandem') ]
-
-rec_type = recognitions[0]
-fold = sys.argv[1]
-exp_name = 'raw_deep'+sys.argv[2]+'_'
- 
-def setEnvironment():  
-  print 'Creating Environment and compiling State Estimator...'
-
-  dir='../../ISDR-CMDP/'
-  lex = 'PTV.lex'
-  background = 'background/' + '.'.join(rec_type) + '.bg'
-  inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
-  doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
-  docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
-  print '...done'
-  return Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
-
-def load_data():
-  newdir = '../Data/query/'
-  print 'loading queries from ',newdir,'...'
-  data = pickle.load(open(newdir+'data.pkl','r'))
-  if fold == '-1':
-    print 'train = test = all queries'
-    return data,data
-  kf = KFold(163, n_folds=10)
-  tr,tx = list(kf)[int(fold)-1]
-  training_data = [ data[i] for i in tr ]
-  testing_data = [ data[i] for i in tx ]
-  print '...done'
-  return training_data, testing_data
-
-training_data, testing_data = load_data()
-############## NETWORK #################
-network_width, network_height = [1024,int(sys.argv[2])]        # change network shape
-input_width = 0               # auto change
-input_height = 1              # change feature
-num_actions = 5
-
-phi_length = 1 # input 4 frames at once num_frames
-discount = 1.
-learning_rate = 0.00025
-rms_decay = 0.99
-rms_epsilon = 0.1
-momentum = 0.
-nesterov_momentum = 0.
-clip_delta = 1.0
-freeze_interval = 100 #no freeze?
-batch_size = 256
-network_type = 'rl_dnn'
-
-"""
-Update Rules:
-1. deepmind_rmsprop
-2. rmsprop
-3. adagrad
-4. adadelta
-5. sgd
-
-Can combine with momentum ( default: 0.9 ) 
-1. momentum
-2. nesterov_momentum
-Note: Can only set one type of momentum 
-"""
-update_rule = 'deepmind_rmsprop'
-
-batch_accumulator = 'sum'
-rng = np.random.RandomState()
-############# REINFORCE ##################
-epsilon_start = 1.0
-epsilon_min = 0.1
-replay_memory_size = 10000
-experiment_prefix = 'result/ret'
-replay_start_size = 500
-update_frequency = 1
-###############################
-num_epoch = 150
-epsilon_decay = num_epoch * 500
-step_per_epoch = 1000
-# TODO
-# overfit train query
-# simulate platform
-# accelerate GPU?
-# more raw feature
-# deep retrieval
-############ LOGGING ###################
+####### term color #########
 def print_red(x):  # epoch
   cprint(x, 'red')
   logging.info(x)
@@ -117,34 +26,146 @@ def print_yellow(x): # test info
 def print_green(x):  # parameter
   cprint(x, 'green')
   logging.info(x)
+########### argparse #########
+parser = argparse.ArgumentParser(description='Interactive Retrieval')
+# retrieval
+parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
+parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
+parser.add_argument("--prefix", help="experiment name prefix",default="")   # TODO store in folder
+parser.add_argument("--feature", help="feature type", default="87dim selected feature") # TODO not implement yet
 
-exp_log_root = '../logs/'
-try:
-  os.makedirs(exp_log_root)
-except:
-  pass
-cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + exp_name + '_'.join(rec_type) +'_fold'+str(fold) + ".log"
+# experiment
+parser.add_argument("--num_epoch", help="number of epoch",default=80)
+parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
+parser.add_argument("--test", help="testing mode",action="store_true")
+parser.add_argument("-nn","--nn_file", help="pre-trained model")
 
-logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+# neural network
+parser.add_argument("--model_width", type=int, help="model width", default=1024)
+parser.add_argument("--model_height", type=int, help="model height", default=2)
+parser.add_argument("--batch_size", type=int, help="batch size", default=256)
+parser.add_argument("-lr","--learning_rate", type=float, help="learning rate", default=0.00025)
+parser.add_argument("--clip_delta", type=float, help="clip delta", default=1.0)
+parser.add_argument("--update_rule", help="deepmind_rmsprop/rmsprop/adagrad/adadelta/sgd", default="deepmind_rmsprop")
+# reinforce
+parser.add_argument("--replay_start_size", type=int, help="replay start size", default=500)   # 5,0000 
+parser.add_argument("--replay_memory_size", type=int, help="replay memory size", default=10000)   # 100,0000
+parser.add_argument("--epsilon_decay", type=int, help="epsilon decay", default=100000)  # 100,0000
+parser.add_argument("--epsilon_min", type=float, help="epsilon min", default=0.1)
+parser.add_argument("--epsilon_start", type=float, help="epsilon start", default=1.0)
+parser.add_argument("--freeze_interval", type=int, help="freeze interval", default=100)   # 10000
+parser.add_argument("--update_frequency", type=int, help="update frequency", default=1)
 
-def setLogging():
-  print_green('learning_rate : {}'.format(learning_rate))
-  print_green('clip_delta : {}'.format(clip_delta))
-  print_green('freeze_interval : {}'.format(freeze_interval))
-  print_green('replay_memory_size : {}'.format(replay_memory_size))
-  print_green('batch_size : {}'.format(batch_size))
-  print_green('num_epoch : {}'.format(num_epoch))
-  print_green('step_per_epoch : {}'.format(step_per_epoch))
-  print_green('epsilon_decay : {}'.format(epsilon_decay))
-  print_green('network_type : {}'.format(network_type))
-  print_green('input_width : {}'.format(input_width))
-  print_green('batch_size : {}'.format(batch_size))
+args = parser.parse_args()
+##########################
+#       SETTING          #
+##########################
+def setRetrievalModule():  
+  recognitions = [ ('onebest','CMVN'), 
+                 ('onebest','tandem'),
+                 ('lattice','CMVN'),
+                 ('lattice','tandem') ]
+  rec_type = recognitions[args.type]
+  print 'Creating Environment and compiling State Estimator...'
+
+  dir='../../ISDR-CMDP/'
+  lex = 'PTV.lex'
+  background = 'background/' + '.'.join(rec_type) + '.bg'
+  inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
+  doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
+  docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+
+  env = Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
+  # feature
+  global input_width
+  input_width = env.dialoguemanager.statemachine.feat_len
+
+  # Logging
+  exp_log_root = '../logs/'
+  try:
+    os.makedirs(exp_log_root)
+  except:
+    pass
+  cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
+  exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+  print_green('exp_log_name : {}'.format(exp_log_name))
   print_green("recognition type: {}".format(rec_type))
-  print_green("network shape: {}".format([network_width,network_height]))
-  print "number of trainig data: ", len(training_data)
-  print "number of testing data: ", len(testing_data)
-  print 'exp_log_name : ', exp_log_name
+
+  print '...done'
+  return env
+
+def setDialogueManager():
+  if args.nn_file is None:
+    print 'Compiling Network...'
+    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height, num_actions,
+                                         phi_length,discount,args.learning_rate,rms_decay,
+                                         rms_epsilon,momentum,nesterov_momentum,
+                                         args.clip_delta,args.freeze_interval,args.batch_size,
+                                         network_type, args.update_rule, batch_accumulator, rng)
+  else:
+    print 'Loading Pre-trained Network...'
+    handle = open(args.nn_file, 'r')
+    network = pickle.load(handle)
+    
+  print 'Creating Agent and Simulator...'
+  return agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
+                                  args.replay_memory_size,experiment_prefix,args.replay_start_size,
+                                  args.update_frequency,rng)
+ 
+def load_query():
+  newdir = '../Data/query/'
+  print 'loading queries from ',newdir,'...'
+  data = pickle.load(open(newdir+'data.pkl','r'))
+  if args.fold == -1:
+    print_green( 'train = test = all queries')
+    return data,data
+  kf = KFold(163, n_folds=10)
+  tr,tx = list(kf)[args.fold-1]
+  training_data = [ data[i] for i in tr ]
+  testing_data = [ data[i] for i in tx ]
+  print '...done'
+  return training_data, testing_data
+############## NETWORK #################  TODO add to argparse
+experiment_prefix = 'result/ret'  # TODO fix it
+input_width = 0               # auto change
+input_height = 1              # change feature
+num_actions = 5
+
+phi_length = 1 # input 4 frames at once num_frames
+discount = 1.
+rms_decay = 0.99
+rms_epsilon = 0.1
+momentum = 0.
+nesterov_momentum = 0.
+network_type = 'rl_dnn'
+batch_accumulator = 'sum'
+rng = np.random.RandomState()
+
+"""
+Update Rules:
+Can combine with momentum ( default: 0.9 ) 
+1. momentum
+2. nesterov_momentum
+Note: Can only set one type of momentum 
+"""
+###############################
+# TODO
+# simulate platform
+# accelerate GPU?
+# deep retrieval
+############ LOGGING ###################
+def setLogging():
+  print_green('learning_rate : {}'.format(args.learning_rate))
+  print_green('batch_size : {}'.format(args.batch_size))
+  print_green('clip_delta : {}'.format(args.clip_delta))
+  print_green('freeze_interval : {}'.format(args.freeze_interval))
+  print_green('replay_memory_size : {}'.format(args.replay_memory_size))
+  print_green('num_epoch : {}'.format(args.num_epoch))
+  print_green('step_per_epoch : {}'.format(args.step_per_epoch))
+  print_green('epsilon_decay : {}'.format(args.epsilon_decay))
+  print_green('input_width(feature length) : {}'.format(input_width))
+  print_green("network shape: {}".format([args.model_width,args.model_height]))
 ###############################
 class experiment():
   def __init__(self,agent,env):
@@ -153,7 +174,8 @@ class experiment():
     self.agent = agent
     self.env = env
     self.best_seq = {}
-    self.best_return = np.zeros(163)
+    self.best_return = np.zeros(163) # to be removed
+    self.training_data, self.testing_data = load_query()
 
   def run(self):
     print_red( 'Init Model')
@@ -161,10 +183,11 @@ class experiment():
     self.agent.start_testing()
     self.run_epoch(True)
     self.agent.finish_testing(0)
-
-    for epoch in xrange(num_epoch):
+    if args.test:
+      return
+    for epoch in xrange(arg.num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
-      shuffle(training_data)
+      shuffle(self.training_data)
 
       ## TRAIN ##
       self.run_epoch()
@@ -176,13 +199,13 @@ class experiment():
       self.agent.finish_testing(epoch+1)
 
   def run_epoch(self,test_flag=False):
-    epoch_data = training_data
+    epoch_data = self.training_data
     if(test_flag):
-      epoch_data = testing_data
+      epoch_data = self.testing_data
     print 'number of queries',len(epoch_data)
 
     ## PROGRESS BAR SETTING
-    setting = [['Training',step_per_epoch], ['Testing',len(epoch_data)]]
+    setting = [['Training',args.step_per_epoch], ['Testing',len(epoch_data)]]
     setting = setting[test_flag]
     widgets = [ setting[0] , Percentage(), Bar(), ETA() ]
 
@@ -192,7 +215,7 @@ class experiment():
     Losses = []
     self.act_stat = [0,0,0,0,0]
 
-    steps_left = step_per_epoch
+    steps_left = args.step_per_epoch
     while steps_left > 0:
       #if True:
       #  q, ans, ans_index = training_data[0]
@@ -258,34 +281,14 @@ class experiment():
 
 
 def launch():
-  t = time.time()
-  env = setEnvironment()
-  global input_width
-  input_width = env.dialoguemanager.statemachine.feat_len
+  if args.test:
+    print_red("TESTING MODE")
+  else:
+    print_red( "TRAINING MODE")
 
-  print 'Compiling Network...'
-  network = q_network.DeepQLearner(input_width, input_height, network_width, network_height, num_actions,
-                                         phi_length,
-                                         discount,
-                                         learning_rate,
-                                         rms_decay,
-                                         rms_epsilon,
-                                         momentum,
-                                         nesterov_momentum,
-                                         clip_delta,
-                                         freeze_interval,
-                                         batch_size,
-                                         network_type,
-                                         update_rule,
-                                         batch_accumulator,
-                                         rng)
-  print 'Creating Agent and Simulator...'
-  agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
-                                  replay_memory_size,
-                                  experiment_prefix,
-                                  replay_start_size,
-                                  update_frequency,
-                                  rng)
+  t = time.time()
+  env = setRetrievalModule()
+  agt = setDialogueManager()
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()

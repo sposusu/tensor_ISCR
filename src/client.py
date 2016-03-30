@@ -1,4 +1,5 @@
 import cPickle as pickle
+import pdb
 import requests
 import json
 
@@ -16,6 +17,8 @@ simulator = get_simulator()
 queries = load_data()
 
 for idx,(q, ans, ans_index) in enumerate(queries):
+  print
+  print 'Running query {0}'.format(idx)
   # Sets single query
   simulator(q,ans,ans_index)
 
@@ -23,11 +26,19 @@ for idx,(q, ans, ans_index) in enumerate(queries):
   ans_string = json.dumps(ans)
 
   # First pass and set up
-  data = {'method':'firstpass','query': query_string,'ans':ans_string,'ans_index':ans_index }
+  firstpass_data = {'action':'firstpass','query': query_string,'ans':ans_string }
 
   # Posts to host
-  r = requests.post(host + 'interact',data)
-  assert r.json()['query'] == q
+  response = requests.post(url=host+'interact',data=firstpass_data)
+  res_param = response.json()
 
-  #print idx, r.text
-  break
+  curtHorizon = 0
+  print 'Turn {0}: {1}'.format(curtHorizon,res_param['action'])
+
+  while res_param['action'] != 'show':
+    feedback_data  = simulator.feedback(res_param)
+    response = requests.post(url=host+'interact',data=feedback_data)
+    curtHorizon += 1
+    res_param = response.json()
+    print 'Turn {0}: {1}'.format(curtHorizon,res_param['action'])
+    break

@@ -34,7 +34,7 @@ class Simulator(object):
     params = {}
     params['action'] = action
 
-    if action == 'none':
+    if action == 'firstpass':
       params['query'] = self.query
     elif action == 'doc':
       doc = next( ( item[0] for item in ret if self.ans.has_key(item[0]) ), None )
@@ -47,9 +47,10 @@ class Simulator(object):
         cnt = sum( 1.0 for a in self.ans \
           if readDocModel(docdir + IndexToDocName(a)).has_key(a) )
         del self.keytermlist[0]
-        ret =  ( True if cnt/len(self.ans) > 0.5 else False )
-        params['keyterm'] = [ keyterm, ret ]
-
+        isrel =  ( True if cnt/len(self.ans) > 0.5 else False )
+        params['keyterm'] = keyterm
+        params['isrel'] = isrel
+        
     elif action == 'request':
       request = self.requestlist[0][0]
       del self.requestlist[0]
