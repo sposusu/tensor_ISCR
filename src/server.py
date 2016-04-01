@@ -19,8 +19,8 @@ app = Flask(__name__,template_folder='views')
 
 ActionTable = genActionTable()
 dialoguemanager = api.get_dialoguemanger()
-#agent = api.get_agent()
-#agent.start_testing()
+agent = api.get_agent()
+agent.start_testing()
 
 # Index Page
 @app.route('/')
