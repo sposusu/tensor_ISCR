@@ -39,7 +39,7 @@ def query():
 
   words_big5 = [ utf8tobig5hex(w) for w in words_uni ]
 
-  query = big5list_to_dict(words_big5)
+  query = big5list_to_dict(words_uni,words_big5)
 
   return jsonify(**query)
 
@@ -50,12 +50,11 @@ def bracket_word(chars_big5):
     bracketed_chars += '[' + chars_big5[i:i+4] + ']'
   return bracketed_chars
 
-
-def big5list_to_dict(words_big5):
+def big5list_to_dict(words_uni,words_big5):
   d = dict()
   L = len(words_big5)
-  for w in words_big5:
-    d[ bracket_word(w) ] = 1./L
+  for idx,w_big5 in enumerate(words_big5):
+    d[ words_uni[idx] ] = { 'big5': bracket_word(w_big5), 'probability': 1./L }
   return d
 
 def utf8tobig5hex(uni_string):
@@ -117,8 +116,9 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('-p','--port',type=int,default=1111)
   args = parser.parse_args()
-  app.run(host='localhost', port=1111, debug=True)
+  app.run(host='0.0.0.0', port=1111, debug=True)
   return 0
 
 if __name__ == "__main__":
+  #app.run(host='0.0.0.0', port=1111, debug=True)
   sys.exit(main())
