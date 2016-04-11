@@ -4,6 +4,7 @@ import numpy as np
 
 from DQN import agent
 from IR.dialoguemanager import DialogueManager
+from IR.searchengine import SearchEngine
 from IR.human import Simulator
 
 recognitions = [ ('onebest','CMVN'),
@@ -31,6 +32,14 @@ def get_agent():
   return agent.NeuralAgent(network,AgentArgs.epsilon_start,AgentArgs.epsilon_min,AgentArgs.epsilon_decay,
                                   AgentArgs.replay_memory_size,AgentArgs.experiment_prefix,AgentArgs.replay_start_size,
                                   AgentArgs.update_frequency,AgentArgs.rng)
+
+def get_searchengine():
+  dir='../../ISDR-CMDP/'
+  lex = 'PTV.lex'
+  background = 'background/' + '.'.join(rec_type) + '.bg'
+  inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
+  doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
+  return SearchEngine(lex, background, inv_index, doclengs,dir)
 
 def get_dialoguemanger():
   dir='../../ISDR-CMDP/'

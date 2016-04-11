@@ -1,5 +1,8 @@
 
-function get_big5() {
+function query() {
+	$(document).find('tbody').empty();
+	$(document).find('#wavlist').empty();
+
 	var q = $('#query').val();
 	console.log("Query value:" + q)
 
@@ -8,12 +11,10 @@ function get_big5() {
 		"query": q
 	}
 
-		
-	$.post('/query', data, function(data){
-		$(document).find('tbody').empty();
+	$.post('/languagemodel', data, function(data){
 		$.each(data, function(i, item) {
 			console.log(i,item);
-			$('#result').find('tbody')
+			$('#languagemodel').find('tbody')
 				.append($('<tr>')
 					.append($('<td>').append(i),
 						$('<td>').append(item.big5),
@@ -21,6 +22,20 @@ function get_big5() {
 					)
 				)
 		})
+	})
+	$.post('/query', data, function(data) {
+		$.each(data, function(i,item) {
+			var audio_control = $('<audio>').attr("controls",true)
+			var source = '/wav/'+item
+			console.log(i,item,source);
+			$('#wavlist')
+				.append($('<li>')
+					.append(audio_control
+						.append( $('<source>').attr('src',source).attr('type','audio/wav') )
+					)
+				)
+		})
+
 	})
 	$('#query').val('');
 	return false
@@ -32,7 +47,7 @@ $(document).ready( function() {
 		if(e.which == 13 && !e.shiftKey){
 			console.log('get_big5');
 			e.preventDefault();
-			get_big5();
+			query();
 		}
 	})
 
