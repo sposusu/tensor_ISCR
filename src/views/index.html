@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive Spoken Content Retrieval">
+
+  <title>Interactive Retrieval</title>
+
+
+</head>
+<body>
+
+<div id='wrap'>
+
+<div>
+  <input type="text" id='query'>
+</div>
+
+<table id='languagemodel'>
+  <thead>
+    <tr>
+      <th> Phrase </th>
+      <th> Big5 </th>
+      <th> Probability</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<div>
+  Result List
+  <ul id="wavlist">
+  </ul>
+</div>
+
+
+</div>
+</body>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-beta1/jquery.min.js'></script>
+<script src='/static/scripts/main.js'></script>
+</html>
