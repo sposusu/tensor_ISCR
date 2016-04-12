@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 
   This is our Interactive Retrieval System's server
@@ -36,7 +38,7 @@ def languagemodel():
   assert action == 'firstpass'
   query_uni = request.form.get('query','')
 
-  words_uni = [ w for w in jieba.cut(query_uni,cut_all=False) ]
+  words_uni = [ w for w in jieba.cut_for_search(query_uni) ]
 
   words_big5 = [ utf8tobig5hex(w) for w in words_uni ]
 
@@ -66,7 +68,7 @@ def query():
 
 def result_to_id(result):
   d = dict()
-  for idx in range(3):
+  for idx in range(10):
     doc_id = result[idx][0]
     wavname = 'T' + str(doc_id).zfill(4) + '.wav'
     d[ str(doc_id) ] = wavname
@@ -173,5 +175,4 @@ def main():
   return 0
 
 if __name__ == "__main__":
-  #app.run(host='0.0.0.0', port=1111, debug=True)
   sys.exit(main())

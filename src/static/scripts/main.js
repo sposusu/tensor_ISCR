@@ -4,7 +4,6 @@ function query() {
 	$(document).find('#wavlist').empty();
 
 	var q = $('#query').val();
-	console.log("Query value:" + q)
 
 	var data = {
 		"action": "firstpass",
@@ -23,15 +22,16 @@ function query() {
 				)
 		})
 	})
+
 	$.post('/query', data, function(data) {
 		$.each(data, function(i,item) {
 			var audio_control = $('<audio>').attr("controls",true)
 			var source = '/wav/'+item
 			console.log(i,item,source);
 			$('#wavlist')
-				.append($('<li>')
-					.append(audio_control
-						.append( $('<source>').attr('src',source).attr('type','audio/wav') )
+				.append($('<tr>')
+					.append( $('<td>').append(item),
+						$('<td>').append(audio_control.append($('<source>').attr('src',source).attr('type','audio/wav')))
 					)
 				)
 		})
@@ -43,13 +43,14 @@ function query() {
 
 $(document).ready( function() {
 	$('#query').keypress(function(e){
-		console.log('key pressed!');
 		if(e.which == 13 && !e.shiftKey){
-			console.log('get_big5');
 			e.preventDefault();
 			query();
 		}
 	})
 
-	console.log('ready!');
+	$('#abstract').load("/static/abstract.txt");
+
+	// make sure we start out with the query bar in focus
+	document.getElementById('query').focus();
 })
