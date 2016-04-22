@@ -115,7 +115,7 @@ def get_wav(wavname):
   return send_file( path_to_file,\
                     mimetype="audio/wav",\
                     as_attachment=True,\
-                    attachment_filename="T0001.wav")
+                    attachment_filename=wavname)
 
 
 """
