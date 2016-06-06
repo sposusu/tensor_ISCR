@@ -185,7 +185,7 @@ class experiment():
     self.agent.finish_testing(0)
     if args.test:
       return
-    for epoch in xrange(arg.num_epoch):
+    for epoch in xrange(args.num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
       shuffle(self.training_data)
 
@@ -231,7 +231,7 @@ class experiment():
           logging.debug( 'Episode Reward : %f', self.agent.episode_reward )
         else:
           Losses.append(self.agent.episode_loss)
-          pbar.update(step_per_epoch-steps_left)
+          pbar.update(args.step_per_epoch-steps_left)
 
         if self.agent.episode_reward > self.best_return[ans_index]:
           self.best_return[ans_index] = self.agent.episode_reward
