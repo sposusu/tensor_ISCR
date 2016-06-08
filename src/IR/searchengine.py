@@ -2,7 +2,7 @@ import operator
 import pdb
 
 from retmath import cross_entropy
-
+from util import readLex, readList, readInvIndex, readBackground, readAnswer, readDocLength, docNameToIndex
 """
 
   Move read function into search engine constructor?
@@ -98,7 +98,7 @@ class SearchEngine(object):
 """
   Retrieval Engine Read Functions ( Migrated from util.py )
 """
-
+'''
 def readLex(fname):
   lex = {}
   with open(fname) as f:
@@ -144,6 +144,6 @@ def readDocLength(fname):
 
 def docNameToIndex(fname):
   return int(fname[1:])
-
+'''
 if __name__ == "__main__":
   pass

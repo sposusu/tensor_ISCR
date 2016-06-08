@@ -27,3 +27,13 @@ Interactive System(Environment): <br/>
     Inputs query,returns list of documents
   * Simulator: <br/>
     Simulates Human behavior, ( response to human actions )
+
+DeepReinforce.py == agent(in folder DQN)
+                    -- agent.py -- q_network.py -- lasagne_updates.py
+                                -- ale_data_set.py 
+                      
+                 == environment (in folder IR)
+                    -- environment.py -- dialoguemanager.py(retrieval module) -- seachengin.py 
+                                                                              -- statemachine.py
+                                                                              -- actionmanager.py
+                                      -- human.py (simulated user)

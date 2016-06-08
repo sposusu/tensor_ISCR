@@ -6,6 +6,8 @@ se:
 	python train_stateestimation.py
 test: 
 	nosetests
+clean:
+	rm -r *.pyc
 
 # brute force oracle
 bf:
@@ -26,6 +28,6 @@ exp3:
 exp4:
 	python DeepReinforce.py --prefix linear_model --model_height 0
 # exp5 : run pre-trained model
-exp5:
-	python DeepReinforce.py ---prefix test -nn ../Data/network/onebest_feature_87_epoch_50.pkl --test
+test_model:
+	python DeepReinforce.py --prefix test -nn ../Data/network/onebest_feature_87_epoch_50.pkl --test --nolog
 # exp6 : simulated user 

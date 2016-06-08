@@ -1,5 +1,5 @@
 from dialoguemanager import DialogueManager
-from human import Simulator
+from human import SimulatedUser
 import numpy as np
 
 class Environment(object):
@@ -14,7 +14,7 @@ class Environment(object):
                                     docmodeldir = docmodeldir
                                     )
     # Simulated User
-    self.simulator = Simulator(
+    self.simulateduser = SimulatedUser(
                             dir         = dir,
                             docmodeldir = docmodeldir
                             )
@@ -28,15 +28,14 @@ class Environment(object):
         state: 1 dim feature vector ( firstpass result )
     """
     # Sets up query and answer
-    self.simulator( query, ans, ans_index )
+    self.simulateduser( query, ans, ans_index )
     self.dialoguemanager( query, ans, test_flag ) # ans is for MAP
-    #self.test_flag = test_flag
 
     # Begin first pass
     action_type = -1 # Action None
 
     request  = self.dialoguemanager.request( action_type )
-    feedback = self.simulator.feedback(request)
+    feedback = self.simulateduser.feedback(request)
     self.dialoguemanager.expand_query(feedback)
 
     firstpass = self.dialoguemanager.gen_state_feature()
@@ -61,14 +60,14 @@ class Environment(object):
     if action_type == 4: # Show Result
       # Terminated episode
       ret = self.dialoguemanager.show()
-      self.simulator.view(ret)
+      self.simulateduser.view(ret)
 
       # feature is None
       feature = None
     else:
       # Interact with Simulator
-      request  = self.dialoguemanager.request(action_type)
-      feedback = self.simulator.feedback(request)
+      request  = self.dialoguemanager.request(action_type) # wrap retrieved results & action as a request
+      feedback = self.simulateduser.feedback(request)
 
       # Expands query with simulator response
       self.dialoguemanager.expand_query(feedback)

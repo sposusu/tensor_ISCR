@@ -3,9 +3,9 @@ import os
 
 from nose.tools import *
 
-from python import searchengine
-from python import dialoguemanager as dm
-from python import util
+from IR import searchengine
+from IR import dialoguemanager as dm
+from IR import util
 
 dir='../../ISDR-CMDP/'
 lex = 'PTV.lex'

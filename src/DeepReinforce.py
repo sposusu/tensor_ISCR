@@ -28,11 +28,15 @@ def print_green(x):  # parameter
   logging.info(x)
 ########### argparse #########
 parser = argparse.ArgumentParser(description='Interactive Retrieval')
-# retrieval
+# retrieval module
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
 parser.add_argument("--prefix", help="experiment name prefix",default="")   # store in folder
+  # state machine
 parser.add_argument("--feature", help="feature type", default="87 dim selected feature") # TODO not implement yet
+parser.add_argument("--normalize", help="normalize feature", action="store_true") # TODO not implement yet
+  # action
+parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
 
 # experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
@@ -156,9 +160,10 @@ Note: Can only set one type of momentum
 """
 ###############################
 # TODO
-# simulate platform
+# online platform
 # accelerate GPU?
 # deep retrieval
+# combine retrieval.py to search_engin
 ############ LOGGING ###################
 def setLogging():
   print_green('learning_rate : {}'.format(args.learning_rate))

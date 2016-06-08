@@ -14,6 +14,7 @@ from retmath import *
 from retrieval import retrieveCombination
 from stateestimation import dnn
 from util import IndexToDocName
+from util import readDocModel
 
 """
   Todo: Online training for approximator
@@ -24,7 +25,7 @@ normalize_feature = False
 
 se_prefix = '../Data/stateestimation/'
 weights_file = se_prefix + 'dnn.npz'
-
+'''
 class Approximator(object):
   def __init__(self):
     # Functions
@@ -40,7 +41,7 @@ class Approximator(object):
     feature      = np.asarray(feature).reshape(1,1,1,89)
     estimatedMAP = float(self.test_fn(feature)[0])
     return estimatedMAP
-
+'''
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
               iteration=10,mu=1,delta=1,alpha=0.1):
@@ -53,7 +54,7 @@ class StateMachine(object):
     self.docmodeldir = docmodeldir
 
     # Model for state estimation
-    self.approximator = Approximator()
+  #  self.approximator = Approximator()
 
     # Mean and std for feature normalization
     with h5py.File("../Data/stateestimation/norm.h5") as norm:
@@ -166,6 +167,7 @@ class StateMachine(object):
     oret = retrieveCombination(pos,negprior,\
                               self.background,self.inv_index,self.doclengs,\
                               self.alpha,0.1)
+
     N = min([ret,oret])
     for i in range(len(Ns)):
       if N<Ns[i]:
@@ -240,7 +242,7 @@ class StateMachine(object):
 
     return feature
 
-
+'''
 def readDocModel(fname):
   model = {}
   with open(fname) as fin:
@@ -248,8 +250,9 @@ def readDocModel(fname):
       [ t1, t2 ] = line.split('\t')
       model[ int(t1) ] = float(t2)
   return model
-
+'''
 if __name__ == "__main__":
+  # DNN state estimation
   train_fn, test_fn = neuralnetwork()
 
   filepath = '../../Data/stateestimation/features_89.h5'
