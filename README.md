@@ -28,6 +28,7 @@ Interactive System(Environment): <br/>
   * Simulator: <br/>
     Simulates Human behavior, ( response to human actions )
 
+# code structure
 DeepReinforce.py
   * agent.py(in folder DQN)
     * q_network.py
@@ -36,7 +37,7 @@ DeepReinforce.py
                       
   * environment.py (in folder IR)
     * dialoguemanager.py(retrieval module)
-                                           -- seachengin.py 
-                                           -- statemachine.py
-                                           -- actionmanager.py
+      * seachengin.py 
+      * statemachine.py
+      * actionmanager.py
     * human.py (simulated user)
