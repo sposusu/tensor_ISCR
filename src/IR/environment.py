@@ -77,7 +77,7 @@ class Environment(object):
       feature = self.dialoguemanager.gen_state_feature()
 
     # Calculate Reward
-    reward = self.dialoguemanager.calculate_reward() + np.random.normal(0,0)
+    reward = self.dialoguemanager.calculate_reward() + np.random.normal(0,0.01)
 
     return reward, feature
 
