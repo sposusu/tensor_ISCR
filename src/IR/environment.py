@@ -1,9 +1,10 @@
 from dialoguemanager import DialogueManager
 from human import Simulator
+import numpy as np
 
 class Environment(object):
   def __init__(self,lex,background,inv_index,doclengs,docmodeldir,dir):
-    # Dialogue Manager, with Search Engine and StateMachine
+    # Retrieval Module, with Search Engine and State Machine
     self.dialoguemanager = DialogueManager(
                                     lex         = lex,
                                     background  = background,
@@ -12,7 +13,7 @@ class Environment(object):
                                     dir         = dir,
                                     docmodeldir = docmodeldir
                                     )
-    # Simulator
+    # Simulated User
     self.simulator = Simulator(
                             dir         = dir,
                             docmodeldir = docmodeldir
@@ -76,7 +77,7 @@ class Environment(object):
       feature = self.dialoguemanager.gen_state_feature()
 
     # Calculate Reward
-    reward = self.dialoguemanager.calculate_reward()
+    reward = self.dialoguemanager.calculate_reward() + np.random.normal(0,0)
 
     return reward, feature
 

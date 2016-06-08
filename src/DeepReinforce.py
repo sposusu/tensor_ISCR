@@ -32,12 +32,13 @@ parser = argparse.ArgumentParser(description='Interactive Retrieval')
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
 parser.add_argument("--prefix", help="experiment name prefix",default="")   # TODO store in folder
-parser.add_argument("--feature", help="feature type", default="87dim selected feature") # TODO not implement yet
+parser.add_argument("--feature", help="feature type", default="87 dim selected feature") # TODO not implement yet
 
 # experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
 parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
 parser.add_argument("--test", help="testing mode",action="store_true")
+parser.add_argument("--nolog", help="don't save log file",action="store_true")
 parser.add_argument("-nn","--nn_file", help="pre-trained model")
 
 # neural network
@@ -60,12 +61,27 @@ args = parser.parse_args()
 ##########################
 #       SETTING          #
 ##########################
-def setRetrievalModule():  
-  recognitions = [ ('onebest','CMVN'), 
+
+# Logging
+recognitions = [ ('onebest','CMVN'), 
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
-  rec_type = recognitions[args.type]
+rec_type = recognitions[args.type]
+exp_log_root = '../logs/'
+try:
+  os.makedirs(exp_log_root)
+except:
+  pass
+cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
+exp_log_name = exp_log_root + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+if args.nolog:
+  print_green('No log file')
+else:
+  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+  print_green('exp_log_name : {}'.format(exp_log_name))
+
+def setRetrievalModule():  
   print 'Creating Environment and compiling State Estimator...'
 
   dir='../../ISDR-CMDP/'
@@ -80,17 +96,6 @@ def setRetrievalModule():
   global input_width
   input_width = env.dialoguemanager.statemachine.feat_len
 
-  # Logging
-  exp_log_root = '../logs/'
-  try:
-    os.makedirs(exp_log_root)
-  except:
-    pass
-  cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-  exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
-  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
-  print_green('exp_log_name : {}'.format(exp_log_name))
-  print_green("recognition type: {}".format(rec_type))
 
   print '...done'
   return env
