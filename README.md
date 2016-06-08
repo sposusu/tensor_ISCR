@@ -29,12 +29,14 @@ Interactive System(Environment): <br/>
     Simulates Human behavior, ( response to human actions )
 
 DeepReinforce.py
-                 == agent(in folder DQN)
-                    -- agent.py -- q_network.py -- lasagne_updates.py
-                                -- ale_data_set.py 
+  * agent.py(in folder DQN)
+    * q_network.py
+      * lasagne_updates.py
+    * ale_data_set.py 
                       
-                 == environment (in folder IR)
-                    -- environment.py -- dialoguemanager.py(retrieval module) -- seachengin.py 
-                                                                              -- statemachine.py
-                                                                              -- actionmanager.py
-                                      -- human.py (simulated user)
+  * environment.py (in folder IR)
+    * dialoguemanager.py(retrieval module)
+                                           -- seachengin.py 
+                                           -- statemachine.py
+                                           -- actionmanager.py
+    * human.py (simulated user)
