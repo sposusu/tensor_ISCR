@@ -43,10 +43,10 @@ class NeuralAgent(object):
                        "{}".format(self.network.lr).replace(".", "p") + "_" \
                        + "{}".format(self.network.discount).replace(".", "p")
 
-        try:
-            os.stat(self.exp_dir)
-        except OSError:
-            os.makedirs(self.exp_dir)
+        #try:
+        #    os.stat(self.exp_dir)
+        #except OSError:
+        #    os.makedirs(self.exp_dir)
 
         self.num_actions = self.network.num_actions
 
@@ -72,8 +72,8 @@ class NeuralAgent(object):
 
         self.testing = False
 
-        self._open_results_file()
-        self._open_learning_file()
+        #self._open_results_file()
+        #self._open_learning_file()
 
         self.episode_counter = 0
         self.batch_counter = 0
@@ -277,7 +277,7 @@ class NeuralAgent(object):
 #                            self.step_counter/total_time))
 
             if self.batch_counter > 0:
-                self._update_learning_file()
+                #self._update_learning_file()
                 self.episode_loss = np.mean(self.loss_averages)
                 logging.debug("average loss: {:.4f}".format(self.episode_loss))
 
@@ -305,8 +305,8 @@ class NeuralAgent(object):
                 holdout_sum += np.max(
                     self.network.q_vals(self.holdout_data[i, ...]))
 
-        self._update_results_file(epoch, self.episode_counter,
-                                  holdout_sum / holdout_size)
+        #self._update_results_file(epoch, self.episode_counter,
+        #                          holdout_sum / holdout_size)
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description='Interactive Retrieval')
 # retrieval
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
-parser.add_argument("--prefix", help="experiment name prefix",default="")   # TODO store in folder
+parser.add_argument("--prefix", help="experiment name prefix",default="")   # store in folder
 parser.add_argument("--feature", help="feature type", default="87 dim selected feature") # TODO not implement yet
 
 # experiment
@@ -68,7 +68,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 rec_type = recognitions[args.type]
-exp_log_root = '../logs/'
+exp_log_root = '../logs/'+args.prefix + '/'
 try:
   os.makedirs(exp_log_root)
 except:
