@@ -5,7 +5,7 @@ import numpy as np
 from DQN import agent
 from IR.dialoguemanager import DialogueManager
 from IR.searchengine import SearchEngine
-from IR.human import Simulator
+from IR.human import SimulatedUser
 
 recognitions = [ ('onebest','CMVN'),
                  ('onebest','tandem'),
