@@ -28,16 +28,21 @@ def print_green(x):  # parameter
   logging.info(x)
 ########### argparse #########
 parser = argparse.ArgumentParser(description='Interactive Retrieval')
-# retrieval
+# retrieval module
 parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
-parser.add_argument("--prefix", help="experiment name prefix",default="")   # TODO store in folder
-parser.add_argument("--feature", help="feature type", default="87dim selected feature") # TODO not implement yet
+parser.add_argument("--prefix", help="experiment name prefix",default="")   # store in folder
+  # state machine
+parser.add_argument("--feature", help="feature type", default="87 dim selected feature") # TODO not implement yet
+parser.add_argument("--normalize", help="normalize feature", action="store_true") # TODO not implement yet
+  # action
+parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
 
 # experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
 parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
 parser.add_argument("--test", help="testing mode",action="store_true")
+parser.add_argument("--nolog", help="don't save log file",action="store_true")
 parser.add_argument("-nn","--nn_file", help="pre-trained model")
 
 # neural network
@@ -60,12 +65,27 @@ args = parser.parse_args()
 ##########################
 #       SETTING          #
 ##########################
-def setRetrievalModule():  
-  recognitions = [ ('onebest','CMVN'), 
+
+# Logging
+recognitions = [ ('onebest','CMVN'), 
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
-  rec_type = recognitions[args.type]
+rec_type = recognitions[args.type]
+exp_log_root = '../logs/'+args.prefix + '/'
+try:
+  os.makedirs(exp_log_root)
+except:
+  pass
+cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
+exp_log_name = exp_log_root + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+if args.nolog:
+  print_green('No log file')
+else:
+  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+  print_green('exp_log_name : {}'.format(exp_log_name))
+
+def setRetrievalModule():  
   print 'Creating Environment and compiling State Estimator...'
 
   dir='../../ISDR-CMDP/'
@@ -80,17 +100,6 @@ def setRetrievalModule():
   global input_width
   input_width = env.dialoguemanager.statemachine.feat_len
 
-  # Logging
-  exp_log_root = '../logs/'
-  try:
-    os.makedirs(exp_log_root)
-  except:
-    pass
-  cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-  exp_log_name = exp_log_root + args.prefix + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
-  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
-  print_green('exp_log_name : {}'.format(exp_log_name))
-  print_green("recognition type: {}".format(rec_type))
 
   print '...done'
   return env
@@ -151,9 +160,10 @@ Note: Can only set one type of momentum
 """
 ###############################
 # TODO
-# simulate platform
+# online platform
 # accelerate GPU?
 # deep retrieval
+# combine retrieval.py to search_engin
 ############ LOGGING ###################
 def setLogging():
   print_green('learning_rate : {}'.format(args.learning_rate))
@@ -185,7 +195,7 @@ class experiment():
     self.agent.finish_testing(0)
     if args.test:
       return
-    for epoch in xrange(arg.num_epoch):
+    for epoch in xrange(args.num_epoch):
       print_red( 'Running epoch {0}'.format(epoch+1))
       shuffle(self.training_data)
 
@@ -231,7 +241,7 @@ class experiment():
           logging.debug( 'Episode Reward : %f', self.agent.episode_reward )
         else:
           Losses.append(self.agent.episode_loss)
-          pbar.update(step_per_epoch-steps_left)
+          pbar.update(args.step_per_epoch-steps_left)
 
         if self.agent.episode_reward > self.best_return[ans_index]:
           self.best_return[ans_index] = self.agent.episode_reward

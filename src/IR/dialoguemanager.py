@@ -137,7 +137,7 @@ class DialogueManager(object):
 
   def calculate_reward(self):
     if self.terminal:
-      reward = self.actionmanager.costTable[ 4 ]
+      reward = self.actionmanager.costTable[ 4 ]  # 0
     else:
       reward = self.actionmanager.costTable[ self.cur_action ] + \
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
@@ -166,6 +166,8 @@ class DialogueManager(object):
 """
 
   Read functions for Dialogue Manager
+
+"""
 
 """
 dir = '../../ISDR-CMDP/'
@@ -218,6 +220,6 @@ def readTopicList(cpsID,qID):
     rankings = map(f,[ line.split('\t') for line in fin.readlines() ])
     return rankings
 
-
+"""
 if __name__ == "__main__":
   pass
