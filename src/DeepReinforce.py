@@ -11,8 +11,17 @@ from collections import defaultdict
 from DQN import q_network
 from DQN import agent
 from IR.environment import *
+from IR.dialoguemanager import DialogueManager
+from IR.human import SimulatedUser
+# util IO
 from IR.util import readFoldQueries,readLex,readInvIndex
 from sklearn.cross_validation import KFold
+###############################
+# TODO
+# online platform
+# accelerate GPU?
+# deep retrieval
+# combine retrieval.py to search_engin
 ####### term color #########
 def print_red(x):  # epoch
   cprint(x, 'red')
@@ -37,6 +46,9 @@ parser.add_argument("--feature", help="feature type", default="87 dim selected f
 parser.add_argument("--normalize", help="normalize feature", action="store_true") # TODO not implement yet
   # action
 parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
+parser.add_argument("--action_noise", help="action with probability", default="type1") #TODO
+parser.add_argument("--cost_std", type=int, help="action cost with noise", default=1)#TODO
+
 
 # experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
@@ -44,6 +56,7 @@ parser.add_argument("--step_per_epoch", help="number of step per epoch",default=
 parser.add_argument("--test", help="testing mode",action="store_true")
 parser.add_argument("--nolog", help="don't save log file",action="store_true")
 parser.add_argument("-nn","--nn_file", help="pre-trained model")
+parser.add_argument("--demo", help="demo mode",action="store_true")
 
 # neural network
 parser.add_argument("--model_width", type=int, help="model width", default=1024)
@@ -65,8 +78,7 @@ args = parser.parse_args()
 ##########################
 #       SETTING          #
 ##########################
-
-# Logging
+# SET Logging
 recognitions = [ ('onebest','CMVN'), 
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
@@ -79,45 +91,66 @@ except:
   pass
 cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
 exp_log_name = exp_log_root + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
-if args.nolog:
+if args.nolog or args.demo:
   print_green('No log file')
 else:
   logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
   print_green('exp_log_name : {}'.format(exp_log_name))
 
-def setRetrievalModule():  
-  print 'Creating Environment and compiling State Estimator...'
-
-  dir='../../ISDR-CMDP/'
-  lex = 'PTV.lex'
-  background = 'background/' + '.'.join(rec_type) + '.bg'
-  inv_index = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index'
-  doclengs = 'doclength/' + '.'.join(rec_type) + '.length'
-  docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
-
-  env = Environment(lex,background,inv_index,doclengs,docmodeldir,dir)
-  # feature
-  global input_width
-  input_width = env.dialoguemanager.statemachine.feat_len
-
-
-  print '...done'
+def setRetrievalModule():
+  print 'Creating Environment with Retrieval Module and Simulated User...'
+  retrievalmodule = DialogueManager(
+                      lex         = 'PTV.lex',
+                      background  = 'background/' + '.'.join(rec_type) + '.bg',
+                      inv_index   = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index',
+                      doclengs    = 'doclength/' + '.'.join(rec_type) + '.length',
+                      dir         = '../../ISDR-CMDP/',
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+                      )
+  simulateduser = SimulatedUser(
+                      dir         = '../../ISDR-CMDP/',
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+                      )
+  env = Environment(retrievalmodule,simulateduser,args.cost_std)
   return env
 
-def setDialogueManager():
+"""
+Update Rules:
+Can combine with momentum ( default: 0.9 ) 
+1. momentum
+2. nesterov_momentum
+Note: Can only set one type of momentum 
+""" 
+def setDialogueManager(env):
+  print 'Creating Agent with Compiled Q Network...'
   if args.nn_file is None:
-    print 'Compiling Network...'
-    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height, num_actions,
+    experiment_prefix = 'result/ret'  # TODO fix it
+    input_height = 1              # change feature
+    input_width = env.retrievalmodule.statemachine.feat_len
+    num_actions = 5 
+    phi_length = 1 # input 4 frames at once num_frames
+    discount = 1.
+    rms_decay = 0.99
+    rms_epsilon = 0.1
+    momentum = 0.
+    nesterov_momentum = 0.
+    network_type = 'rl_dnn'
+    batch_accumulator = 'sum'
+    rng = np.random.RandomState()
+    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height,
+                                      num_actions,
                                          phi_length,discount,args.learning_rate,rms_decay,
                                          rms_epsilon,momentum,nesterov_momentum,
                                          args.clip_delta,args.freeze_interval,args.batch_size,
-                                         network_type, args.update_rule, batch_accumulator, rng)
+                                         network_type, args.update_rule
+                                      , batch_accumulator
+                                      , rng
+                                    )
   else:
     print 'Loading Pre-trained Network...'
     handle = open(args.nn_file, 'r')
     network = pickle.load(handle)
     
-  print 'Creating Agent and Simulator...'
   return agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
                                   args.replay_memory_size,experiment_prefix,args.replay_start_size,
                                   args.update_frequency,rng)
@@ -135,35 +168,7 @@ def load_query():
   testing_data = [ data[i] for i in tx ]
   print '...done'
   return training_data, testing_data
-############## NETWORK #################  TODO add to argparse
-experiment_prefix = 'result/ret'  # TODO fix it
-input_width = 0               # auto change
-input_height = 1              # change feature
-num_actions = 5
 
-phi_length = 1 # input 4 frames at once num_frames
-discount = 1.
-rms_decay = 0.99
-rms_epsilon = 0.1
-momentum = 0.
-nesterov_momentum = 0.
-network_type = 'rl_dnn'
-batch_accumulator = 'sum'
-rng = np.random.RandomState()
-
-"""
-Update Rules:
-Can combine with momentum ( default: 0.9 ) 
-1. momentum
-2. nesterov_momentum
-Note: Can only set one type of momentum 
-"""
-###############################
-# TODO
-# online platform
-# accelerate GPU?
-# deep retrieval
-# combine retrieval.py to search_engin
 ############ LOGGING ###################
 def setLogging():
   print_green('learning_rate : {}'.format(args.learning_rate))
@@ -174,7 +179,7 @@ def setLogging():
   print_green('num_epoch : {}'.format(args.num_epoch))
   print_green('step_per_epoch : {}'.format(args.step_per_epoch))
   print_green('epsilon_decay : {}'.format(args.epsilon_decay))
-  print_green('input_width(feature length) : {}'.format(input_width))
+  #print_green('input_width(feature length) : {}'.format(input_width))
   print_green("network shape: {}".format([args.model_width,args.model_height]))
 ###############################
 class experiment():
@@ -269,7 +274,7 @@ class experiment():
     state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
     action     = self.agent.start_episode(state)
     if test_flag and action != 4:
-      logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
+      logging.debug('action : -1 first pass\t\tAP : %f', self.env.retrievalmodule.MAP)
 
     num_steps = 0
     while True:
@@ -279,7 +284,7 @@ class experiment():
       num_steps += 1
 
       if test_flag :#and action != 4:
-        AM = self.env.dialoguemanager.actionmanager
+        AM = self.env.retrievalmodule.actionmanager
         logging.debug('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
 
       if num_steps >= max_steps or terminal:  # STOP Retrieve
@@ -298,10 +303,36 @@ def launch():
 
   t = time.time()
   env = setRetrievalModule()
-  agt = setDialogueManager()
+  agt = setDialogueManager(env)
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
+def demo():
+  env = setRetrievalModule()
+  training_data, testing_data = load_query()
+  f = open("../../ISDR-CMDP/PTV.big5.lex","r")
+  big5map = f.readlines()
+
+  f = open("../../PTV/PTV.query","r")
+  qlist = f.readlines()
+
+  while(True):
+    idx = input(">>> Select Query Index: ")
+    q,ans,ans_index = training_data[idx]
+    #words = [ big5map[i-1].decode('big5').rstrip('\n') for i in q.keys()]  # order is wrong TODO
+    #print "query: "+''.join(words)
+    print "query: ", qlist[idx].rstrip('\n')
+    print "ans: ", ans.keys()
+    state = env.setSession(q,ans,ans_index) # state is nonsense
+
+    action = input(">>> Select an Action: ")     # 0,1,2,3
+    request  = env.retrievalmodule.request(action)
+    feedback = env.simulateduser.feedback_demo(request)
+  
+
 if __name__ == "__main__":
-  launch()
+  if args.demo:
+    demo()
+  else:
+    launch()

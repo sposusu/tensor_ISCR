@@ -43,10 +43,10 @@ class NeuralAgent(object):
                        "{}".format(self.network.lr).replace(".", "p") + "_" \
                        + "{}".format(self.network.discount).replace(".", "p")
 
-        #try:
-        #    os.stat(self.exp_dir)
-        #except OSError:
-        #    os.makedirs(self.exp_dir)
+        try:
+            os.stat(self.exp_dir)
+        except OSError:
+            os.makedirs(self.exp_dir)
 
         self.num_actions = self.network.num_actions
 

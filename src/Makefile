@@ -29,5 +29,14 @@ exp4:
 	python DeepReinforce.py --prefix linear_model --model_height 0
 # exp5 : run pre-trained model
 test_model:
-	python DeepReinforce.py --prefix test -nn ../Data/network/onebest_feature_87_epoch_50.pkl --test --nolog
-# exp6 : simulated user 
+	python DeepReinforce.py -nn ../Data/network/onebest_feature_87_epoch_50.pkl --test --nolog
+# exp_cost : simulated user 
+exp_cost1:
+	python DeepReinforce.py --prefix cost_var_1 
+exp_cost10:
+	python DeepReinforce.py --prefix cost_var_10   --cost_std 10
+exp_cost100:
+	python DeepReinforce.py --prefix cost_var_100  --cost_std 100
+exp_cost1000:
+	python DeepReinforce.py --prefix cost_var_1000 --cost_std 1000
+        
