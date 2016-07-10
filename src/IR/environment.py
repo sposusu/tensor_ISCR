@@ -3,12 +3,11 @@
 import numpy as np
 
 class Environment(object):
-  def __init__(self,retrievalmodule,simulateduser,std):
+  def __init__(self,retrievalmodule,simulateduser):
     # Retrieval Module, with Search Engine and State Machine
     self.retrievalmodule = retrievalmodule
     # Simulated User
     self.simulateduser = simulateduser
-    self.reward_std = std
 
   def setSession(self,query,ans,ans_index,test_flag = False):
     """
@@ -65,7 +64,7 @@ class Environment(object):
       feature = self.retrievalmodule.gen_state_feature()
 
     # Calculate Reward  (Must be retrieval reward + user reward?)
-    reward = self.retrievalmodule.calculate_reward() + np.random.normal(0,self.reward_std)
+    reward = self.retrievalmodule.calculate_reward() #+ np.random.normal(0,self.reward_std)
 
     return reward, feature
 

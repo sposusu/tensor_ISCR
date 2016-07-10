@@ -17,9 +17,18 @@ from util import  renormalize
 
 # Define Cost Table
 def genCostTable():
-  values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+  # default
+  #values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+  # according to survey
+  values = [ -23., -13., -19., -23., 0., 0., 1000. ]
+  
   costTable = dict(zip(range(6)+['lambda'],values))
   return costTable
+
+def genNoiseTable():
+  values = [ 11., 7., 10., 11., 0.001, 0.001, 0001. ]
+  noiseTable = dict(zip(range(6)+['lambda'],values))
+  return noiseTable
 
 def genActionTable():
   at = {}
@@ -51,6 +60,7 @@ class ActionManager(object):
     # Since agent only returns integer as action
     self.actionTable  = genActionTable()
     self.costTable    = genCostTable()
+    self.noiseTable   = genNoiseTable()
 
   def __call__(self, query):
     self.posmodel = deepcopy(query)
@@ -94,10 +104,11 @@ class ActionManager(object):
       self.posprior[ request ] = 1.0
 
     elif action == 'topic':
-      topicIdx = int(params['topic'])
-      self.topiclist[ topicIdx ]
-      self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
-      self.poslengs.append(self.topicleng)
+      if params['topic'] != None:
+        topicIdx = int(params['topic'])
+        self.topiclist[ topicIdx ]
+        self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
+        self.poslengs.append(self.topicleng)
 
     elif action == 'show':
       # This condition shouldn't happen, since we blocked this in environment.py

@@ -42,13 +42,15 @@ parser.add_argument("-t", "--type", type=int, help="recognitions type", default=
 parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
 parser.add_argument("--prefix", help="experiment name prefix",default="")   # store in folder
   # state machine
-parser.add_argument("--feature", help="feature type", default="87 dim selected feature") # TODO not implement yet
+parser.add_argument("--feature", help="feature type (all/raw)", default="all") # TODO not implement yet
 parser.add_argument("--normalize", help="normalize feature", action="store_true") # TODO not implement yet
-  # action
-parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
-parser.add_argument("--action_noise", help="action with probability", default="type1") #TODO
-parser.add_argument("--cost_std", type=int, help="action cost with noise", default=1)#TODO
 
+# simulated user
+parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
+parser.add_argument("--topic_prob", help="topic action with probability", action="store_true") #TODO
+parser.add_argument("--keyterm_thres", type=float,help="topic action with probability", default=0.5)
+parser.add_argument("--cost_std", type=int, help="action cost with noise", default=1)
+parser.add_argument("-nsu","--new_simulated_user", help="simulated_user according to questionnaire", action="store_true") # TODO
 
 # experiment
 parser.add_argument("--num_epoch", help="number of epoch",default=80)
@@ -84,7 +86,7 @@ recognitions = [ ('onebest','CMVN'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
 rec_type = recognitions[args.type]
-exp_log_root = '../logs/'+args.prefix + '/'
+exp_log_root = '../result/'+args.prefix + '/'
 try:
   os.makedirs(exp_log_root)
 except:
@@ -105,13 +107,17 @@ def setRetrievalModule():
                       inv_index   = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index',
                       doclengs    = 'doclength/' + '.'.join(rec_type) + '.length',
                       dir         = '../../ISDR-CMDP/',
-                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',
+                      feat        = args.feature
                       )
   simulateduser = SimulatedUser(
                       dir         = '../../ISDR-CMDP/',
-                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/'
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',                      
+                      keyterm_thres = args.keyterm_thres,
+                      topic_prob  = args.topic_prob,
+                      survey      = args.new_simulated_user
                       )
-  env = Environment(retrievalmodule,simulateduser,args.cost_std)
+  env = Environment(retrievalmodule,simulateduser)
   return env
 
 """
@@ -123,8 +129,9 @@ Note: Can only set one type of momentum
 """ 
 def setDialogueManager(env):
   print 'Creating Agent with Compiled Q Network...'
+  experiment_prefix = '../result/'+args.prefix+'/model'  # TODO fix it save with log (result has logs and models)
+  rng = np.random.RandomState()
   if args.nn_file is None:
-    experiment_prefix = 'result/ret'  # TODO fix it
     input_height = 1              # change feature
     input_width = env.retrievalmodule.statemachine.feat_len
     num_actions = 5 
@@ -136,7 +143,6 @@ def setDialogueManager(env):
     nesterov_momentum = 0.
     network_type = 'rl_dnn'
     batch_accumulator = 'sum'
-    rng = np.random.RandomState()
     network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height,
                                       num_actions,
                                          phi_length,discount,args.learning_rate,rms_decay,
@@ -309,6 +315,8 @@ def launch():
   exp.run()
 
 def demo():
+  flag = False # fast generate survey example
+  import random
   env = setRetrievalModule()
   training_data, testing_data = load_query()
   f = open("../../ISDR-CMDP/PTV.big5.lex","r")
@@ -317,18 +325,23 @@ def demo():
   f = open("../../PTV/PTV.query","r")
   qlist = f.readlines()
 
-  while(True):
-    idx = input(">>> Select Query Index: ")
+  for i in xrange(4):
+    if flag:
+      idx = 95 #random.randint(0,162)
+    else:
+      idx = input(">>> Select Query Index: ")
     q,ans,ans_index = training_data[idx]
-    #words = [ big5map[i-1].decode('big5').rstrip('\n') for i in q.keys()]  # order is wrong TODO
-    #print "query: "+''.join(words)
+    print "=========="
     print "query: ", qlist[idx].rstrip('\n')
     print "ans: ", ans.keys()
     state = env.setSession(q,ans,ans_index) # state is nonsense
 
-    action = input(">>> Select an Action: ")     # 0,1,2,3
+    if flag:
+      action = i # 0,1,2,3
+    else:
+      action = input(">>> Select an Action: ")     # 0,1,2,3
     request  = env.retrievalmodule.request(action)
-    feedback = env.simulateduser.feedback_demo(request)
+    feedback = env.simulateduser.feedback_demo(request,flag)
   
 
 if __name__ == "__main__":

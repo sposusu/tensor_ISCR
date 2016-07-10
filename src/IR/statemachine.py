@@ -44,7 +44,7 @@ class Approximator(object):
 '''
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
-              iteration=10,mu=1,delta=1,alpha=0.1):
+              iteration=10,mu=1,delta=1,alpha=0.1, feat="all"):
 
     self.background = background
     self.inv_index  = inv_index
@@ -66,7 +66,14 @@ class StateMachine(object):
     self.mu = mu
     self.delta = delta
     self.alpha = alpha
-    self.feat_len = 87
+
+    # feature
+    self.feat = feat
+    if feat == "all":
+      self.feat_len = 87
+    elif feat == "raw":
+      self.feat_len = 49
+    print "feature length = ",self.feat_len
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
@@ -240,7 +247,10 @@ class StateMachine(object):
     #deltas = [ -1 * val1 + val2 for val1, val2 in zip(top_scores[:-1],top_scores[1:]) ]
     feature += top_scores# + deltas
 
-    return feature
+    if self.feat == "all":
+      return feature
+    elif self.feat == "raw":
+      return top_scores
 
 '''
 def readDocModel(fname):

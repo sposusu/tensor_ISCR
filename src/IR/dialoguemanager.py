@@ -11,7 +11,7 @@ from statemachine import StateMachine
 import numpy as np
 
 class DialogueManager(object):
-  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir):
+  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,feat):
 
     # Search Engine
     self.searchengine = SearchEngine(
@@ -28,7 +28,8 @@ class DialogueManager(object):
                               inv_index   = self.searchengine.inv_index,
                               doclengs    = self.searchengine.doclengs,
                               dir         = dir,
-                              docmodeldir = docmodeldir
+                              docmodeldir = docmodeldir,
+                              feat        = feat
                               )
 
     # Action Manager, performs query expansion
@@ -139,7 +140,8 @@ class DialogueManager(object):
     if self.terminal:
       reward = self.actionmanager.costTable[ 4 ]  # 0
     else:
-      reward = self.actionmanager.costTable[ self.cur_action ] + \
+      reward_std = self.actionmanager.noiseTable[ self.cur_action ]
+      reward = self.actionmanager.costTable[ self.cur_action ] + np.random.normal(0,reward_std) +\
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
 
     return reward

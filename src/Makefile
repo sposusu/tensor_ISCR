@@ -39,4 +39,6 @@ exp_cost100:
 	python DeepReinforce.py --prefix cost_var_100  --cost_std 100
 exp_cost1000:
 	python DeepReinforce.py --prefix cost_var_1000 --cost_std 1000
-        
+
+demo:
+	python DeepReinforce.py --demo        
