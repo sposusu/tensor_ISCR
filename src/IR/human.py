@@ -82,7 +82,10 @@ class SimulatedUser(object):
         request = self.requestlist[0][0]
         del self.requestlist[0]
       else:
-        flag = np.random.randint(self.request_type)
+        if self.request_type <= len(self.requestlist):
+          flag = np.random.randint(self.request_type)
+        else:
+          flag = np.random.randint(len(self.requestlist))
         request = self.requestlist[flag][0]
         del self.requestlist[flag]
       params['request'] = request
