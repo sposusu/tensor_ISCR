@@ -57,7 +57,7 @@ class StateMachine(object):
   #  self.approximator = Approximator()
 
     # Mean and std for feature normalization
-    with h5py.File("../Data/stateestimation/norm.h5") as norm:
+    with h5py.File("../data/stateestimation/norm.h5") as norm:
       self.mean = norm['mean'][:]
       self.std = norm['std'][:]
 
