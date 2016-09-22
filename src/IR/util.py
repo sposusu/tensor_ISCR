@@ -173,7 +173,7 @@ def readKeytermlist(cpsID,fileIDs):
     cpsID = 'onebest.CMVN'
 
   for fileID,prob in fileIDs.iteritems():
-    filename = '../../ISDR-CMDP/keyterm/'+cpsID+'/'+str(fileID)
+    filename = '../data/ISDR-CMDP/keyterm/'+cpsID+'/'+str(fileID)
     if not os.path.isfile(filename):
       continue
     fin = file(filename)
@@ -193,7 +193,7 @@ def readKeytermlist(cpsID,fileIDs):
 def readRequestlist(cpsID,fileIDs):
   requests = {}
   for fileID,prob in fileIDs.iteritems():
-    filename = '../../ISDR-CMDP/request/'+cpsID+'/'+str(fileID)
+    filename = '../data/ISDR-CMDP/request/'+cpsID+'/'+str(fileID)
     if not os.path.isfile(filename):
       continue
     fin = file(filename)
@@ -210,7 +210,7 @@ def readTopicWords(cpsID):
   topicWordList = []
   for i in range(128):
     words = {}
-    filename = '../../ISDR-CMDP/lda/' + cpsID + '/'+str(i)
+    filename = '../data/ISDR-CMDP/lda/' + cpsID + '/'+str(i)
     fin = file(filename)
     for line in fin.readlines():
       if len(line.split('\t'))<=1:
@@ -248,7 +248,7 @@ def sortTopicByKLtoAnswer(docmodeldir,ans,doclengs,topiclst):
 
 def sortTopicByInferenceProb(cpsID):
     rankings = []
-    fin = file('../../ISDR-CMDP/ldadist/'+cpsID+'.dist')
+    fin = file('../data/ISDR-CMDP/ldadist/'+cpsID+'.dist')
     for line in fin.readlines():
 	ranking = []
 	tokens = line.split()
@@ -260,7 +260,7 @@ def sortTopicByInferenceProb(cpsID):
 
 def readTopicList(cpsID,qID):
   ranking = []
-  fin = file('../../ISDR-CMDP/topicRanking/'+cpsID+'/'+str(qID))
+  fin = file('../data/ISDR-CMDP/topicRanking/'+cpsID+'/'+str(qID))
   for line in fin.readlines():
     tokens = line.split('\t')
     ranking.append((int(float(tokens[0])),float(tokens[1])))

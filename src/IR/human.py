@@ -20,7 +20,7 @@ class SimulatedUser(object):
     self.keyterm_prob = 95.28
     self.request_type = 22
     self.topic_prob = 73.14
-    
+
 
   def __call__(self,query,ans,ans_index):
     # query and desired answer
@@ -57,7 +57,7 @@ class SimulatedUser(object):
            doc = list[0]
         else:
            doc = list[1]
-           
+
       params['doc'] = doc
 
     elif action == 'keyterm':
@@ -76,7 +76,7 @@ class SimulatedUser(object):
 
         params['keyterm'] = keyterm
         params['isrel'] = isrel
-        
+
     elif action == 'request':
       if not self.survey:
         request = self.requestlist[0][0]
@@ -122,12 +122,12 @@ class SimulatedUser(object):
       assert 0
 
     return params
-  
+
   def feedback_demo(self,request,flag):
     no_input = flag # for generate survey
 
-    f = open("../../ISDR-CMDP/PTV.big5.lex","r")
-    big5map = f.readlines()
+    with open("../data/ISDR-CMDP/PTV.big5.lex","r") as f:
+      big5map = f.readlines()
 
     ret    = request['ret']
     action = request['action']
@@ -140,7 +140,7 @@ class SimulatedUser(object):
 
     elif action == 'doc':
       docID = [ doc for doc,score in ret[:5] ]
-      path = "../../PTV/ptv_recognition_doc/doc_onebest"
+      path = "../data/PTV/ptv_recognition_doc/doc_onebest"
       docs = [ open(path+"/T"+str(id).zfill(4)) for id in docID ]
       for i in xrange(len(docs)):
         print str(docID[i])+". "+docs[i].readline()
@@ -170,12 +170,12 @@ class SimulatedUser(object):
         isrel =  ( True if cnt/len(self.ans) > 0.5 else False )
         params['keyterm'] = keyterm
         params['isrel'] = isrel
-        if no_input:        
+        if no_input:
           print("Is this keyterm relevant( 0 = no / 1 = yes )? ")
         else:
           input("Is this keyterm relevant( 0 = no / 1 = yes )? ")
         print "Simulated Response: ", isrel
-        
+
     elif action == 'request':
       for r in self.requestlist[:20]:
         print big5map[r[0]-1].decode('big5')
@@ -192,7 +192,7 @@ class SimulatedUser(object):
 
     elif action == 'topic':
       topicIdx = self.topicRanking[0][0]
-      path = "../../ISDR-CMDP/lda/onebest.CMVN/"
+      path = "../data/ISDR-CMDP/lda/onebest.CMVN/"
       #print self.topicRanking
       topicID = [ topic for topic,score in self.topicRanking ]
       #score = [ score for topic,score in self.topicRanking ]
@@ -218,7 +218,7 @@ class SimulatedUser(object):
       assert 0
 
     return params
-  
+
 
 
   def view(self, params):

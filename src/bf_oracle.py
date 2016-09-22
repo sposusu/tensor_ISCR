@@ -5,12 +5,15 @@ from sklearn.cross_validation import KFold
 import numpy as np
 from multiprocessing import Pool
 from collections import defaultdict
+
 recognitions = [ ('onebest','CMVN'),
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
+
 rec_type = recognitions[0]
 fold = 1
+
 def setEnvironment():
   print 'Creating Environment and compiling State Estimator...'
 

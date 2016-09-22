@@ -1,9 +1,10 @@
+
+
 import cPickle as pickle
 import numpy as np
 import datetime,logging
 import os,sys,pdb,random,time
 import progressbar,argparse
-from random import shuffle
 from termcolor import cprint
 from progressbar import ProgressBar,Percentage,Bar,ETA
 from collections import defaultdict
@@ -21,7 +22,7 @@ from sklearn.cross_validation import KFold
 # online platform
 # accelerate GPU?
 # deep retrieval
-# combine retrieval.py to search_engin
+# combine retrieval.py to search_engine
 ####### term color #########
 def print_red(x):  # epoch
   cprint(x, 'red')
@@ -68,7 +69,7 @@ parser.add_argument("-lr","--learning_rate", type=float, help="learning rate", d
 parser.add_argument("--clip_delta", type=float, help="clip delta", default=1.0)
 parser.add_argument("--update_rule", help="deepmind_rmsprop/rmsprop/adagrad/adadelta/sgd", default="deepmind_rmsprop")
 # reinforce
-parser.add_argument("--replay_start_size", type=int, help="replay start size", default=500)   # 5,0000 
+parser.add_argument("--replay_start_size", type=int, help="replay start size", default=500)   # 5,0000
 parser.add_argument("--replay_memory_size", type=int, help="replay memory size", default=10000)   # 100,0000
 parser.add_argument("--epsilon_decay", type=int, help="epsilon decay", default=100000)  # 100,0000
 parser.add_argument("--epsilon_min", type=float, help="epsilon min", default=0.1)
@@ -81,18 +82,18 @@ args = parser.parse_args()
 #       SETTING          #
 ##########################
 # SET Logging
-recognitions = [ ('onebest','CMVN'), 
+recognitions = [ ('onebest','CMVN'),
                  ('onebest','tandem'),
                  ('lattice','CMVN'),
                  ('lattice','tandem') ]
+
 rec_type = recognitions[args.type]
-exp_log_root = '../result/'+args.prefix + '/'
-try:
+
+exp_log_root = os.path.join('../result/',args.prefix)
+exp_log_name = os.path.join(exp_log_root,'_'.join(rec_type) + '_fold{}'.format(str(args.fold)) + '.log')
+if not os.path.exists(exp_log_root):
   os.makedirs(exp_log_root)
-except:
-  pass
-cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
-exp_log_name = exp_log_root + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+
 if args.nolog or args.demo:
   print_green('No log file')
 else:
@@ -106,27 +107,27 @@ def setRetrievalModule():
                       background  = 'background/' + '.'.join(rec_type) + '.bg',
                       inv_index   = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index',
                       doclengs    = 'doclength/' + '.'.join(rec_type) + '.length',
-                      dir         = '../../ISDR-CMDP/',
+                      dir         = '../data/ISDR-CMDP/',
                       docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',
                       feat        = args.feature
                       )
   simulateduser = SimulatedUser(
-                      dir         = '../../ISDR-CMDP/',
-                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',                      
+                      dir           = '../data/ISDR-CMDP/',
+                      docmodeldir   = 'docmodel/' + '/'.join(rec_type) + '/',
                       keyterm_thres = args.keyterm_thres,
-                      topic_prob  = args.topic_prob,
-                      survey      = args.new_simulated_user
+                      topic_prob    = args.topic_prob,
+                      survey        = args.new_simulated_user
                       )
   env = Environment(retrievalmodule,simulateduser)
   return env
 
 """
 Update Rules:
-Can combine with momentum ( default: 0.9 ) 
+Can combine with momentum ( default: 0.9 )
 1. momentum
 2. nesterov_momentum
-Note: Can only set one type of momentum 
-""" 
+Note: Can only set one type of momentum
+"""
 def setDialogueManager(env):
   print 'Creating Agent with Compiled Q Network...'
   experiment_prefix = '../result/'+args.prefix+'/model'  # TODO fix it save with log (result has logs and models)
@@ -134,7 +135,7 @@ def setDialogueManager(env):
   if args.nn_file is None:
     input_height = 1              # change feature
     input_width = env.retrievalmodule.statemachine.feat_len
-    num_actions = 5 
+    num_actions = 5
     phi_length = 1 # input 4 frames at once num_frames
     discount = 1.
     rms_decay = 0.99
@@ -156,23 +157,27 @@ def setDialogueManager(env):
     print 'Loading Pre-trained Network...'
     handle = open(args.nn_file, 'r')
     network = pickle.load(handle)
-    
+
   return agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
                                   args.replay_memory_size,experiment_prefix,args.replay_start_size,
                                   args.update_frequency,rng)
- 
-def load_query():
-  newdir = '../Data/query/'
-  print 'loading queries from ',newdir,'...'
-  data = pickle.load(open(newdir+'data.pkl','r'))
+
+def load_query(newdir_pickle='../data/query/data.pkl'):
+  print('Loading queries from {}'.format(newdir_pickle))
+  with open(newdir_pickle,'r') as f:
+      data = pickle.load(f)
+
   if args.fold == -1:
     print_green( 'train = test = all queries')
     return data,data
+
   kf = KFold(163, n_folds=10)
+
   tr,tx = list(kf)[args.fold-1]
+
   training_data = [ data[i] for i in tr ]
   testing_data = [ data[i] for i in tx ]
-  print '...done'
+
   return training_data, testing_data
 
 ############ LOGGING ###################
@@ -187,10 +192,11 @@ def setLogging():
   print_green('epsilon_decay : {}'.format(args.epsilon_decay))
   #print_green('input_width(feature length) : {}'.format(input_width))
   print_green("network shape: {}".format([args.model_width,args.model_height]))
+
 ###############################
 class experiment():
   def __init__(self,agent,env):
-    print 'Initializing experiment...'
+    print('Initializing experiment...')
     setLogging()
     self.agent = agent
     self.env = env
@@ -199,31 +205,31 @@ class experiment():
     self.training_data, self.testing_data = load_query()
 
   def run(self):
-    print_red( 'Init Model')
+    print_red('Init Model')
 
     self.agent.start_testing()
-    self.run_epoch(True)
+    self.run_epoch(test_flag=True)
     self.agent.finish_testing(0)
     if args.test:
       return
-    for epoch in xrange(args.num_epoch):
-      print_red( 'Running epoch {0}'.format(epoch+1))
-      shuffle(self.training_data)
+    for epoch in range(1,args.num_epoch+1,1):
+      print_red('Running epoch {0}'.format(epoch))
+      random.shuffle(self.training_data)
 
       ## TRAIN ##
       self.run_epoch()
-      self.agent.finish_epoch(epoch+1)
-      
+      self.agent.finish_epoch(epoch)
+
       ## TEST ##
       self.agent.start_testing()
       self.run_epoch(True)
-      self.agent.finish_testing(epoch+1)
+      self.agent.finish_testing(epoch)
 
   def run_epoch(self,test_flag=False):
     epoch_data = self.training_data
     if(test_flag):
       epoch_data = self.testing_data
-    print 'number of queries',len(epoch_data)
+    print('Number of queries {}'.format(len(epoch_data)))
 
     ## PROGRESS BAR SETTING
     setting = [['Training',args.step_per_epoch], ['Testing',len(epoch_data)]]
@@ -237,6 +243,7 @@ class experiment():
     self.act_stat = [0,0,0,0,0]
 
     steps_left = args.step_per_epoch
+
     while steps_left > 0:
       #if True:
       #  q, ans, ans_index = training_data[0]
@@ -249,7 +256,7 @@ class experiment():
           pbar.update(idx)
           APs.append(AP)
           Returns.append(self.agent.episode_reward)
-          logging.debug( 'Episode Reward : %f', self.agent.episode_reward )
+          logging.debug('Episode Reward : %f', self.agent.episode_reward )
         else:
           Losses.append(self.agent.episode_loss)
           pbar.update(args.step_per_epoch-steps_left)
@@ -270,7 +277,7 @@ class experiment():
       MAP,Return = [ np.mean(APs) , np.mean(Returns) ]
       print_yellow( 'MAP = '+str(MAP)+'\tReturn = '+ str(Return) )
       print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
-      
+
     else:
       Loss,BestReturn = [ np.mean(Losses), np.mean(self.best_return) ]
       print_blue( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon)+'\tBest Return = ' + str(BestReturn) )
@@ -308,22 +315,22 @@ def launch():
     print_red( "TRAINING MODE")
 
   t = time.time()
+
   env = setRetrievalModule()
   agt = setDialogueManager(env)
   exp = experiment(agt,env)
-  print 'Done, time taken {} seconds'.format(time.time()-t)
+  print('Done, time taken {} seconds'.format(time.time()-t))
   exp.run()
 
 def demo():
   flag = False # fast generate survey example
-  import random
   env = setRetrievalModule()
   training_data, testing_data = load_query()
-  f = open("../../ISDR-CMDP/PTV.big5.lex","r")
-  big5map = f.readlines()
+  with open("../data/ISDR-CMDP/PTV.big5.lex","r") as f:
+    big5map = f.readlines()
 
-  f = open("../../PTV/PTV.query","r")
-  qlist = f.readlines()
+  with open("../PTV.query","r") as f:
+    qlist = f.readlines()
 
   for i in xrange(4):
     if flag:
@@ -342,7 +349,7 @@ def demo():
       action = input(">>> Select an Action: ")     # 0,1,2,3
     request  = env.retrievalmodule.request(action)
     feedback = env.simulateduser.feedback_demo(request,flag)
-  
+
 
 if __name__ == "__main__":
   if args.demo:

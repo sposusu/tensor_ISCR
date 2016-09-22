@@ -1,14 +1,5 @@
 exec:
 	python DeepReinforce.py
-env:
-	python python/environment.py
-se:
-	python train_stateestimation.py
-test: 
-	nosetests
-clean:
-	rm -r *.pyc
-
 # brute force oracle
 bf:
 	python bf_oracle.py
