@@ -1,194 +1,351 @@
 import cPickle as pickle
-import datetime
-import logging
-import os
-import pdb
-import random
-import time
-
 import numpy as np
-import progressbar
-from progressbar import ProgressBar, Percentage, Bar, ETA
+import datetime,logging
+import os,sys,pdb,random,time
+import progressbar,argparse
+from random import shuffle
+from termcolor import cprint
+from progressbar import ProgressBar,Percentage,Bar,ETA
+from collections import defaultdict
 
 from DQN import q_network
-import DQN.agent as agent
+from DQN import agent
 from IR.environment import *
+from IR.dialoguemanager import DialogueManager
+from IR.human import SimulatedUser
+# util IO
 from IR.util import readFoldQueries,readLex,readInvIndex
+from sklearn.cross_validation import KFold
+###############################
+# TODO
+# online platform
+# accelerate GPU?
+# deep retrieval
+# combine retrieval.py to search_engin
+####### term color #########
+def print_red(x):  # epoch
+  cprint(x, 'red')
+  logging.info(x)
+def print_blue(x): # train info
+  cprint(x, 'blue')
+  logging.info(x)
+def print_yellow(x): # test info
+  cprint(x, 'yellow')
+  logging.info(x)
+def print_green(x):  # parameter
+  cprint(x, 'green')
+  logging.info(x)
+########### argparse #########
+parser = argparse.ArgumentParser(description='Interactive Retrieval')
+# retrieval module
+parser.add_argument("-t", "--type", type=int, help="recognitions type", default=0)
+parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
+parser.add_argument("--prefix", help="experiment name prefix",default="")   # store in folder
+  # state machine
+parser.add_argument("--feature", help="feature type (all/raw)", default="all") # TODO not implement yet
+parser.add_argument("--normalize", help="normalize feature", action="store_true") # TODO not implement yet
 
+# simulated user
+parser.add_argument("--action_cost", help="action cost", default="type1") # TODO not implement yet
+parser.add_argument("--topic_prob", help="topic action with probability", action="store_true") #TODO
+parser.add_argument("--keyterm_thres", type=float,help="topic action with probability", default=0.5)
+parser.add_argument("--cost_std", type=int, help="action cost with noise", default=1)
+parser.add_argument("-nsu","--new_simulated_user", help="simulated_user according to questionnaire", action="store_true") # TODO
+
+# experiment
+parser.add_argument("--num_epoch", help="number of epoch",default=80)
+parser.add_argument("--step_per_epoch", help="number of step per epoch",default=1000) # 25,0000
+parser.add_argument("--test", help="testing mode",action="store_true")
+parser.add_argument("--nolog", help="don't save log file",action="store_true")
+parser.add_argument("-nn","--nn_file", help="pre-trained model")
+parser.add_argument("--demo", help="demo mode",action="store_true")
+
+# neural network
+parser.add_argument("--model_width", type=int, help="model width", default=1024)
+parser.add_argument("--model_height", type=int, help="model height", default=2)
+parser.add_argument("--batch_size", type=int, help="batch size", default=256)
+parser.add_argument("-lr","--learning_rate", type=float, help="learning rate", default=0.00025)
+parser.add_argument("--clip_delta", type=float, help="clip delta", default=1.0)
+parser.add_argument("--update_rule", help="deepmind_rmsprop/rmsprop/adagrad/adadelta/sgd", default="deepmind_rmsprop")
+# reinforce
+parser.add_argument("--replay_start_size", type=int, help="replay start size", default=500)   # 5,0000 
+parser.add_argument("--replay_memory_size", type=int, help="replay memory size", default=10000)   # 100,0000
+parser.add_argument("--epsilon_decay", type=int, help="epsilon decay", default=100000)  # 100,0000
+parser.add_argument("--epsilon_min", type=float, help="epsilon min", default=0.1)
+parser.add_argument("--epsilon_start", type=float, help="epsilon start", default=1.0)
+parser.add_argument("--freeze_interval", type=int, help="freeze interval", default=100)   # 10000
+parser.add_argument("--update_frequency", type=int, help="update frequency", default=1)
+
+args = parser.parse_args()
 ##########################
-#       filename         #
+#       SETTING          #
 ##########################
-
-train_data = 'train.fold1.pkl'
-test_data  = 'test.fold1.pkl'
-
-dir='../../ISDR-CMDP/'
-data_dir = '10fold/query/CMVN'
-
-lex = 'PTV.lex'
-background = 'background/onebest.CMVN.bg'
-inv_index = 'index/onebest/PTV.onebest.CMVN.index'
-doclengs = 'doclength/onebest.CMVN.length'
-answers = 'PTV.ans'
-
-docmodeldir = 'docmodel/onebest/CMVN/'
-
-newdir = '../Data/query/'
-
-training_data = pickle.load(open(newdir+train_data,'r'))
-testing_data  = pickle.load(open(newdir+test_data,'r'))
-
-def list2tuple(data):
-  result = []
-  for idx in range(len(data[0])):
-    result.append(tuple( (data[0][idx],data[1][idx],data[2][idx]) ))
-  return result
-
-training_data = list2tuple(training_data)
-testing_data  = list2tuple(testing_data)
-
-###############################
-input_width, input_height = [89,1]
-num_actions = 5
-
-phi_length = 4 # phi length?  input 4 frames at once
-discount = 1.
-learning_rate = 0.00025
-rms_decay = 0.99 # rms decay
-rms_epsilon = 0.1
-momentum = 0
-clip_delta = 0.
-freeze_interval = 100 #???  no freeze?
-batch_size = 32
-network_type = 'rl_dnn'
-update_rule = 'deepmind_rmsprop' # need update
-batch_accumulator = 'sum'
-rng = np.random.RandomState()
-###############################
-epsilon_start = 1.0
-epsilon_min = 0.1
-replay_memory_size = 10000
-experiment_prefix = 'result/ret'
-replay_start_size = 500
-update_frequency = 1
-###############################
-num_epoch = 200
-
-epsilon_decay = num_epoch * 500
-
-test_frequency = 5
-
-step_per_epoch = 1000
-max_steps = 5
-
-num_tr_query = len(training_data)
-num_tx_query = len(testing_data)
-
-###############################
-
-exp_log_root = '../logs/'
+# SET Logging
+recognitions = [ ('onebest','CMVN'), 
+                 ('onebest','tandem'),
+                 ('lattice','CMVN'),
+                 ('lattice','tandem') ]
+rec_type = recognitions[args.type]
+exp_log_root = '../result/'+args.prefix + '/'
 try:
   os.makedirs(exp_log_root)
 except:
   pass
+cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H:%M:%S")
+exp_log_name = exp_log_root + '_'.join(rec_type) +'_fold'+str(args.fold) + ".log"
+if args.nolog or args.demo:
+  print_green('No log file')
+else:
+  logging.basicConfig(filename=exp_log_name,level=logging.DEBUG)
+  print_green('exp_log_name : {}'.format(exp_log_name))
 
-cur_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+def setRetrievalModule():
+  print 'Creating Environment with Retrieval Module and Simulated User...'
+  retrievalmodule = DialogueManager(
+                      lex         = 'PTV.lex',
+                      background  = 'background/' + '.'.join(rec_type) + '.bg',
+                      inv_index   = 'index/' + rec_type[0] + '/PTV.' + '.'.join(rec_type) + '.index',
+                      doclengs    = 'doclength/' + '.'.join(rec_type) + '.length',
+                      dir         = '../../ISDR-CMDP/',
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',
+                      feat        = args.feature
+                      )
+  simulateduser = SimulatedUser(
+                      dir         = '../../ISDR-CMDP/',
+                      docmodeldir = 'docmodel/' + '/'.join(rec_type) + '/',                      
+                      keyterm_thres = args.keyterm_thres,
+                      topic_prob  = args.topic_prob,
+                      survey      = args.new_simulated_user
+                      )
+  env = Environment(retrievalmodule,simulateduser)
+  return env
 
-exp_log_name = exp_log_root + cur_datetime + ".log"
+"""
+Update Rules:
+Can combine with momentum ( default: 0.9 ) 
+1. momentum
+2. nesterov_momentum
+Note: Can only set one type of momentum 
+""" 
+def setDialogueManager(env):
+  print 'Creating Agent with Compiled Q Network...'
+  experiment_prefix = '../result/'+args.prefix+'/model'  # TODO fix it save with log (result has logs and models)
+  rng = np.random.RandomState()
+  if args.nn_file is None:
+    input_height = 1              # change feature
+    input_width = env.retrievalmodule.statemachine.feat_len
+    num_actions = 5 
+    phi_length = 1 # input 4 frames at once num_frames
+    discount = 1.
+    rms_decay = 0.99
+    rms_epsilon = 0.1
+    momentum = 0.
+    nesterov_momentum = 0.
+    network_type = 'rl_dnn'
+    batch_accumulator = 'sum'
+    network = q_network.DeepQLearner(input_width, input_height, args.model_width, args.model_height,
+                                      num_actions,
+                                         phi_length,discount,args.learning_rate,rms_decay,
+                                         rms_epsilon,momentum,nesterov_momentum,
+                                         args.clip_delta,args.freeze_interval,args.batch_size,
+                                         network_type, args.update_rule
+                                      , batch_accumulator
+                                      , rng
+                                    )
+  else:
+    print 'Loading Pre-trained Network...'
+    handle = open(args.nn_file, 'r')
+    network = pickle.load(handle)
+    
+  return agent.NeuralAgent(network,args.epsilon_start,args.epsilon_min,args.epsilon_decay,
+                                  args.replay_memory_size,experiment_prefix,args.replay_start_size,
+                                  args.update_frequency,rng)
+ 
+def load_query():
+  newdir = '../Data/query/'
+  print 'loading queries from ',newdir,'...'
+  data = pickle.load(open(newdir+'data.pkl','r'))
+  if args.fold == -1:
+    print_green( 'train = test = all queries')
+    return data,data
+  kf = KFold(163, n_folds=10)
+  tr,tx = list(kf)[args.fold-1]
+  training_data = [ data[i] for i in tr ]
+  testing_data = [ data[i] for i in tx ]
+  print '...done'
+  return training_data, testing_data
 
-logging.basicConfig(filename=exp_log_name,level=logging.INFO)
-
+############ LOGGING ###################
+def setLogging():
+  print_green('learning_rate : {}'.format(args.learning_rate))
+  print_green('batch_size : {}'.format(args.batch_size))
+  print_green('clip_delta : {}'.format(args.clip_delta))
+  print_green('freeze_interval : {}'.format(args.freeze_interval))
+  print_green('replay_memory_size : {}'.format(args.replay_memory_size))
+  print_green('num_epoch : {}'.format(args.num_epoch))
+  print_green('step_per_epoch : {}'.format(args.step_per_epoch))
+  print_green('epsilon_decay : {}'.format(args.epsilon_decay))
+  #print_green('input_width(feature length) : {}'.format(input_width))
+  print_green("network shape: {}".format([args.model_width,args.model_height]))
+###############################
 class experiment():
   def __init__(self,agent,env):
+    print 'Initializing experiment...'
+    setLogging()
     self.agent = agent
     self.env = env
+    self.best_seq = {}
+    self.best_return = np.zeros(163) # to be removed
+    self.training_data, self.testing_data = load_query()
 
   def run(self):
-    self.training()
+    print_red( 'Init Model')
 
-  def training(self):
-    logging.info('ans_index,turns,MAP')
-    for epoch in range(num_epoch):
-      logging.info('epoch {0}'.format(epoch))
-      print 'Running epoch {0} out of {1} epochs'.format(epoch+1,num_epoch)
-      widgets = [ 'Training', Percentage(), Bar(), ETA() ]
-      pbar = ProgressBar(widgets=widgets,maxval=num_tr_query).start()
-      for idx, (q, ans, ans_index) in enumerate(training_data):
-        logging.info('ans_index {0}'.format(ans_index))
-        self.run_episode(q,ans,ans_index,test_flag=False)
-        pbar.update(idx)
-      pbar.finish()
-
-      if epoch % test_frequency == 0:
-        self.testing(epoch+1)
-
-
-      random.shuffle(training_data)
-
-  def testing(self,epoch):
-    logging.info('Testing')
-    print 'Running test at epoch {0}'.format(epoch)
     self.agent.start_testing()
+    self.run_epoch(True)
+    self.agent.finish_testing(0)
+    if args.test:
+      return
+    for epoch in xrange(args.num_epoch):
+      print_red( 'Running epoch {0}'.format(epoch+1))
+      shuffle(self.training_data)
 
-    widgets = [ 'Testing', Percentage(), Bar(), ETA() ]
-    pbar = ProgressBar(widgets=widgets,maxval=num_tx_query).start()
-    for idx,(qtest,anstest,anstest_index) in enumerate(testing_data):
-      logging.info('anstest_index {0}'.format(anstest_index))
-      self.run_episode(qtest,anstest,anstest_index,test_flag=True)
-      pbar.update(idx)
+      ## TRAIN ##
+      self.run_epoch()
+      self.agent.finish_epoch(epoch+1)
+      
+      ## TEST ##
+      self.agent.start_testing()
+      self.run_epoch(True)
+      self.agent.finish_testing(epoch+1)
+
+  def run_epoch(self,test_flag=False):
+    epoch_data = self.training_data
+    if(test_flag):
+      epoch_data = self.testing_data
+    print 'number of queries',len(epoch_data)
+
+    ## PROGRESS BAR SETTING
+    setting = [['Training',args.step_per_epoch], ['Testing',len(epoch_data)]]
+    setting = setting[test_flag]
+    widgets = [ setting[0] , Percentage(), Bar(), ETA() ]
+
+    pbar = ProgressBar(widgets=widgets,maxval=setting[1]).start()
+    APs = []
+    Returns = []
+    Losses = []
+    self.act_stat = [0,0,0,0,0]
+
+    steps_left = args.step_per_epoch
+    while steps_left > 0:
+      #if True:
+      #  q, ans, ans_index = training_data[0]
+      for idx,(q, ans, ans_index) in enumerate(epoch_data):
+        logging.debug( 'ans_index {0}'.format(ans_index) )
+        n_steps,AP = self.run_episode(q,ans,ans_index,steps_left,test_flag)
+        steps_left -= n_steps
+
+        if test_flag:
+          pbar.update(idx)
+          APs.append(AP)
+          Returns.append(self.agent.episode_reward)
+          logging.debug( 'Episode Reward : %f', self.agent.episode_reward )
+        else:
+          Losses.append(self.agent.episode_loss)
+          pbar.update(args.step_per_epoch-steps_left)
+
+        if self.agent.episode_reward > self.best_return[ans_index]:
+          self.best_return[ans_index] = self.agent.episode_reward
+          self.best_seq[ans_index] = self.agent.act_seq
+#          print 'query idx : ' + str(idx) + '\tbest_seq : '+ str(self.agent.act_seq) +'\treturn : ' + str(self.agent.episode_reward)
+
+        if steps_left <= 0:
+          break
+
+      if test_flag:
+        break
     pbar.finish()
-    self.agent.finish_testing(epoch)
 
-  def run_episode(self,q,ans,ans_index,test_flag = False):
-    init_state = self.env.setSession(q,ans,ans_index,test_flag)  # reset
-    action     = self.agent.start_episode(init_state)
+    if test_flag:
+      MAP,Return = [ np.mean(APs) , np.mean(Returns) ]
+      print_yellow( 'MAP = '+str(MAP)+'\tReturn = '+ str(Return) )
+      print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
+      
+    else:
+      Loss,BestReturn = [ np.mean(Losses), np.mean(self.best_return) ]
+      print_blue( 'Loss = '+str(Loss)+'\tepsilon = '+str(self.agent.epsilon)+'\tBest Return = ' + str(BestReturn) )
+      print_blue( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
+
+  def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
+    state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
+    action     = self.agent.start_episode(state)
+    if test_flag and action != 4:
+      logging.debug('action : -1 first pass\t\tAP : %f', self.env.retrievalmodule.MAP)
 
     num_steps = 0
     while True:
-      reward, state = self.env.step(action)
-      terminal = self.env.game_over()
+      reward, state = self.env.step(action)				# ENVIROMENT STEP
+      terminal, AP = self.env.game_over()
+      self.act_stat[action] += 1
       num_steps += 1
 
-      if num_steps >= max_steps or terminal:
+      if test_flag :#and action != 4:
+        AM = self.env.retrievalmodule.actionmanager
+        logging.debug('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
+
+      if num_steps >= max_steps or terminal:  # STOP Retrieve
         self.agent.end_episode(reward, terminal)
         break
 
-      action = self.agent.step(reward, state)
+      action = self.agent.step(reward, state)			# AGENT STEP
+    return num_steps, AP
 
-    return num_steps
 
 def launch():
-  t = time.time()
-  print 'Compiling Network...'
-  network = q_network.DeepQLearner(input_width, input_height, num_actions,
-                                         phi_length,
-                                         discount,
-                                         learning_rate,
-                                         rms_decay,
-                                         rms_epsilon,
-                                         momentum,
-                                         clip_delta,
-                                         freeze_interval,
-                                         batch_size,
-                                         network_type,
-                                         update_rule,
-                                         batch_accumulator,
-                                         rng)
-  print 'Creating Agent and Simulator...'
-  agt = agent.NeuralAgent(network,epsilon_start,epsilon_min,epsilon_decay,
-                                  replay_memory_size,
-                                  experiment_prefix,
-                                  replay_start_size,
-                                  update_frequency,
-                                  rng)
+  if args.test:
+    print_red("TESTING MODE")
+  else:
+    print_red( "TRAINING MODE")
 
-  print 'Creating Environment and compiling State Estimator...'
-  env = Environment(lex,background,inv_index,\
-                    doclengs,docmodeldir,dir)
-  print 'Initializing experiment...'
+  t = time.time()
+  env = setRetrievalModule()
+  agt = setDialogueManager(env)
   exp = experiment(agt,env)
   print 'Done, time taken {} seconds'.format(time.time()-t)
   exp.run()
 
+def demo():
+  flag = False # fast generate survey example
+  import random
+  env = setRetrievalModule()
+  training_data, testing_data = load_query()
+  f = open("../../ISDR-CMDP/PTV.big5.lex","r")
+  big5map = f.readlines()
+
+  f = open("../../PTV/PTV.query","r")
+  qlist = f.readlines()
+
+  for i in xrange(4):
+    if flag:
+      idx = 95 #random.randint(0,162)
+    else:
+      idx = input(">>> Select Query Index: ")
+    q,ans,ans_index = training_data[idx]
+    print "=========="
+    print "query: ", qlist[idx].rstrip('\n')
+    print "ans: ", ans.keys()
+    state = env.setSession(q,ans,ans_index) # state is nonsense
+
+    if flag:
+      action = i # 0,1,2,3
+    else:
+      action = input(">>> Select an Action: ")     # 0,1,2,3
+    request  = env.retrievalmodule.request(action)
+    feedback = env.simulateduser.feedback_demo(request,flag)
+  
+
 if __name__ == "__main__":
-  launch()
+  if args.demo:
+    demo()
+  else:
+    launch()

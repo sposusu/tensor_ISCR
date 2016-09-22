@@ -72,8 +72,8 @@ class NeuralAgent(object):
 
         self.testing = False
 
-        self._open_results_file()
-        self._open_learning_file()
+        #self._open_results_file()
+        #self._open_learning_file()
 
         self.episode_counter = 0
         self.batch_counter = 0
@@ -133,11 +133,18 @@ class NeuralAgent(object):
 
         self.start_time = time.time()
 
-        return_action = self.rng.randint(0, self.num_actions)
+#        return_action = self.rng.randint(0, self.num_actions)
+        if self.testing:
+            phi = self.test_data_set.phi(observation)
+            return_action = self.network.choose_action(phi, 0.)
+        else:
+            return_action = self.rng.randint(0, self.num_actions)
 
         self.last_action = return_action
 
         self.last_img = observation
+
+        self.act_seq = [ return_action ]
 
         return return_action
 
@@ -172,7 +179,8 @@ class NeuralAgent(object):
         #TESTING---------------------------
         if self.testing:
             self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
+            #action = self._choose_action(self.test_data_set, .05,
+            action = self._choose_action(self.test_data_set, 0.,
                                          observation, np.clip(reward, -1, 1))
 
         #NOT TESTING---------------------------
@@ -199,6 +207,7 @@ class NeuralAgent(object):
 
         self.last_action = action
         self.last_img = observation
+        self.act_seq.append(action)
 
         return action
 
@@ -212,7 +221,10 @@ class NeuralAgent(object):
         if self.step_counter >= self.phi_length:
             phi = data_set.phi(cur_img)
             action = self.network.choose_action(phi, epsilon)
+#            logging.debug( self.network.q_vals(phi) )
+#            print( 'q_val : '+ str(self.network.q_vals(phi)) +'\taction : '+str(action) )
         else:
+            print 'random action'
             action = self.rng.randint(0, self.num_actions)
 
         return action
@@ -243,6 +255,7 @@ class NeuralAgent(object):
         """
 
         self.episode_reward += reward
+        self.episode_loss = 0
         self.step_counter += 1
         total_time = time.time() - self.start_time
 
@@ -260,14 +273,13 @@ class NeuralAgent(object):
                                      np.clip(reward, -1, 1),
                                      True)
 
-            logging.info("steps/second: {:.2f}".format(\
-                            self.step_counter/total_time))
+#            logging.info("steps/second: {:.2f}".format(\
+#                            self.step_counter/total_time))
 
             if self.batch_counter > 0:
-                self._update_learning_file()
-                logging.info("average loss: {:.4f}".format(\
-                                np.mean(self.loss_averages)))
-
+                #self._update_learning_file()
+                self.episode_loss = np.mean(self.loss_averages)
+                logging.debug("average loss: {:.4f}".format(self.episode_loss))
 
     def finish_epoch(self, epoch):
         net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
@@ -293,8 +305,8 @@ class NeuralAgent(object):
                 holdout_sum += np.max(
                     self.network.q_vals(self.holdout_data[i, ...]))
 
-        self._update_results_file(epoch, self.episode_counter,
-                                  holdout_sum / holdout_size)
+        #self._update_results_file(epoch, self.episode_counter,
+        #                          holdout_sum / holdout_size)
 
 
 if __name__ == "__main__":

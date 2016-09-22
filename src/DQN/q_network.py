@@ -25,11 +25,12 @@ class DeepQLearner:
     Deep Q-learning network using Lasagne.
     """
 
-    def __init__(self, input_width, input_height, num_actions,
+    def __init__(self, input_width, input_height, net_width, net_height, num_actions,
                  num_frames, discount, learning_rate, rho,
-                 rms_epsilon, momentum, clip_delta, freeze_interval,
+                 rms_epsilon, momentum, nesterov_momentum, clip_delta, freeze_interval,
                  batch_size, network_type, update_rule,
                  batch_accumulator, rng, input_scale=255.0):
+        assert not ( momentum and nesterov_momentum ), "Choose only 1 momentum method!"
 
         self.input_width = input_width
         self.input_height = input_height
@@ -41,9 +42,12 @@ class DeepQLearner:
         self.lr = learning_rate
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
+        self.nesterov_momentum = nesterov_momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
         self.rng = rng
+        self.network_width = net_width
+        self.network_height = net_height
 
         lasagne.random.set_rng(self.rng)
 
@@ -136,6 +140,12 @@ class DeepQLearner:
         elif update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
                                               self.rms_epsilon)
+        elif update_rule == 'adagrad':
+	    updates = lasagne.updates.adagrad(loss, params, self.lr,
+							self.rms_epsilon)
+        elif update_rule == 'adadelta':
+	    updates = lasagne.updates.adadelta(loss, params, self.lr, self.rho,
+        				self.rms_epsilon)
         elif update_rule == 'sgd':
             updates = lasagne.updates.sgd(loss, params, self.lr)
         else:
@@ -144,6 +154,9 @@ class DeepQLearner:
         if self.momentum > 0:
             updates = lasagne.updates.apply_momentum(updates, None,
                                                      self.momentum)
+	elif self.nesterov_momentum > 0:
+            updates = lasagne.updates.apply_nesterov_momentum(updates,None,
+						     self.nesterov_momentum)
 
         self._train = theano.function([], [loss, q_vals], updates=updates,
                                       givens=givens)
@@ -457,34 +470,44 @@ class DeepQLearner:
     def build_rl_network_dnn(self, input_width, input_height, output_dim,
                             num_frames, batch_size):
 
-        l_in = lasagne.layers.InputLayer(
+        var = 0.01
+        bias = 0.1
+
+
+        layer = lasagne.layers.InputLayer(
             shape=(batch_size, num_frames, input_width, input_height)
         )
 
-        l_hidden1 = lasagne.layers.DenseLayer(
-            l_in,
-            num_units=256,
-            nonlinearity=lasagne.nonlinearities.rectify,
-            #W=lasagne.init.HeUniform(),
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
-        )
+#        l_hidden1 = lasagne.layers.DenseLayer(
+#            l_in,
+#            num_units=_num_units,
+#            nonlinearity=lasagne.nonlinearities.rectify,
+#            W=lasagne.init.Normal(var),
+#            b=lasagne.init.Constant(bias)
+#        )
 
-        l_hidden2 = lasagne.layers.DenseLayer(
-            l_hidden1,
-            num_units=256,
+#        l_hidden2 = lasagne.layers.DenseLayer(
+#            l_hidden1,
+#            num_units=_num_units,
+#            nonlinearity=lasagne.nonlinearities.rectify,
+#            W=lasagne.init.Normal(var),
+#            b=lasagne.init.Constant(bias)
+#        )
+        for _ in xrange(self.network_height):
+            layer = lasagne.layers.DenseLayer(
+            layer,
+            num_units=self.network_width,
             nonlinearity=lasagne.nonlinearities.rectify,
-            #W=lasagne.init.HeUniform(),
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
         )
 
         l_out = lasagne.layers.DenseLayer(
-            l_hidden2,
+            layer,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.Normal(.01),
-            b=lasagne.init.Constant(.1)
+            W=lasagne.init.Normal(var),
+            b=lasagne.init.Constant(bias)
         )
 
         return l_out
@@ -504,7 +527,8 @@ class DeepQLearner:
             l_in,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.Constant(0.0),
+#            W=lasagne.init.Constant(0.0),
+            W = lasagne.init.Normal(0.01,0),
             b=None
         )
 

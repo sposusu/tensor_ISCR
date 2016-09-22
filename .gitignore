@@ -1,3 +1,5 @@
 venv
+logs
 *.pyc
 src/result
+src/web/node_modules

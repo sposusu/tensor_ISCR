@@ -8,9 +8,10 @@ import pdb
 from actionmanager import ActionManager
 from searchengine import SearchEngine
 from statemachine import StateMachine
+import numpy as np
 
 class DialogueManager(object):
-  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir):
+  def __init__(self,lex,background,inv_index,doclengs,dir,docmodeldir,feat):
 
     # Search Engine
     self.searchengine = SearchEngine(
@@ -27,7 +28,8 @@ class DialogueManager(object):
                               inv_index   = self.searchengine.inv_index,
                               doclengs    = self.searchengine.doclengs,
                               dir         = dir,
-                              docmodeldir = docmodeldir
+                              docmodeldir = docmodeldir,
+                              feat        = feat
                               )
 
     # Action Manager, performs query expansion
@@ -48,8 +50,10 @@ class DialogueManager(object):
       Return:
         state(firstpass): 1 dim vector
     """
+
     self.query = query
-    self.ans   = ( None if test_flag else ans )
+    #self.ans   = ( None if test_flag else ans )
+    self.ans   = ans
 
     # Interaction Parameters, action and current turn number
     self.cur_action  = -1 # Action None
@@ -90,30 +94,29 @@ class DialogueManager(object):
 
     # Record mean average precision
     # Train state estimator
+    #if not self.test_flag:
     self.lastMAP = self.MAP
-
-    if not self.test_flag:
-      self.MAP = self.evalMAP(self.ret,self.ans)
-    else:
-      self.MAP = estimatedMAP
-
-    logging.info('action {0}, MAP {1}'.format(self.cur_action,self.MAP))
+    self.MAP = self.evalAP(self.ret,self.ans)
 
     return feature
 
   def request(self,action_type):
     '''
+
       Sends request to simulator for more query info
+
     '''
     self.cur_action = action_type
     request = {}
     request['ret']    = self.ret
-    request['action'] = self.actionmanager.actiontable[ action_type ]
+    request['action'] = self.actionmanager.actionTable[ action_type ]
     return request
 
   def expand_query(self,response):
     '''
+
       Passes response to action manager for query expansion
+
     '''
     posmodel, negmodel = self.actionmanager.expand_query(response)
 
@@ -122,21 +125,30 @@ class DialogueManager(object):
 
     return posmodel, negmodel
 
+  def evalAP(self,ret,ans):
+    tp = [ float(ans.has_key(docID)) for docID,val in ret ]
+    atp = np.cumsum(tp)
+    precision = [  atp[idx] / (idx+1) * tp[idx] for idx,(docID,val) in enumerate(ret)  ]
+    return ( sum(precision)/len(ans) if len(ans) else 0. )
+
   def evalMAP(self,ret,ans):
-    Precision_sum = sum([ 1.0/(idx+1) if ans.has_key(docID) else 0. for idx,(docID,val) in enumerate(ret) ])
-    return ( Precision_sum/len(ans) if len(ans) else 0. )
+    APs = [ evalAP(ret[i],ans[i]) for i in xrange(len(ret)) ]
+    print "warning!! MAP"
+    return sum(APs)/len(APs)
 
   def calculate_reward(self):
     if self.terminal:
-      reward = self.actionmanager.costTable[ 4 ]
+      reward = self.actionmanager.costTable[ 4 ]  # 0
     else:
-      reward = self.actionmanager.costTable[ self.cur_action ] + \
-              self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
+      reward_std = self.actionmanager.noiseTable[ self.cur_action ]
+      reward = self.actionmanager.costTable[ self.cur_action ] + np.random.normal(0,reward_std) +\
+               self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
+
     return reward
 
   def show(self):
     self.terminal = True
-    params = { 'ret': self.ret }
+    params = {'ret': self.ret }
     return params
 
   def game_over(self):
@@ -144,8 +156,8 @@ class DialogueManager(object):
       self.query = None
       self.ans   = None
       self.actionmanager.posmodel = None
-      return True
-    return False
+      return True, self.MAP
+    return False, self.MAP
 
   """
   def save_features(self,filename):
@@ -156,6 +168,8 @@ class DialogueManager(object):
 """
 
   Read functions for Dialogue Manager
+
+"""
 
 """
 dir = '../../ISDR-CMDP/'
@@ -208,6 +222,6 @@ def readTopicList(cpsID,qID):
     rankings = map(f,[ line.split('\t') for line in fin.readlines() ])
     return rankings
 
-
+"""
 if __name__ == "__main__":
   pass

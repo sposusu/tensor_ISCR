@@ -7,21 +7,25 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
+import random
 
 from expansion import expansion
 from retmath import *
 from retrieval import retrieveCombination
 from stateestimation import dnn
 from util import IndexToDocName
+from util import readDocModel
 
 """
   Todo: Online training for approximator
   Review feature extraction in old code
 """
 
+normalize_feature = False
+
 se_prefix = '../Data/stateestimation/'
 weights_file = se_prefix + 'dnn.npz'
-
+'''
 class Approximator(object):
   def __init__(self):
     # Functions
@@ -37,10 +41,10 @@ class Approximator(object):
     feature      = np.asarray(feature).reshape(1,1,1,89)
     estimatedMAP = float(self.test_fn(feature)[0])
     return estimatedMAP
-
+'''
 class StateMachine(object):
   def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
-              iteration=10,mu=1,delta=1,alpha=0.1):
+              iteration=10,mu=1,delta=1,alpha=0.1, feat="all"):
 
     self.background = background
     self.inv_index  = inv_index
@@ -50,13 +54,26 @@ class StateMachine(object):
     self.docmodeldir = docmodeldir
 
     # Model for state estimation
-    self.approximator = Approximator()
+  #  self.approximator = Approximator()
+
+    # Mean and std for feature normalization
+    with h5py.File("../Data/stateestimation/norm.h5") as norm:
+      self.mean = norm['mean'][:]
+      self.std = norm['std'][:]
 
     # Parameters for expansion
     self.iteration = iteration
     self.mu = mu
     self.delta = delta
     self.alpha = alpha
+
+    # feature
+    self.feat = feat
+    if feat == "all":
+      self.feat_len = 87
+    elif feat == "raw":
+      self.feat_len = 49
+    print "feature length = ",self.feat_len
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
@@ -67,16 +84,23 @@ class StateMachine(object):
     """
     feature = self.featureExtraction(ret,action_type,curtHorizon,\
                                     posmodel,negmodel,posprior,negprior)
-
-    estimatedMAP = self.approximator.predict_one(feature)
+    estimatedMAP = 0.
+#    estimatedMAP = self.approximator.predict_one(feature)
 
     feature = np.asarray(feature).reshape(1,len(feature))
+
+    if normalize_feature:
+      with np.errstate(divide='ignore', invalid='ignore'):
+        feature = np.true_divide(feature-self.mean , self.std)
+    	feature[feature == np.inf] = 0
+    	feature = np.nan_to_num(feature)
 
     return feature, estimatedMAP
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):
     feature = []
+
     # Extract Features
     docs = []
     doclengs = []
@@ -120,7 +144,7 @@ class StateMachine(object):
     ieDocT20 = renormalize(ieDocT20)
 
     # bias term
-    feature.append(1.0)
+    # feature.append(1.0)
 
     # dialogue turn
     feature.append(float(curtHorizon))
@@ -150,6 +174,7 @@ class StateMachine(object):
     oret = retrieveCombination(pos,negprior,\
                               self.background,self.inv_index,self.doclengs,\
                               self.alpha,0.1)
+
     N = min([ret,oret])
     for i in range(len(Ns)):
       if N<Ns[i]:
@@ -179,7 +204,7 @@ class StateMachine(object):
     feature.append(qf50)
 
     # retrieved number
-    feature.append(len(ret))
+    #feature.append(len(ret))
 
     # query scope
     feature.append(QueryScope(posprior,self.inv_index))
@@ -200,7 +225,6 @@ class StateMachine(object):
     maxIdf, avgIdf = IDFscore(posmodel,self.inv_index)
     feature.append(maxIdf)
     feature.append(avgIdf)
-
     # Statistics, top 5, 10, 20, 50, 100
     means, vars = Variability(ret,[5,10,20,50,100])
     for mean in means:
@@ -219,12 +243,16 @@ class StateMachine(object):
       feature.append(FitGaussDistribution(ret,0,v))
 
     # top N scores
-    for key, val in ret[:49]:
-      feature.append(-1*val)
+    top_scores = [ -1 * x[1] for x in ret[:49] ]
+    #deltas = [ -1 * val1 + val2 for val1, val2 in zip(top_scores[:-1],top_scores[1:]) ]
+    feature += top_scores# + deltas
 
-    return feature
+    if self.feat == "all":
+      return feature
+    elif self.feat == "raw":
+      return top_scores
 
-
+'''
 def readDocModel(fname):
   model = {}
   with open(fname) as fin:
@@ -232,8 +260,9 @@ def readDocModel(fname):
       [ t1, t2 ] = line.split('\t')
       model[ int(t1) ] = float(t2)
   return model
-
+'''
 if __name__ == "__main__":
+  # DNN state estimation
   train_fn, test_fn = neuralnetwork()
 
   filepath = '../../Data/stateestimation/features_89.h5'

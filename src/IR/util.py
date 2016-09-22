@@ -176,17 +176,17 @@ def readKeytermlist(cpsID,fileIDs):
     filename = '../../ISDR-CMDP/keyterm/'+cpsID+'/'+str(fileID)
     if not os.path.isfile(filename):
       continue
-      fin = file(filename)
-      for i in range(100):
-        line = fin.readline()
-        if line=='':
-          break
-        pair = line.replace('\n','').split('\t')
-        if keyterms.has_key(int(pair[0])):
-          keyterms[int(pair[0])] += prob*float(pair[1])
-        else:
-          keyterms[int(pair[0])] = prob*float(pair[1])
-      fin.close()
+    fin = file(filename)
+    for i in range(100):
+      line = fin.readline()
+      if line=='':
+        break
+      pair = line.replace('\n','').split('\t')
+      if keyterms.has_key(int(pair[0])):
+        keyterms[int(pair[0])] += prob*float(pair[1])
+      else:
+        keyterms[int(pair[0])] = prob*float(pair[1])
+    fin.close()
   sortedKeytermlst = sorted(keyterms.iteritems(),key=operator.itemgetter(1),reverse=True)
   return sortedKeytermlst
 
@@ -210,7 +210,7 @@ def readTopicWords(cpsID):
   topicWordList = []
   for i in range(128):
     words = {}
-    filename = '../../ISDR-CMDP/lda/'+cpsID+'/'+str(i)
+    filename = '../../ISDR-CMDP/lda/' + cpsID + '/'+str(i)
     fin = file(filename)
     for line in fin.readlines():
       if len(line.split('\t'))<=1:

@@ -5,7 +5,7 @@ import math
 from util import *
 from retmath import *
 from copy import *
-
+'''
 def batchRetrieve(queries, background, inv_index, docleng, alpha):
     return [ retrieve(query, background, inv_index, docleng, alpha) for query in queries ]
 #    retrieved = []
@@ -51,7 +51,7 @@ def retrieve(query, background, inv_index, docleng, alpha):
     sorted_ret = sorted(result.iteritems(),\
 	    key=operator.itemgetter(1),reverse=True)	
     return sorted_ret
-
+'''
 def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, beta):
     result = {}
     for i in range(1,5048,1):
@@ -110,7 +110,7 @@ def retrieveCombination(query, negquery, background, inv_index, docleng, alpha, 
 	    key=operator.itemgetter(1),reverse=True)	
     return sorted_ret
 
-
+'''
 def evalAP(ret,ans):
     AP = 0.0
     cnt = 0.0
@@ -132,4 +132,4 @@ def evalMAP(retrieved,answers,verbose=False):
     else:
 	    return MAP
 	
-
+'''

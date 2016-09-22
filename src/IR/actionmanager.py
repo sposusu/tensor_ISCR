@@ -1,9 +1,12 @@
 """
+
   Action Manager is pulled out dialogue manager
   because it would be easier to add more actions in a separate file
+
 """
 
 from collections import defaultdict
+from copy import deepcopy
 import json
 import operator
 import pdb
@@ -14,13 +17,22 @@ from util import  renormalize
 
 # Define Cost Table
 def genCostTable():
-  values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+  # default
+  #values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+  # according to survey
+  values = [ -23., -13., -19., -23., 0., 0., 1000. ]
+  
   costTable = dict(zip(range(6)+['lambda'],values))
   return costTable
 
+def genNoiseTable():
+  values = [ 11., 7., 10., 11., 0.001, 0.001, 0001. ]
+  noiseTable = dict(zip(range(6)+['lambda'],values))
+  return noiseTable
+
 def genActionTable():
   at = {}
-  at[-1] = 'none'
+  at[-1] = 'firstpass'
   at[0]  = 'doc'
   at[1]  = 'keyterm'
   at[2]  = 'request'
@@ -30,7 +42,7 @@ def genActionTable():
 
 class ActionManager(object):
   def __init__(self, background, doclengs, dir, docmodeldir, \
-                    topicleng=50, topicnumword=1000):
+                    topicleng=100, topicnumword=500):
 
     self.background  = background
     self.doclengs    = doclengs
@@ -46,11 +58,12 @@ class ActionManager(object):
     self.topicnumword = topicnumword
 
     # Since agent only returns integer as action
-    self.actiontable  = genActionTable()
+    self.actionTable  = genActionTable()
     self.costTable    = genCostTable()
-    
+    self.noiseTable   = genNoiseTable()
+
   def __call__(self, query):
-    self.posmodel = query
+    self.posmodel = deepcopy(query)
     self.negmodel = None
 
     self.posdocs  = []
@@ -58,45 +71,44 @@ class ActionManager(object):
     self.negdocs  = []
     self.neglengs = []
 
-    self.posprior = self.posmodel
+    self.posprior = deepcopy(self.posmodel)
     self.negprior = {}
 
-
   def expand_query(self,params):
-    assert isinstance(params,dict)
+    assert isinstance(params,dict),params
 
     action = params['action']
 
-    if action == 'none':
+    if action == 'firstpass':
       query = params['query']
       self.__call__(query)
 
     elif action == 'doc':
       doc = params['doc']
       if doc:
+        doc = int(doc)
         self.posdocs.append(self.docmodeldir+IndexToDocName(doc))
       	self.poslengs.append(self.doclengs[doc])
 
     elif action == 'keyterm':
       if 'keyterm' in params:
-        keyterm, isrel = params['keyterm']
+        keyterm = int(params['keyterm'])
+        isrel = params['isrel'] == 'True'
         if isrel:
           self.posprior[ keyterm ] = 1.
         else:
           self.negprior[ keyterm ] = 1.
 
     elif action == 'request':
-      request = params['request']
+      request = int(params['request'])
       self.posprior[ request ] = 1.0
 
     elif action == 'topic':
-      topicIdx = params['topic']
-      try:
+      if params['topic'] != None:
+        topicIdx = int(params['topic'])
         self.topiclist[ topicIdx ]
         self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
-      except:
-        print 'Index out of range error'
-      self.poslengs.append(self.topicleng)
+        self.poslengs.append(self.topicleng)
 
     elif action == 'show':
       # This condition shouldn't happen, since we blocked this in environment.py
