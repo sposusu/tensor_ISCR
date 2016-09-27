@@ -3,3 +3,5 @@ logs
 *.pyc
 src/result
 src/web/node_modules
+*.pickle
+*.pkl

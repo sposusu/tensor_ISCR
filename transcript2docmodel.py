@@ -8,8 +8,6 @@ from tqdm import tqdm
 
 def run_transcript2docmodel(lex_file, transcript_dir, docmodels_cache, save_docmodel_dir, doclength_file, index_file):
 
-
-
     # Load lex dict
     lex_dict = {}
     with open(lex_file,'r') as fin:
@@ -111,7 +109,7 @@ if __name__ == "__main__":
 
     # Self defined paths
     transcript_name = 'dnn'
-    transcript_dir = './PTV_transcription_charSeg'
+    transcript_dir = './data/PTV_onebest_fromMATBN_charSeg'
 
     docmodels_cache = os.path.join(transcript_dir,'docmodels.pickle')
 
