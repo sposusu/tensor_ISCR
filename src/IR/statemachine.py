@@ -68,12 +68,15 @@ class StateMachine(object):
     self.alpha = alpha
 
     # feature
+    assert feat in ["all","raw","wig","nqc"]
     self.feat = feat
     if feat == "all":
       self.feat_len = 87
     elif feat == "raw":
       self.feat_len = 49
-    print "feature length = ",self.feat_len
+    elif feat == "wig" or feat == "nqc":
+      self.feat_len = 5 
+    print("feature length = {}".format(self.feat_len))
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):
@@ -99,6 +102,45 @@ class StateMachine(object):
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):
+
+    top_scores = [ -1 * x[1] for x in ret[:49] ]
+    if self.feat == "raw":
+	return top_scores    
+    elif self.feat == "raw_query":
+	query = []
+	query += [ entropy( posprior ) ]
+ 	return top_scores + query
+    elif self.feat == "wig" or self.feat == "nqc":
+	wigs = []
+	nqcs = []	
+	# read puesdo rel docs
+	docs = []
+	doclengs = []
+        for docID,score in ret[:50]:
+          model = readDocModel(self.dir + self.docmodeldir + IndexToDocName(docID))
+          docs.append(model)
+          doclengs.append(self.doclengs[docID])
+       	
+	# Calculate wig & nqc 
+        irrel = cross_entropies(posmodel,self.background) - \
+                0.1 * cross_entropies(negmodel,self.background)
+    	
+	# Calculate at 10, 20, 30, 40 ,50 
+	cal_num_list = [0, 10,20,30,40,50]	
+   	for start, end in zip( cal_num_list[:-1], cal_num_list[1:] ):
+	  wig = 0.
+	  nqc = 0.
+	  for r in ret[start:end]:
+	    wig += ( r[1] - irrel ) / 10.
+	    nqc += math.pow(r[1]-irrel,2) / 10.
+	  wigs.append(wig)
+	  nqcs.append(nqc)
+	
+	if self.feat == "wig":
+	  return wigs
+	else:
+	  return nqcs
+    
     feature = []
 
     # Extract Features
@@ -244,29 +286,6 @@ class StateMachine(object):
 
     # top N scores
     top_scores = [ -1 * x[1] for x in ret[:49] ]
-    #deltas = [ -1 * val1 + val2 for val1, val2 in zip(top_scores[:-1],top_scores[1:]) ]
-    feature += top_scores# + deltas
-
-    if self.feat == "all":
-      return feature
-    elif self.feat == "raw":
-      return top_scores
-
-'''
-def readDocModel(fname):
-  model = {}
-  with open(fname) as fin:
-    for line in fin.readlines():
-      [ t1, t2 ] = line.split('\t')
-      model[ int(t1) ] = float(t2)
-  return model
-'''
-if __name__ == "__main__":
-  # DNN state estimation
-  train_fn, test_fn = neuralnetwork()
-
-  filepath = '../../Data/stateestimation/features_89.h5'
-  h5f = h5py.File(filepath,'r')
-  X_train = h5f['features'][:].reshape(37962,1,1,89)
-  y_train = h5f['MAPs'][:].reshape(37962,1)
-  train_fn(X_train[:2],y_train[:2])
+    feature += top_scores 
+	
+    return feature

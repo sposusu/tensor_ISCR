@@ -140,8 +140,9 @@ class DialogueManager(object):
     if self.terminal:
       reward = self.actionmanager.costTable[ 4 ]  # 0
     else:
-      reward_std = self.actionmanager.noiseTable[ self.cur_action ]
-      reward = self.actionmanager.costTable[ self.cur_action ] + np.random.normal(0,reward_std) +\
+      #reward_std = self.actionmanager.noiseTable[ self.cur_action ]
+      
+      reward = self.actionmanager.costTable[ self.cur_action ] +\
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
 
     return reward
