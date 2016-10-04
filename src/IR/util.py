@@ -147,14 +147,14 @@ def readDocLength(fname):
     return docLengs
 
 def readDocModel(fname):
-    fout = file(fname)
-    model = {}
-    for line in fout.readlines():
-	tokens = line.split('\t')
-	word = int(tokens[0])
-	val = float(tokens[1])
-	model[word] = val
-    return model
+  fout = file(fname)
+  model = {}
+  for line in fout.readlines():
+    tokens = line.split()
+    word = int(tokens[0])
+    val = float(tokens[1])
+    model[word] = val
+  return model
 
 def printRetrievedList(retrieved,fname):
     fout = file(fname,'w')
