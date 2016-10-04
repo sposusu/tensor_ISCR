@@ -423,6 +423,7 @@ def run_create_topic_rankings(mallet_binary, query_utf8_jieba_file, lda_dir, top
     inferencer_model = os.path.join(lda_dir,'mallet_train','inferencer.model')
     query_doc_topics  = os.path.join(lda_dir,'mallet_train','query_doc_topics.txt')
 
+
     inference_cmd = "{} infer-topics --input {} --inferencer {} --output-doc-topics {}"
     if os.path.exists(query_doc_topics):
         print("Query doc topics already exists {}".format(query_doc_topics))
