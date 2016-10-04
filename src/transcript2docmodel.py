@@ -1,3 +1,4 @@
+import codecs
 from collections import defaultdict
 from glob import glob
 import math
@@ -10,7 +11,8 @@ import sys
 import jieba
 from tqdm import tqdm
 
-from IR.util import readInvIndex, readCleanInvIndex, readDocLength, readDocModel, docNameToIndex
+from IR.util import readLex, readAnswer, readInvIndex, readCleanInvIndex, readDocLength, readDocModel
+from IR.util import docNameToIndex, IndexToDocName
 
 def run_reconstruct_query(cmvn_model_file, query_big5_file, query_utf8_file):
     if os.path.exists(query_utf8_file):
@@ -308,9 +310,123 @@ def run_create_keyterms(inv_index_file, keyterm_dir):
     else:
         print("Keyterm already exists at {}".format(keyterm_dir))
 
+def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
+    # Make directory for mallet
+    train_dir = os.path.join(lda_dir,'mallet_train')
+    if not os.path.exists(train_dir):
+        os.makedirs(train_dir)
+
+    # Make mallet file from documents
+    mallet_file = os.path.join(train_dir,'documents.mallet')
+    print("Mallet: import-dir {} to {}".format(docmodel_dir,mallet_file))
+    make_mallet_file_cmd = "{} import-dir --input {} --output {} --keep-sequence".format(mallet_binary, docmodel_dir, mallet_file)
+    if os.path.exists(mallet_file):
+        print("Mallet file already exists {}. Skipping...".format(mallet_file))
+    else:
+        os.system(make_mallet_file_cmd)
+
+    # Train with lda
+    print("Train lda topic model with mallet")
+
+    train_topics_cmd = "{mallet_bin} train-topics --input {input} \
+                                        --output-model {output_model} \
+                                        --output-state {output_state} \
+                                        --output-topic-keys {output_topic_keys} \
+                                        --topic-word-weights-file {topic_words_weight_file} \
+                                        --word-topic-counts-file {words_topic_counts_file} \
+                                        --output-doc-topics {output_doc_topics} \
+                                        --num-topics {num_topics} \
+                                        --num-threads {num_threads} \
+                                        --optimize-interval {optimize_interval} \
+                                        --alpha {alpha} \
+                                        --beta {beta}"
+
+    # Define here to use later
+    topic_words_weight_file = os.path.join(train_dir,'topic_words_weight_file')
+
+    train_topics_param = { 'mallet_bin': mallet_binary,
+                        'input': mallet_file,
+                        'output_model': os.path.join(train_dir,'output_model.binary'),
+                        'output_state': os.path.join(train_dir,'output_state.gz'),
+                        'output_topic_keys': os.path.join(train_dir,'output_topic_keys.txt'),
+                        'topic_words_weight_file': topic_words_weight_file,
+                        'words_topic_counts_file': os.path.join(train_dir,'words_topic_counts_file.txt'),
+                        'output_doc_topics': os.path.join(train_dir,'output_doc_topics.txt'),
+                        'num_topics': 128, # FROM ISDR-CMDP
+                        'num_threads': 4,
+                        'optimize_interval': 20, # From Mallet Tutorial
+                        'alpha': 1, # From ISDR-CMDP
+                        'beta': 0.05 # From ISDR-CMDP
+                        }
+
+    if os.path.exists(topic_words_weight_file):
+        print("Topic words weight file already exists {}. Skipping...".format(topic_words_weight_file))
+    else:
+        os.system(train_topics_cmd.format(**train_topics_param))
+
+    # Create topic models with normalized lda weights
+    print("Create topic model word distributions with normalized lda weights {}".format(topic_words_weight_file))
+
+    # Read lex
+    print("Loading lex file")
+    lex_dict = {}
+    with open(lex_file,'r') as fin:
+        for idx, line in enumerate(fin.readlines(),1):
+            lex = line.strip()
+            lex_dict[ lex ] = idx
+
+
+    topic_models = defaultdict(dict)
+    print("Reading topic weights")
+    with codecs.open(topic_words_weight_file,'r','utf-8') as f:
+        for line in tqdm(f.readlines()):
+            tokens = line.split()
+
+            line_filename = tokens[0]
+
+            phrase = tokens[1]
+            lex_index = lex_dict[ utf8_to_brackethex(phrase) ]
+
+            prob = float(tokens[2])
+
+            topic_models[ line_filename ][ lex_index ] = prob
+
+    print("Writing topic models")
+    for fname in tqdm(topic_models.keys()):
+
+        factor = 1. / sum( topic_models[ fname ].values() )
+        for k in topic_models[ fname ].keys():
+            topic_models[ fname ][ k ] *= factor
+
+        topic_path = os.path.join(lda_dir,fname)
+        with open(topic_path,'w') as fout:
+            for lex_index, prob in topic_models[ fname ].iteritems():
+                fout.write('{}\t{}\n'.format(lex_index,prob))
+
+def run_create_topic_rankings(topic_ranking_dir):
+
+    pass
+
 ####################
 #       Util       #
 ####################
+def cut_transcript(transcript_dir, jieba_dir):
+    if not os.path.exists(jieba_dir):
+        os.makedirs(jieba_dir)
+        print("Run cutting transcript from {} to {}".format(transcript_dir,jieba_dir))
+    	for filepath in tqdm(glob(os.path.join(transcript_dir,'*'))):
+    		with open(filepath,'r') as f:
+    			text = f.read().decode('utf-8')
+    			text = ''.join(text.split())
+    			jieba_text = ' '.join(jieba.cut(text))
+
+    		filename = filepath.split('/')[-1]
+
+    		with codecs.open(os.path.join(jieba_dir,filename),'w','utf-8') as f:
+    			f.write(jieba_text)
+    else:
+        print("Transcript {} has already been cut to {}".format(transcript_dir,jieba_dir))
+
 def utf8_to_brackethex(uni_word):
 
     big5_word = uni_word.encode('big5')
@@ -329,13 +445,16 @@ def utf8_to_brackethex(uni_word):
     return bracketed_chars
 
 if __name__ == "__main__":
-    ###############################
-    #         Specify Type        #
-    ###############################
+    ############################
+    #         Specify          #
+    ############################
 
     transcript_dir    = '../data/PTV_transcription_charSeg'
+    jieba_dir         = '../data/PTV_transcription_charSeg_jieba'
     transcript_name   = 'reference'
 
+
+    mallet_binary     = '../../Mallet/bin/mallet'
     ###############################
     #       Reconstruct Query     #
     ###############################
@@ -380,10 +499,18 @@ if __name__ == "__main__":
 
     request_dir   = os.path.join(lm_dir,'request')
 
-    run_create_requests(save_docmodel_dir, index_file, doclength_file, request_dir)
+    #run_create_requests(save_docmodel_dir, index_file, doclength_file, request_dir)
 
     keyterm_dir   = os.path.join(lm_dir,'keyterm')
 
-    run_create_keyterms(index_file, keyterm_dir)
+    #run_create_keyterms(index_file, keyterm_dir)
 
-    run_create_lda(lex_file, answer_file, save_docmodel_dir, doclength_file)
+    lda_dir       = os.path.join(lm_dir,'lda')
+
+    #cut_transcript(transcript_dir,jieba_dir)
+
+    #run_create_lda(mallet_binary, jieba_dir, lda_dir, lex_file)
+
+    topic_ranking_dir = os.path.join(lm_dir,'topicRanking')
+
+    run_create_topic_rankings(topic_ranking_dir)
