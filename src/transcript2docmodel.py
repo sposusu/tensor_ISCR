@@ -329,6 +329,7 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
     print("Train lda topic model with mallet")
 
     train_topics_cmd = "{mallet_bin} train-topics --input {input} \
+                                        --inferencer-filename {inferencer_filename} \
                                         --output-model {output_model} \
                                         --output-state {output_state} \
                                         --output-topic-keys {output_topic_keys} \
@@ -346,6 +347,7 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
 
     train_topics_param = { 'mallet_bin': mallet_binary,
                         'input': mallet_file,
+                        'inferencer_filename': os.path.join(train_dir,'inferencer.model'),
                         'output_model': os.path.join(train_dir,'output_model.binary'),
                         'output_state': os.path.join(train_dir,'output_state.gz'),
                         'output_topic_keys': os.path.join(train_dir,'output_topic_keys.txt'),
@@ -363,6 +365,8 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
         print("Topic words weight file already exists {}. Skipping...".format(topic_words_weight_file))
     else:
         os.system(train_topics_cmd.format(**train_topics_param))
+
+    os.system(train_topics_cmd.format(**train_topics_param))
 
     # Create topic models with normalized lda weights
     print("Create topic model word distributions with normalized lda weights {}".format(topic_words_weight_file))
@@ -403,13 +407,65 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
             for lex_index, prob in topic_models[ fname ].iteritems():
                 fout.write('{}\t{}\n'.format(lex_index,prob))
 
-def run_create_topic_rankings(topic_ranking_dir):
+def run_create_topic_rankings(mallet_binary, query_utf8_jieba_file, lda_dir, topic_ranking_dir):
+    # Query file to mallet
+    print("Transorming queries to mallet")
+    query_mallet_file = os.path.join(lda_dir,'mallet_train','queries.mallet')
+    document_mallet_file = os.path.join(lda_dir,'mallet_train','documents.mallet')
+    import_file_cmd = "{} import-file --input {} --output {} --use-pipe-from {}"
+    if os.path.exists(query_mallet_file):
+        print("Query mallet file already exists {}".format(query_mallet_file))
+    else:
+        os.system(import_file_cmd.format(mallet_binary, query_utf8_jieba_file, query_mallet_file, document_mallet_file))
 
-    pass
+    # Infer Model
+    print("Inferencing quries")
+    inferencer_model = os.path.join(lda_dir,'mallet_train','inferencer.model')
+    query_doc_topics  = os.path.join(lda_dir,'mallet_train','query_doc_topics.txt')
+
+    inference_cmd = "{} infer-topics --input {} --inferencer {} --output-doc-topics {}"
+    if os.path.exists(query_doc_topics):
+        print("Query doc topics already exists {}".format(query_doc_topics))
+    else:
+        os.system(inference_cmd.format(mallet_binary, query_mallet_file, inferencer_model, query_doc_topics))
+
+    # Write Topic Rankings
+    print("Creating Topic Rankings Get Top 20")
+    if not os.path.exists(topic_ranking_dir):
+        os.makedirs(topic_ranking_dir)
+
+    with open(query_doc_topics,'r') as f:
+        f.next()
+        for line in tqdm(f):
+            tokens = line.split()
+            fname = int(tokens[0])
+            topic_probs = map(float,tokens[2:])
+            assert len(topic_probs) == 128
+
+            topic_prob_tuples = zip(range(128),topic_probs)
+
+            topic_prob_tuples.sort(key=operator.itemgetter(1),reverse=True)
+
+            filepath = os.path.join(topic_ranking_dir,str(fname))
+            with open(filepath,'w') as fout:
+                for topic_idx, score in topic_prob_tuples[:20]:
+                    fout.write("{}\t{}\n".format(topic_idx,score))
 
 ####################
 #       Util       #
 ####################
+def cut_queries(query_utf8_file, query_utf8_jieba_file):
+    if os.path.exists(query_utf8_jieba_file):
+        print("Jieba query file has already been cut {}".format(query_utf8_jieba_file))
+        return
+
+    with codecs.open(query_utf8_file,'r','utf-8') as f:
+        with codecs.open(query_utf8_jieba_file,'w','utf-8') as fout:
+            for line in f.readlines():
+                line = line.strip()
+                cut_line = ' '.join(jieba.cut(line))
+                fout.write(cut_line + '\n')
+
 def cut_transcript(transcript_dir, jieba_dir):
     if not os.path.exists(jieba_dir):
         os.makedirs(jieba_dir)
@@ -465,8 +521,10 @@ if __name__ == "__main__":
     cmvn_model_query_file = os.path.join(PTV_dir,'PTV.qry.model.CMVN')
     query_big5hex_file    = os.path.join(query_dir,'PTV.big5.query')
     query_utf8_file       = os.path.join(query_dir,'PTV.utf8.query')
+    query_utf8_jieba_file = os.path.join(query_dir,'PTV_utf8_jieba.query')
 
     run_reconstruct_query( cmvn_model_query_file, query_big5hex_file, query_utf8_file )
+    cut_queries(query_utf8_file, query_utf8_jieba_file)
 
     ###############################
     #    Create Language Models   #
@@ -481,8 +539,8 @@ if __name__ == "__main__":
     doclength_file    = os.path.join(lm_dir, transcript_name + '.doclength')
     index_file        = os.path.join(lm_dir, transcript_name + '.index')
 
-    #run_transcript2docmodel(query_utf8_file, transcript_dir, lex_file,
-    #       lm_dir, docmodels_cache, save_docmodel_dir, background_file,doclength_file, index_file)
+    run_transcript2docmodel(query_utf8_file, transcript_dir, lex_file,
+           lm_dir, docmodels_cache, save_docmodel_dir, background_file,doclength_file, index_file)
 
     ###############################
     #     Create Query Pickle     #
@@ -491,7 +549,7 @@ if __name__ == "__main__":
     answer_file       = os.path.join(PTV_dir,'PTV.ans')
     query_pickle      = os.path.join(lm_dir,'query.pickle')
 
-    #run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)
+    run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)
 
     ###############################
     #     Create Action Models    #
@@ -499,18 +557,18 @@ if __name__ == "__main__":
 
     request_dir   = os.path.join(lm_dir,'request')
 
-    #run_create_requests(save_docmodel_dir, index_file, doclength_file, request_dir)
+    run_create_requests(save_docmodel_dir, index_file, doclength_file, request_dir)
 
     keyterm_dir   = os.path.join(lm_dir,'keyterm')
 
-    #run_create_keyterms(index_file, keyterm_dir)
+    run_create_keyterms(index_file, keyterm_dir)
 
     lda_dir       = os.path.join(lm_dir,'lda')
 
-    #cut_transcript(transcript_dir,jieba_dir)
+    cut_transcript(transcript_dir,jieba_dir)
 
-    #run_create_lda(mallet_binary, jieba_dir, lda_dir, lex_file)
+    run_create_lda(mallet_binary, jieba_dir, lda_dir, lex_file)
 
     topic_ranking_dir = os.path.join(lm_dir,'topicRanking')
 
-    run_create_topic_rankings(topic_ranking_dir)
+    run_create_topic_rankings(mallet_binary, query_utf8_jieba_file, lda_dir, topic_ranking_dir)
