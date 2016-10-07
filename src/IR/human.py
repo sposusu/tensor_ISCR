@@ -1,13 +1,18 @@
-from util import *
+import os
+
 import numpy as np
+
+from util import *
+import reader
+
 class SimulatedUser(object):
   """
     Simulates human response to retrieval machine
   """
-  def __init__(self,dir, docmodeldir, keyterm_thres, topic_prob, survey):
-    self.dir = dir
-    self.docmodeldir = docmodeldir
-    self.cpsID = '.'.join(docmodeldir.split('/')[1:-1])
+  def __init__(self, data_dir, keyterm_thres, topic_prob, survey):
+    self.dir = data_dir
+    self.docmodel_dir = os.path.join(data_dir,'docmodel')
+
     self.keyterm_thres = keyterm_thres
     self.topic_prob = topic_prob
     print "keyterm_thres = ",self.keyterm_thres
@@ -16,10 +21,10 @@ class SimulatedUser(object):
 
     # surveyed distribution
     self.survey = survey
-    self.doc_prob = 76.78
+    self.doc_prob     = 76.78
     self.keyterm_prob = 95.28
     self.request_type = 22
-    self.topic_prob = 73.14
+    self.topic_prob   = 73.14
 
 
   def __call__(self,query,ans,ans_index):
@@ -29,13 +34,17 @@ class SimulatedUser(object):
     self.ret   = None
 
     # Information for actions
-    self.keytermlist  = readKeytermlist(self.cpsID,query)
-    self.requestlist  = readRequestlist(self.cpsID, self.ans)
-    self.topiclist    = readTopicWords(self.cpsID)
-    self.topicRanking = readTopicList(self.cpsID,ans_index)[:5]
+    keyterm_dir  = os.path.join(self.dir,'keyterm')
+    request_dir  = os.path.join(self.dir,'request')
+    topic_dir    = os.path.join(self.dir,'lda')
+    ranking_dir  = os.path.join(self.dir,'topicRanking')
 
-    # Debug
-    #print 'Simualtor has query {0}, ans {1}'.format(self.query,self.ans)
+    self.keytermlist  = reader.readKeytermlist(keyterm_dir, query)
+    self.requestlist  = reader.readRequestlist(request_dir, self.ans)
+    self.topiclist    = reader.readTopicWords(topic_dir)
+
+    # Since top ranking is pre-sorted according to query
+    self.topicRanking = reader.readTopicList(ranking_dir,ans_index)[:5]
 
   def feedback(self, request ):
     ret    = request['ret']
@@ -63,7 +72,8 @@ class SimulatedUser(object):
     elif action == 'keyterm':
       if len(self.keytermlist):
         keyterm = self.keytermlist[0][0]
-        docdir = self.dir + 'docmodel/ref/' + self.docmodeldir.split('/')[-2] + '/'
+        #docdir = self.dir + 'docmodel/ref/' + self.docmodeldir.split('/')[-2] + '/'
+        docdir = self.docmodel_dir + '/'
         cnt = sum( 1.0 for a in self.ans \
           if readDocModel(docdir + IndexToDocName(a)).has_key(a) )
         del self.keytermlist[0]
@@ -162,7 +172,8 @@ class SimulatedUser(object):
         keyterm = self.keytermlist[0][0]
         print keyterm
         print "keyterm: ",big5map[keyterm-1].decode('big5')
-        docdir = self.dir + 'docmodel/ref/' + self.docmodeldir.split('/')[-2] + '/'
+        #docdir = self.dir + 'docmodel/ref/' + self.docmodeldir.split('/')[-2] + '/'
+        docdir = self.docmodel_dir + '/'
         cnt = sum( 1.0 for a in self.ans \
           if readDocModel(docdir + IndexToDocName(a)).has_key(a) )
         del self.keytermlist[0]
@@ -223,3 +234,11 @@ class SimulatedUser(object):
 
   def view(self, params):
     self.ret = params['ret']
+
+if __name__ == "__main__":
+    data_dir = '/home/ubuntu/InteractiveRetrieval/data/reference'
+    keyterm_thres = 0.5
+    topic_prob = True
+    survey = False
+    su = SimulatedUser( data_dir, keyterm_thres, topic_prob, survey)
+    import pdb; pdb.set_trace()

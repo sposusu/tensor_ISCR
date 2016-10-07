@@ -9,11 +9,12 @@ from collections import defaultdict
 from copy import deepcopy
 import json
 import operator
+import os
 import pdb
 
 from util import  IndexToDocName, pruneAndNormalize
-from util import  readDocModel, readTopicList, readTopicWords
 from util import  renormalize
+import reader
 
 # Define Cost Table
 def genCostTable():
@@ -41,148 +42,148 @@ def genActionTable():
   return at
 
 class ActionManager(object):
-  def __init__(self, background, doclengs, dir, docmodeldir, \
+    def __init__(self, background, doclengs, data_dir, \
                     topicleng=100, topicnumword=500):
 
-    self.background  = background
-    self.doclengs    = doclengs
+        self.background  = background
+        self.doclengs    = doclengs
 
-    self.dir         = dir
-    self.docmodeldir = docmodeldir
+        #self.topiclist   = reader.load_from_pickle(topiclist_pickle)
+        topic_dir         = os.path.join(data_dir,'lda')
+        self.topiclist    = reader.readTopicWords(topic_dir)
 
-    self.cpsID       = '.'.join(docmodeldir.split('/')[1:-1])
-    self.topiclist   = readTopicWords(self.cpsID)
+        self.docmodel_dir  = os.path.join(data_dir,'docmodel')
 
-    # Parameters for expansion and action
-    self.topicleng    = topicleng
-    self.topicnumword = topicnumword
+        # Parameters for expansion and action
+        self.topicleng    = topicleng
+        self.topicnumword = topicnumword
 
-    # Since agent only returns integer as action
-    self.actionTable  = genActionTable()
-    self.costTable    = genCostTable()
-    self.noiseTable   = genNoiseTable()
+        # Since agent only returns integer as action
+        self.actionTable  = genActionTable()
+        self.costTable    = genCostTable()
+        self.noiseTable   = genNoiseTable()
 
-  def __call__(self, query):
-    self.posmodel = deepcopy(query)
-    self.negmodel = None
+    def __call__(self, query):
+        self.posmodel = deepcopy(query)
+        self.negmodel = None
 
-    self.posdocs  = []
-    self.poslengs = []
-    self.negdocs  = []
-    self.neglengs = []
+        self.posdocs  = []
+        self.poslengs = []
+        self.negdocs  = []
+        self.neglengs = []
 
-    self.posprior = deepcopy(self.posmodel)
-    self.negprior = {}
+        self.posprior = deepcopy(self.posmodel)
+        self.negprior = {}
 
-  def expand_query(self,params):
-    assert isinstance(params,dict),params
+    def expand_query(self,params):
+        assert isinstance(params,dict),params
 
-    action = params['action']
+        action = params['action']
 
-    if action == 'firstpass':
-      query = params['query']
-      self.__call__(query)
+        if action == 'firstpass':
+            query = params['query']
+            self.__call__(query)
 
-    elif action == 'doc':
-      doc = params['doc']
-      if doc:
-        doc = int(doc)
-        self.posdocs.append(self.docmodeldir+IndexToDocName(doc))
-      	self.poslengs.append(self.doclengs[doc])
+        elif action == 'doc':
+            doc = params['doc']
+            if doc:
+                doc = int(doc)
+                self.posdocs.append(os.path.join(self.docmodel_dir,IndexToDocName(doc)))
+            	self.poslengs.append(self.doclengs[doc])
 
-    elif action == 'keyterm':
-      if 'keyterm' in params:
-        keyterm = int(params['keyterm'])
-        isrel = params['isrel'] == 'True'
-        if isrel:
-          self.posprior[ keyterm ] = 1.
-        else:
-          self.negprior[ keyterm ] = 1.
+        elif action == 'keyterm':
+            if 'keyterm' in params:
+                keyterm = int(params['keyterm'])
+                isrel = params['isrel'] == 'True'
+                if isrel:
+                    self.posprior[ keyterm ] = 1.
+                else:
+                    self.negprior[ keyterm ] = 1.
 
-    elif action == 'request':
-      request = int(params['request'])
-      self.posprior[ request ] = 1.0
+        elif action == 'request':
+            request = int(params['request'])
+            self.posprior[ request ] = 1.0
 
-    elif action == 'topic':
-      if params['topic'] != None:
-        topicIdx = int(params['topic'])
-        self.topiclist[ topicIdx ]
-        self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
-        self.poslengs.append(self.topicleng)
+        elif action == 'topic':
+            if params['topic'] != None:
+                topicIdx = int(params['topic'])
+                self.topiclist[ topicIdx ]
+                self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
+                self.poslengs.append(self.topicleng)
 
-    elif action == 'show':
-      # This condition shouldn't happen, since we blocked this in environment.py
-      assert 0
+        elif action == 'show':
+          # This condition shouldn't happen, since we blocked this in environment.py
+            assert 0
 
-    posmodel = expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
-    negmodel = expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
+        posmodel = self.expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
+        negmodel = self.expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)
 
-    self.posmodel = posmodel
-    self.negmodel = negmodel
+        self.posmodel = posmodel
+        self.negmodel = negmodel
 
-    return posmodel, negmodel
+        return posmodel, negmodel
 
-def expansion(prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
-  dir = '../data/ISDR-CMDP/'
+    def expansion(self,prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
+        models = []
+        alphas = []
 
-  models = []
-  alphas = []
+        for name in docnames:
+            if isinstance(name, str) or isinstance(name,int):
+                docmodel_path = os.path.join(self.docmodel_dir,name)
+                models.append(reader.readDocModel(docmodel_path))
+            else:
+                models.append(name)
+            alphas.append(0.5)
 
-  for name in docnames:
-    if isinstance(name, str):
-      models.append(readDocModel(dir+name))
-    else:
-      models.append(name)
-    alphas.append(0.5)
+        N = float(len(docnames))
 
-  N = float(len(docnames))
+        # init query model
+        query = defaultdict(float)
 
-  # init query model
-  query = defaultdict(float)
-  for model in models:
-    for word,val in model.iteritems():
-      query[word] += val/N
+        for model in models:
+            for word,val in model.iteritems():
+                query[word] += val/N
 
-  # EM expansion
-  for it in range(iteration):
-    # E step, Estimate P(Zw,d=1)
-    aux = {}
-    for m in range(len(models)):
-      model = models[m]
-      alpha = alphas[m]
-      aux[m] = defaultdict(float)
-      for word,val in model.iteritems():
-        aux[m][word] = alpha*query[word]/(alpha*query[word] + (1-alpha)*back[word])
+        # EM expansion
+        for it in range(iteration):
+            # E step, Estimate P(Zw,d=1)
+            aux = {}
+            for m in range(len(models)):
+                model = models[m]
+                alpha = alphas[m]
+                aux[m] = defaultdict(float)
+                for word,val in model.iteritems():
+                    aux[m][word] = alpha*query[word]/(alpha*query[word] + (1-alpha)*back[word])
 
-    # M step
-    # Estimate alpha_D
-    tmpmass = defaultdict(float)
-    for m in range(len(models)):
-      alphas[m] = 0.
-      model = models[m]
-      for word,val in model.iteritems():
-        alphas[m]     += aux[m][word]*val*doclengs[m]
-        tmpmass[word] += aux[m][word]*val*doclengs[m]
-      alphas[m] /= doclengs[m]
+            # M step
+            # Estimate alpha_D
+            tmpmass = defaultdict(float)
+            for m in range(len(models)):
+                alphas[m] = 0.
+                model = models[m]
+                for word,val in model.iteritems():
+                    alphas[m]     += aux[m][word]*val*doclengs[m]
+                    tmpmass[word] += aux[m][word]*val*doclengs[m]
+                alphas[m] /= doclengs[m]
 
-    # Estimate expanded query model
-    qexpand = defaultdict(float)
-    for word,val in prior.iteritems():
-      qexpand[word] = mu * val
-    for word,val in tmpmass.iteritems():
-      qexpand[word] += tmpmass[word]
+            # Estimate expanded query model
+            qexpand = defaultdict(float)
+            for word,val in prior.iteritems():
+                qexpand[word] = mu * val
+            for word,val in tmpmass.iteritems():
+                qexpand[word] += tmpmass[word]
 
-    # Normalize expanded model
-    Z = 0.0
-    for word,val in qexpand.iteritems():
-      Z += val
-    for word in qexpand.iterkeys():
-      qexpand[word] = qexpand[word]/Z
+            # Normalize expanded model
+            Z = 0.0
+            for word,val in qexpand.iteritems():
+                Z += val
+            for word in qexpand.iterkeys():
+                qexpand[word] = qexpand[word]/Z
 
-    query = qexpand
-    mu *= delta
+            query = qexpand
+            mu *= delta
 
-  qsort = sorted(query.iteritems(),key=operator.itemgetter(1),reverse=True)
-  query = dict(qsort[0:100])
+        qsort = sorted(query.iteritems(),key=operator.itemgetter(1),reverse=True)
+        query = dict(qsort[0:100])
 
-  return query
+        return query

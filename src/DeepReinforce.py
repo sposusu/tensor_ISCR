@@ -18,7 +18,6 @@ from IR.human import SimulatedUser
 from IR.util import readFoldQueries,readLex,readInvIndex
 from sklearn.cross_validation import KFold
 ###############################
-# TODO
 # online platform
 # accelerate GPU?
 # deep retrieval
@@ -212,7 +211,7 @@ class experiment():
     self.agent.finish_testing(0)
     if args.test:
       return
-    for epoch in range(1,args.num_epoch+1,1):
+    for epoch in range(1,int(args.num_epoch)+1,1):
       print_red('Running epoch {0}'.format(epoch))
       random.shuffle(self.training_data)
 
