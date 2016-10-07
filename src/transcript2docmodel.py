@@ -252,8 +252,10 @@ def run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle
 
             answer_dict_list[ query_idx - 1 ][ doc_idx ] = 1.
 
+    answer_index_list = range(len(answer_dict_list))
+
     with open(query_pickle,'w') as f:
-        obj = zip(query_dict_list,answer_dict_list)
+        obj = zip(query_dict_list,answer_dict_list,answer_index_list)
         pickle.dump(obj,f)
 
 def run_create_requests(docmodel_dir, inv_index_file, doclength_file, request_dir):
@@ -506,9 +508,9 @@ if __name__ == "__main__":
     #         Specify          #
     ############################
 
-    transcript_dir    = '../data/PTV_transcription_charSeg'
-    jieba_dir         = transcript_dir + '_jieba'
-    transcript_name   = 'reference'
+    transcript_dir    = '../data/PTV_onebest_fromMATBN_charSeg'
+    jieba_dir         = os.path.join(transcript_dir,'jieba')
+    transcript_name   = 'dnn'
 
     mallet_binary     = '../../Mallet/bin/mallet'
     ###############################
@@ -532,8 +534,7 @@ if __name__ == "__main__":
 
     lm_dir            = os.path.join(data_dir, transcript_name)
     docmodels_cache   = os.path.join(lm_dir,'docmodels.cache')
-    doclengths_pickle = os.path.join(lm_dir,'doclength.pickle')
-    
+
     save_docmodel_dir = os.path.join(lm_dir,'docmodel')
     lex_file          = os.path.join(lm_dir, transcript_name + '.lex')
     background_file   = os.path.join(lm_dir, transcript_name + '.background')
