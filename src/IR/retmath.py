@@ -102,6 +102,8 @@ def FitExpDistribution(ret,lamda):
 
   rank = map(operator.itemgetter(1),ret)[:100]
   meanX = sum(rank)/float(len(rank)) + rank[-1]
+  if meanX == 0:
+      return 0.
   rank = [(r+rank[-1])/meanX for r in rank]
 
   err = 0.0
@@ -116,6 +118,8 @@ def FitGaussDistribution(ret,m,v):
 
   rank = map(operator.itemgetter(1),ret)[:100]
   meanX = sum(rank)/float(len(rank)) + rank[-1]
+  if meanX == 0:
+     return 0.
   rank = [(r+rank[-1])/meanX for r in rank]
 
   err = 0.0

@@ -23,21 +23,21 @@ class NeuralAgent(object):
                  epsilon_decay, replay_memory_size, exp_pref,
                  replay_start_size, update_frequency, rng):
 
-        self.network = q_network
-        self.epsilon_start = epsilon_start
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
+        self.network            = q_network
+        self.epsilon_start      = epsilon_start
+        self.epsilon_min        = epsilon_min
+        self.epsilon_decay      = epsilon_decay
         self.replay_memory_size = replay_memory_size
-        self.exp_pref = exp_pref
-        self.replay_start_size = replay_start_size
-        self.update_frequency = update_frequency
-        self.rng = rng
+        self.exp_pref           = exp_pref
+        self.replay_start_size  = replay_start_size
+        self.update_frequency   = update_frequency
+        self.rng                = rng
 
-        self.phi_length = self.network.num_frames
-        self.image_width = self.network.input_width
+        self.phi_length   = self.network.num_frames
+        self.image_width  = self.network.input_width
         self.image_height = self.network.input_height
 
-        # CREATE A FOLDER TO HOLD RESULTS
+        # Create a folder to hold results
         time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
         self.exp_dir = self.exp_pref + time_str + \
                        "{}".format(self.network.lr).replace(".", "p") + "_" \
@@ -49,7 +49,6 @@ class NeuralAgent(object):
             os.makedirs(self.exp_dir)
 
         self.num_actions = self.network.num_actions
-
 
         self.data_set = ale_data_set.DataSet(width=self.image_width,
                                              height=self.image_height,

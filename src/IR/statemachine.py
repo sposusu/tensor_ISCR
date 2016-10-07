@@ -1,71 +1,30 @@
 from collections import defaultdict
 import math
-import pdb
+import os
 
-import h5py
-import lasagne
 import numpy as np
-import theano
-import theano.tensor as T
 import random
 
 from expansion import expansion
 from retmath import *
 from retrieval import retrieveCombination
-from stateestimation import dnn
 from util import IndexToDocName
-from util import readDocModel
+import reader
 
-"""
-  Todo: Online training for approximator
-  Review feature extraction in old code
-"""
-
-normalize_feature = False
-
-se_prefix = '../Data/stateestimation/'
-weights_file = se_prefix + 'dnn.npz'
-'''
-class Approximator(object):
-  def __init__(self):
-    # Functions
-    self.network, self.train_fn, self.val_fn, self.test_fn = dnn()
-
-    with np.load( weights_file ) as f:
-      param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-      lasagne.layers.set_all_param_values(self.network, param_values)
-
-
-  def predict_one(self,feature):
-    assert len(feature) == 89
-    feature      = np.asarray(feature).reshape(1,1,1,89)
-    estimatedMAP = float(self.test_fn(feature)[0])
-    return estimatedMAP
-'''
 class StateMachine(object):
-  def __init__(self,background,inv_index,doclengs,dir,docmodeldir,\
-              iteration=10,mu=1,delta=1,alpha=0.1, feat="all"):
+  def __init__(self,background,inv_index,doclengs,docmodel_dir,\
+              iteration=10,mu=1,delta=1,alpha=0.1,feat="all"):
 
-    self.background = background
-    self.inv_index  = inv_index
-    self.doclengs   = doclengs
-
-    self.dir         = dir
-    self.docmodeldir = docmodeldir
-
-    # Model for state estimation
-  #  self.approximator = Approximator()
-
-    # Mean and std for feature normalization
-    with h5py.File("../data/stateestimation/norm.h5") as norm:
-      self.mean = norm['mean'][:]
-      self.std = norm['std'][:]
+    self.background     = background
+    self.inv_index      = inv_index
+    self.doclengs       = doclengs
+    self.docmodel_dir   = docmodel_dir
 
     # Parameters for expansion
     self.iteration = iteration
-    self.mu = mu
-    self.delta = delta
-    self.alpha = alpha
+    self.mu        = mu
+    self.delta     = delta
+    self.alpha     = alpha
 
     # feature
     assert feat in ["all","raw","wig","nqc"]
@@ -75,7 +34,7 @@ class StateMachine(object):
     elif feat == "raw":
       self.feat_len = 49
     elif feat == "wig" or feat == "nqc":
-      self.feat_len = 5 
+      self.feat_len = 5
     print("feature length = {}".format(self.feat_len))
 
   def __call__(self,ret,action_type,curtHorizon,\
@@ -87,46 +46,37 @@ class StateMachine(object):
     """
     feature = self.featureExtraction(ret,action_type,curtHorizon,\
                                     posmodel,negmodel,posprior,negprior)
-    estimatedMAP = 0.
-#    estimatedMAP = self.approximator.predict_one(feature)
 
     feature = np.asarray(feature).reshape(1,len(feature))
 
-    if normalize_feature:
-      with np.errstate(divide='ignore', invalid='ignore'):
-        feature = np.true_divide(feature-self.mean , self.std)
-    	feature[feature == np.inf] = 0
-    	feature = np.nan_to_num(feature)
-
-    return feature, estimatedMAP
+    return feature
 
   def featureExtraction(self,ret,action_type,curtHorizon,\
                           posmodel,negmodel,posprior,negprior):
 
     top_scores = [ -1 * x[1] for x in ret[:49] ]
     if self.feat == "raw":
-	return top_scores    
-    elif self.feat == "raw_query":
-	query = []
-	query += [ entropy( posprior ) ]
- 	return top_scores + query
+	return top_scores
     elif self.feat == "wig" or self.feat == "nqc":
 	wigs = []
-	nqcs = []	
+	nqcs = []
 	# read puesdo rel docs
 	docs = []
 	doclengs = []
         for docID,score in ret[:50]:
-          model = readDocModel(self.dir + self.docmodeldir + IndexToDocName(docID))
+          #model = self.docmodels[IndexToDocName(docID)]
+          docmodel_path = os.path.join(self.docmodel_dir,IndexToDocName(docID))
+          model = reader.readDocModel(docmodel_path)
+
           docs.append(model)
           doclengs.append(self.doclengs[docID])
-       	
-	# Calculate wig & nqc 
+
+	# Calculate wig & nqc
         irrel = cross_entropies(posmodel,self.background) - \
                 0.1 * cross_entropies(negmodel,self.background)
-    	
-	# Calculate at 10, 20, 30, 40 ,50 
-	cal_num_list = [0, 10,20,30,40,50]	
+
+	# Calculate at 10, 20, 30, 40 ,50
+	cal_num_list = [0, 10,20,30,40,50]
    	for start, end in zip( cal_num_list[:-1], cal_num_list[1:] ):
 	  wig = 0.
 	  nqc = 0.
@@ -135,12 +85,12 @@ class StateMachine(object):
 	    nqc += math.pow(r[1]-irrel,2) / 10.
 	  wigs.append(wig)
 	  nqcs.append(nqc)
-	
+
 	if self.feat == "wig":
 	  return wigs
 	else:
 	  return nqcs
-    
+
     feature = []
 
     # Extract Features
@@ -152,7 +102,10 @@ class StateMachine(object):
     for docID,score in ret:
       if k>=20:
         break
-      model = readDocModel(self.dir + self.docmodeldir + IndexToDocName(docID))
+      #model = self.docmodels[IndexToDocName(docID)]
+      docmodel_path = os.path.join(self.docmodel_dir,IndexToDocName(docID))
+      model = reader.readDocModel(docmodel_path)
+
       docs.append(model)
       doclengs.append(self.doclengs[docID])
       k += 1
@@ -286,6 +239,6 @@ class StateMachine(object):
 
     # top N scores
     top_scores = [ -1 * x[1] for x in ret[:49] ]
-    feature += top_scores 
-	
+    feature += top_scores
+
     return feature

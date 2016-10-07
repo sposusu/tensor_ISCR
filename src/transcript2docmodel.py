@@ -507,9 +507,8 @@ if __name__ == "__main__":
     ############################
 
     transcript_dir    = '../data/PTV_transcription_charSeg'
-    jieba_dir         = '../data/PTV_transcription_charSeg_jieba'
+    jieba_dir         = transcript_dir + '_jieba'
     transcript_name   = 'reference'
-
 
     mallet_binary     = '../../Mallet/bin/mallet'
     ###############################
@@ -532,8 +531,9 @@ if __name__ == "__main__":
     ###############################
 
     lm_dir            = os.path.join(data_dir, transcript_name)
-    docmodels_cache   = os.path.join(lm_dir,'docmodels.pickle')
-
+    docmodels_cache   = os.path.join(lm_dir,'docmodels.cache')
+    doclengths_pickle = os.path.join(lm_dir,'doclength.pickle')
+    
     save_docmodel_dir = os.path.join(lm_dir,'docmodel')
     lex_file          = os.path.join(lm_dir, transcript_name + '.lex')
     background_file   = os.path.join(lm_dir, transcript_name + '.background')

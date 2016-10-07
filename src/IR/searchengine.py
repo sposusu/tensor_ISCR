@@ -3,27 +3,15 @@ import pdb
 
 from retmath import cross_entropy
 from util import readLex, readList, readInvIndex, readBackground, readAnswer, readDocLength, docNameToIndex
-"""
-
-  Move read function into search engine constructor?
-
-"""
-
-__all__ = ['SearchEngine',\
-            'readLex',\
-            'readBackground',\
-            'readInvIndex',\
-            'readAnswer',\
-            'readDocLength',\
-            'docNameToIndex']
+import reader
 
 class SearchEngine(object):
-  def __init__(self,lex,background,inv_index,doclengs,dir,alpha=1000,beta=0.1):
+  def __init__(self,lex_file, background_file, inv_index_file, doclengs_file,alpha=1000,beta=0.1):
     # Initialize
-    self.lex        = readLex(dir+lex)
-    self.background = readBackground(dir+background,self.lex)
-    self.inv_index  = readInvIndex(dir+inv_index)
-    self.doclengs   = readDocLength(dir+doclengs)
+    self.lex        = reader.readLex(lex_file)
+    self.background = reader.readBackground(background_file,self.lex)
+    self.inv_index  = reader.readInvIndex(inv_index_file)
+    self.doclengs   = reader.readDocLength(doclengs_file)
 
     # Query expansion parameters
     self.alpha = alpha
@@ -95,55 +83,5 @@ class SearchEngine(object):
     sorted_ret = sorted(result.iteritems(),key=operator.itemgetter(1),reverse=True)
     return sorted_ret
 
-"""
-  Retrieval Engine Read Functions ( Migrated from util.py )
-"""
-'''
-def readLex(fname):
-  lex = {}
-  with open(fname) as f:
-    for idx, row in enumerate(f.readlines()):
-        lex[row.strip('\n')] = idx + 1
-  return lex
-
-def readList(fname):
-  return [ line.strip('\n') for line in open(fname,'r').readlines() ]
-
-def readInvIndex(fname):
-  inv_index = {}
-  with open(fname) as f:
-    for line in f.readlines():
-      [ p1, p2 ] = line.strip('\n').split('\t')
-      inv_index[ int(p1) ] = dict( [ (int(valpair.split(':')[0]),float(valpair.split(':')[1])) \
-                                  for valpair in p2.split() ] )
-  return inv_index
-
-def readBackground(fname,lex):
-  background = {}
-  with open(fname) as f:
-    for line in f.readlines():
-      [ p1,p2 ] = line.strip('\n').split()
-      background[ lex[p1] ] = float(p2)
-  return background
-
-def readAnswer(fname,lex):
-  answer = [ dict() for x in range(163) ]
-  with open(fname) as f:
-    for line in f.readlines():
-        [t1,t2,t3,t4] = line.strip('\n').split()
-        answer[ int(t1) - 1 ][ docNameToIndex(t3) ] = 1
-  return answer
-
-def readDocLength(fname):
-  doclengs = {}
-  with open(fname) as f:
-    for line in f.readlines():
-      [ p1,p2 ] = line.strip('\n').split()
-      doclengs[ docNameToIndex(p1) ] = float(p2)
-  return doclengs
-
-def docNameToIndex(fname):
-  return int(fname[1:])
-'''
 if __name__ == "__main__":
   pass
