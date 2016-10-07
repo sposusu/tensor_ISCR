@@ -474,15 +474,16 @@ def cut_transcript(transcript_dir, jieba_dir):
         os.makedirs(jieba_dir)
         print("Run cutting transcript from {} to {}".format(transcript_dir,jieba_dir))
     	for filepath in tqdm(glob(os.path.join(transcript_dir,'*'))):
-    		with open(filepath,'r') as f:
-    			text = f.read().decode('utf-8')
-    			text = ''.join(text.split())
-    			jieba_text = ' '.join(jieba.cut(text))
+            if os.path.isfile(filepath):
+        		with open(filepath,'r') as f:
+        			text = f.read().decode('utf-8')
+        			text = ''.join(text.split())
+        			jieba_text = ' '.join(jieba.cut(text))
 
-    		filename = filepath.split('/')[-1]
+        		filename = filepath.split('/')[-1]
 
-    		with codecs.open(os.path.join(jieba_dir,filename),'w','utf-8') as f:
-    			f.write(jieba_text)
+        		with codecs.open(os.path.join(jieba_dir,filename),'w','utf-8') as f:
+        			f.write(jieba_text)
     else:
         print("Transcript {} has already been cut to {}".format(transcript_dir,jieba_dir))
 
@@ -552,7 +553,6 @@ if __name__ == "__main__":
     query_pickle      = os.path.join(lm_dir,'query.pickle')
 
     run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)
-
     ###############################
     #     Create Action Models    #
     ###############################

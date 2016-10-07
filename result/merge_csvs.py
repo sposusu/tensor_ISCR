@@ -2,6 +2,7 @@ import csv
 from glob import glob
 import os
 
+import numpy as np
 
 def run_merge_csvs(result_dir):
 	all_data = []
@@ -19,13 +20,25 @@ def run_merge_csvs(result_dir):
 	
 	print("len(all_data[0]) {}".format(len(all_data[0])))
 	
-	header = [ 'epoch' ] + list(range(1,11,1)) + list(range(1,11,1))
+	header = [ 'epoch' ] + list(range(1,11,1)) + ['MAP_average'] + list(range(1,11,1)) + ['Return_average']
 
 	merged_data = []
 	for d in all_data:
-		MAPs = d[0::2]
-		Rets = d[1::2]
-		merged_data.append( MAPs + Rets )
+		MAPs = list(map(float,d[0::2]))
+
+		MAP_avg = np.mean(MAPs)
+	
+		MAPs += [None] * ( 10 - len(MAPs) )  
+
+		Rets = list(map(float,d[1::2]))
+		
+		Ret_avg = np.mean(Rets)
+		
+		Rets += [None] * ( 10 - len(Rets) )  
+		
+		row_data = MAPs + [ MAP_avg ] + Rets + [ Ret_avg ] 
+
+		merged_data.append( row_data )
 
 	merged_csv = result_dir + '_merged.csv'
 	with open(merged_csv,'w') as f:
@@ -37,6 +50,6 @@ def run_merge_csvs(result_dir):
 
 
 if __name__ == "__main__":
-	result_dir = './result/wig/onebest_CMVN'
+	result_dir = './result/nqc/onebest_CMVN'
 	
 	run_merge_csvs(result_dir)

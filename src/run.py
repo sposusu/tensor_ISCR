@@ -1,4 +1,4 @@
-
+import argparse
 from collections import defaultdict
 import cPickle as pickle
 import numpy as np
@@ -34,9 +34,6 @@ def set_environment(retrieval_args):
                         )
 
   # Simulated User
-
-
-
   keyterm_thres = retrieval_args.get('keyterm_thres')
   topic_prob    = retrieval_args.get('topic_prob')
   survey        = retrieval_args.get('survey')
@@ -267,7 +264,7 @@ def run_training(retrieval_args, training_args, reinforce_args):
     tstart = time.time()
 
     env   = set_environment(retrieval_args)
-    agent = set_agent(training_args,reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
+    agent = set_agent(training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
     print("Environemt and Agent Set")
 
     exp   = experiment(retrieval_args, training_args, reinforce_args, agent, env)
@@ -293,12 +290,27 @@ def print_green(x):  # parameter
     logging.info(x)
 
 if __name__ == "__main__":
+    #################################
+    #        Argument Parser        #
+    #################################
+    parser = argparse.ArgumentParser(description="Interactive Spoken Content Retrieval")
+
+    parser.add_argument("-d", "--directory", type=str, help="data directory", default='/home/ubuntu/InteractiveRetrieval/data/reference')
+    parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
+    parser.add_argument("--prefix",  type=str, help="experiment prefix", default=None)
+    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all") # TODO not implement yet
+
+    args = parser.parse_args()
+
+    #################################
+    #     Load Default Argument     #
+    #################################
     retrieval_args = {
-        'data_dir': '/home/ubuntu/InteractiveRetrieval/data/reference',
-        'result_dir': '/home/ubuntu/InteractiveRetrieval/result/reference',
-        'exp_name': 'reference',
-        'fold': 1,
-        'feature_type': 'all', # all | raw | nqc | wig
+        'data_dir': '/home/ubuntu/InteractiveRetrieval/data/onebest_CMVN',
+        'result_dir': '/home/ubuntu/InteractiveRetrieval/result/onebest_CMVN',
+        'exp_name': 'onebest_CMVN',
+        'fold': args.fold,
+        'feature_type': args.feature
         'keyterm_thres': 0.5,
         'topic_prob': True,
         'cost_noise_std': 1
@@ -315,7 +327,7 @@ if __name__ == "__main__":
     }
 
     reinforce_args = {
-        'steps_per_epoch': 10,
+        'steps_per_epoch': 1000,
         'replay_start_size': 500,
         'replay_memory_size': 10000,
         'epsilon_decay': 100000,

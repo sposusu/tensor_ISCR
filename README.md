@@ -1,43 +1,14 @@
-# InteractiveRetrieval
+# Interactive Spoken Content Retrieval
 
-Our codes consists of two parts:
-  * Deep Reinforcment Learning
-  * Interactive Retrieval System
+### 1. Built language models from PTV transcripts
+  * Transcript directory should be a 
+  * Specify transcript directory in src/transcript2docmodel.py
 
-Deep Reinforcement Learning Code:
-  * https://github.com/spragunr/deep_q_rl
 
-Interactive System(Environment): <br/>
-  * Dialogue Manager: <br/>
-      The dialogue manager that handles the interaction process
-    * Roles
-      - query expansion(background model, negative model)
-      - records turns
-      - calculates reward
+### 2. Train Retrieval agent
+  *
+  *
 
-    * State Machine: <br/>
-      Extracts feature and performs state estimation
-      Feature: the 1-dimensional observation vector our RL agent needs
-
-    * Action Manager: <br/>
-      Performs query expansion according to different actions
-
-  * Search Engine: <br/>
-    The retrieval engine of our system.
-    Inputs query,returns list of documents
-  * Simulator: <br/>
-    Simulates Human behavior, ( response to human actions )
-
-# code structure
-DeepReinforce.py
-  * agent.py(in folder DQN)
-    * q_network.py
-      * lasagne_updates.py
-    * ale_data_set.py 
-                      
-  * environment.py (in folder IR)
-    * dialoguemanager.py(retrieval module)
-      * seachengin.py 
-      * statemachine.py
-      * actionmanager.py
-    * human.py (simulated user)
+### 3. View Results
+  *
+  *
