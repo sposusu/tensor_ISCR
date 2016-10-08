@@ -23,9 +23,9 @@ class Experiment(object):
 
         self.training_data, self.testing_data = Experiment.load_query(retrieval_args)
 
-        self.env = self.set_environment(retrieval_args)
+        self.env = Experiment.set_environment(retrieval_args)
 
-        self.agent = self.set_agent(retrieval_args, training_args, reinforce_args,\
+        self.agent = Experiment.set_agent(retrieval_args, training_args, reinforce_args,\
                 self.env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
 
         self.num_epochs      = training_args.get('num_epochs')
@@ -54,8 +54,8 @@ class Experiment(object):
         Experiment.print_green("keyterm_thres: {}".format(retrieval_args.get('keyterm_thres')))
         Experiment.print_green("experiment_log_file: {}".format(exp_log_path))
 
-
-    def set_environment(self, retrieval_args):
+    @staticmethod
+    def set_environment(retrieval_args):
         print('Creating Environment with DialogueManager and Simulated User...')
         # Dialogue Manager
         data_dir = retrieval_args.get('data_dir')
@@ -82,7 +82,8 @@ class Experiment(object):
         env = Environment(retrievalmodule,simulateduser)
         return env
 
-    def set_agent(self, retrieval_args, training_args, reinforce_args, feature_length, result_dir):
+    @staticmethod
+    def set_agent(retrieval_args, training_args, reinforce_args, feature_length, result_dir):
         print("Setting up Agent...")
 
         ######################################
@@ -169,7 +170,7 @@ class Experiment(object):
         self.agent.finish_testing(0)
 
         for epoch in range(1,self.num_epochs+1,1):
-            print_red('Running epoch {0}'.format(epoch))
+            Experiment.print_red('Running epoch {0}'.format(epoch))
             random.shuffle(self.training_data)
 
             ## TRAIN ##

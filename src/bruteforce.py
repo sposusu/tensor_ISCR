@@ -10,78 +10,9 @@ import random
 import sys
 import time
 
-from run import set_environment, experiment
+import numpy as np
 
-#################################
-#    Brute Force Best Results   #
-#################################
-def run_bruteforce(retrieval_args, training_args, reinforce_args):
-    print("Running brute force")
-    # Brute Force Not Working
-    tstart = time.time()
-
-    env   = set_environment(retrieval_args)
-
-    assert retrieval_args.get('fold') == -1, "Fold should be -1 in brue force"
-
-    # Brute Force Queries
-    queries, test_queries = exp.load_query(retrieval_args)
-
-    # Brute Force Logging File
-    result_dir = retrieval_args.get("result_dir")
-    exp_name   = retrieval_args.get("exp_name")
-    exp_dir    = os.path.join(result_dir,exp_name)
-    if not os.path.exists(exp_dir):
-        os.makedirs(exp_dir)
-    exp_logpath = os.path.join(exp_dir,exp_name + '_bruteforce.log')
-
-    lf = open(exp_logpath,'w')
-    lf.write('Index\tBest Sequence\tBest Return\tAP\n')
-    lf.flush()
-
-    best_returns = - np.ones(163)
-    best_seqs = defaultdict(list)
-    APs = np.zeros(163)
-
-    def brute_force_job(idx):
-        q, ans, ans_index = queries[idx]
-        for seq in itertools.product(range(5),repeat=4):
-            cur_return = 0.
-            init_state = env.setSession(q,ans,ans_index,True)
-            seq += [ 4 ] # Final action is show
-            for act in seq:
-                reward, state = env.step(act)
-                cur_return += reward
-                if act == 4:
-                    break
-
-            terminal, AP = env.game_over()
-            sys.stderr.write('Query {}, Actions Sequence {}, Return = {}\n'.format(idx,seq,cur_return))
-
-            if cur_return > best_returns[idx]:
-                best_returns[idx] = cur_return
-                best_seqs[idx] = seq
-                APs[idx] = AP
-
-        lf.write( '{}\t{}\t{}\t{}\n'.format(idx, best_seqs[idx], best_returns[idx], APs[idx]))
-        lf.flush()
-        return best_seqs[idx],best_returns[idx],APs[idx]
-
-    # Start multiprocessing
-    pool = Pool(10)
-    for i in xrange(16):
-        print("{}0~{}9".format(i,i))
-        pool.map(brute_force_job, range(i*10,(i+1)*10))
-        print('160~162')
-        pool.map(brute_force_job, range(160,163))
-
-    lf.close()
-    # Bruce Force Pickle
-    bruteforce_pickle = os.path.join(exp_dir,exp_name+'_bruteforce.pickle')
-    with open(bruteforce,'w') as f:
-        pickle.dump( (best_returns, best_seqs,APs),f )
-        print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))
-
+from experiment import Experiment
 
 if __name__ == "__main__":
     #################################
@@ -143,12 +74,12 @@ if __name__ == "__main__":
 
     tstart = time.time()
 
-    env   = set_environment(retrieval_args)
+    env   = Experiment.set_environment(retrieval_args)
 
     assert retrieval_args.get('fold') == -1, "Fold should be -1 in brue force"
 
     # Brute Force Queries
-    queries, test_queries = experiment.load_query(retrieval_args)
+    queries, test_queries = Experiment.load_query(retrieval_args)
 
     # Brute Force Logging File
     result_dir = retrieval_args.get("result_dir")
@@ -194,13 +125,13 @@ if __name__ == "__main__":
     pool = Pool(10)
     for i in xrange(16):
         print("{}0~{}9".format(i,i))
-        pool.map(brute_force_job, range(i*10,(i+1)*10))
+        pool.map(brute_force_job, tuple(range(i*10,(i+1)*10)))
         print('160~162')
-        pool.map(brute_force_job, range(160,163))
+        pool.map(brute_force_job, tuple(range(160,163)))
 
     lf.close()
     # Bruce Force Pickle
     bruteforce_pickle = os.path.join(exp_dir,exp_name+'_bruteforce.pickle')
     with open(bruteforce,'w') as f:
         pickle.dump( (best_returns, best_seqs,APs),f )
-        print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))
+    print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))

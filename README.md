@@ -20,5 +20,5 @@
 
 ### Other Notes
 - Don't ask me about the code and the data storage format, it's just as it is
-- I believe there are bugs in old recognition, naming a few
-  - Some keyterms do not exist in Wen's data, can reproduce if I can access Wen's recognition transcripts
+- I believe there are bugs in Wen's data, naming a few
+  - Some keyterms do not exist, can reproduce if I can access Wen's recognition transcripts
