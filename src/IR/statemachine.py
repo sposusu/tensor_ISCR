@@ -12,13 +12,13 @@ from util import IndexToDocName
 import reader
 
 class StateMachine(object):
-  def __init__(self,background,inv_index,doclengs,docmodel_dir,\
+  def __init__(self,background,inv_index,doclengs,data_dir,\
               iteration=10,mu=1,delta=1,alpha=0.1,feat="all"):
 
     self.background     = background
     self.inv_index      = inv_index
     self.doclengs       = doclengs
-    self.docmodel_dir   = docmodel_dir
+    self.docmodel_dir   = os.path.join(data_dir,'docmodel')
 
     # Parameters for expansion
     self.iteration = iteration

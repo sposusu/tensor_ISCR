@@ -12,11 +12,8 @@ import numpy as np
 
 class DialogueManager(object):
   def __init__(self, data_dir, feature_type):
-
-    docmodels_pickle    = os.path.join(data_dir,'docmodels.pickle')
-    topiclist_pickle    = os.path.join(data_dir,'lda','topiclist.pickle')
-
-    data_name = data_dir.split('/')[-1]
+    data_dir  = os.path.normpath(data_dir)
+    data_name = os.path.basename(data_dir)
 
     lex_file        = os.path.join(data_dir,data_name + '.lex')
     background_file = os.path.join(data_dir,data_name + '.background')
@@ -32,13 +29,11 @@ class DialogueManager(object):
                                 )
 
     # State Machine
-    docmodel_dir    = os.path.join(data_dir,'docmodel')
-
     self.statemachine = StateMachine(
                               background    = self.searchengine.background,
                               inv_index     = self.searchengine.inv_index,
                               doclengs      = self.searchengine.doclengs,
-                              docmodel_dir  = docmodel_dir,
+                              data_dir      = data_dir,
                               feat          = feature_type
                               )
 
@@ -90,7 +85,6 @@ class DialogueManager(object):
     self.curtHorizon += 1
 
     # Feature Extraction
-    # State Estimation
     feature = self.statemachine(  ret         = self.ret,
                                   action_type = self.cur_action,
                                   curtHorizon = self.curtHorizon,
@@ -101,8 +95,6 @@ class DialogueManager(object):
                                   negprior    = self.actionmanager.negprior  )
 
     # Record mean average precision
-    # Train state estimator
-    #if not self.test_flag:
     self.lastMAP = self.MAP
     self.MAP = self.evalAP(self.ret,self.ans)
 
@@ -167,12 +159,3 @@ class DialogueManager(object):
       self.actionmanager.posmodel = None
       return True, self.MAP
     return False, self.MAP
-
-if __name__ == "__main__":
-    data_dir = '/home/ubuntu/InteractiveRetrieval/data/reference'
-    searchengine_pickle = os.path.join(data_dir,'searchengine.pickle')
-    docmodels_pickle    = os.path.join(data_dir,'docmodels.pickle')
-    topiclist_pickle    = os.path.join(data_dir,'lda','topiclist.pickle')
-    feat = 'all'
-    dm = DialogueManager(searchengine_pickle, docmodels_pickle, topiclist_pickle,feat)
-    import pdb; pdb.set_trace()

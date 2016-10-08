@@ -126,10 +126,13 @@ class ActionManager(object):
     def expansion(self,prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
         models = []
         alphas = []
-
+        #print("Doc names")
+        #print(docnames)
+        #import pdb; pdb.set_trace()
         for name in docnames:
             if isinstance(name, str) or isinstance(name,int):
-                docmodel_path = os.path.join(self.docmodel_dir,name)
+                #docmodel_path = os.path.join(self.docmodel_dir,name)
+                docmodel_path = name
                 models.append(reader.readDocModel(docmodel_path))
             else:
                 models.append(name)

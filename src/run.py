@@ -22,6 +22,10 @@ from IR.util import readFoldQueries,readLex,readInvIndex
 from IR import reader
 from sklearn.cross_validation import KFold
 
+###############################
+#  Environment & Agent Setup  #
+###############################
+
 def set_environment(retrieval_args):
   print('Creating Environment with DialogueManager and Simulated User...')
   # Dialogue Manager
@@ -128,13 +132,15 @@ class experiment():
         self.best_return = np.zeros(163) # to be removed
 
     def set_logging(self, retrieval_args):
-        result_dir = retrieval_args.get('result_dir')
-        exp_name = retrieval_args.get('exp_name')
-        fold = retrieval_args.get('fold')
-        exp_logfile = exp_name + '_fold{}'.format(str(fold)) + '.log'
-        exp_log_path = os.path.join(result_dir,exp_logfile)
-        if not os.path.exists(result_dir):
-            os.makedirs(result_dir)
+        result_dir   = retrieval_args.get('result_dir')
+        exp_name     = retrieval_args.get('exp_name')
+        exp_dir      = os.path.join(result_dir,exp_name)
+        if not os.path.exists(exp_dir):
+            os.makedirs(exp_dir)
+
+        fold         = retrieval_args.get('fold')
+        exp_logfile  = exp_name + '_fold{}'.format(str(fold)) + '.log'
+        exp_log_path = os.path.join(exp_dir,exp_logfile)
 
         logging.basicConfig(filename=exp_log_path,level=logging.DEBUG)
 
@@ -175,12 +181,12 @@ class experiment():
 
             ## TEST ##
             self.agent.start_testing()
-            self.run_epoch(True)
+            self.run_epoch(test_flag = True)
             self.agent.finish_testing(epoch)
 
     def run_epoch(self,test_flag=False):
         epoch_data = self.training_data
-        if(test_flag):
+        if test_flag:
             epoch_data = self.testing_data
         print('Number of queries {}'.format(len(epoch_data)))
 
@@ -218,8 +224,8 @@ class experiment():
                 if steps_left <= 0:
                     break
 
-                if test_flag:
-                    break
+            if test_flag:
+                break
 
         pbar.finish()
 
@@ -259,6 +265,10 @@ class experiment():
 
         return num_steps, AP
 
+
+#################################
+#     Run Training Function     #
+#################################
 def run_training(retrieval_args, training_args, reinforce_args):
     tstart = time.time()
 
@@ -277,12 +287,15 @@ def run_training(retrieval_args, training_args, reinforce_args):
 def print_red(x):  # epoch
     cprint(x, 'red')
     logging.info(x)
+
 def print_blue(x): # train info
     cprint(x, 'blue')
     logging.info(x)
+
 def print_yellow(x): # test info
     cprint(x, 'yellow')
     logging.info(x)
+
 def print_green(x):  # parameter
     cprint(x, 'green')
     logging.info(x)
@@ -295,23 +308,28 @@ if __name__ == "__main__":
 
     parser.add_argument("-d", "--directory", type=str, help="data directory", default='/home/ubuntu/InteractiveRetrieval/data/reference')
     parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
-    parser.add_argument("--prefix",  type=str, help="experiment prefix", default=None)
+    parser.add_argument("--result",  type=str, help="result directory", default=None)
+    parser.add_argument("--name",  type=str, help="experiment name", default=None)
     parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
 
     args = parser.parse_args()
+
+    # Check parser arguments
+    assert os.path.isdir(args.directory)
+    assert isinstance(args.result,str),"Specify result directory location!"
+    assert isinstance(args.name,str),"Specify experiment name!"
 
     #################################
     #     Load Default Argument     #
     #################################
     retrieval_args = {
-        'data_dir': '/home/ubuntu/InteractiveRetrieval/data/onebest_CMVN',
-        'result_dir': '/home/ubuntu/InteractiveRetrieval/result/onebest_CMVN',
-        'exp_name': 'onebest_CMVN',
+        'data_dir': args.directory,
+        'result_dir': args.result,
+        'exp_name': args.name,
         'fold': args.fold,
         'feature_type': args.feature,
         'keyterm_thres': 0.5,
         'topic_prob': True,
-        'cost_noise_std': 1
     }
 
     training_args = {
