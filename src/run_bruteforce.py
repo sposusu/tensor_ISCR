@@ -98,11 +98,13 @@ if __name__ == "__main__":
     APs = np.zeros(163)
 
     def brute_force_job(idx):
+        tstart = time.time()
+        print("Brute forcing answer index {}".format(idx))
         q, ans, ans_index = queries[idx]
         for seq in itertools.product(range(5),repeat=4):
             cur_return = 0.
             init_state = env.setSession(q,ans,ans_index,True)
-            seq += [ 4 ] # Final action is show
+            seq = list(seq) + [ 4 ] # Final action is show
             for act in seq:
                 reward, state = env.step(act)
                 cur_return += reward
@@ -119,15 +121,13 @@ if __name__ == "__main__":
 
         lf.write( '{}\t{}\t{}\t{}\n'.format(idx, best_seqs[idx], best_returns[idx], APs[idx]))
         lf.flush()
+
+        print("Brute forcing answer index {}, Best return {}. Time taken {}".format(idx, best_returns[idx], time.time() - tstart))
         return best_seqs[idx],best_returns[idx],APs[idx]
 
     # Start multiprocessing
-    pool = Pool(10)
-    for i in xrange(16):
-        print("{}0~{}9".format(i,i))
-        pool.map(brute_force_job, tuple(range(i*10,(i+1)*10)))
-        print('160~162')
-        pool.map(brute_force_job, tuple(range(160,163)))
+    pool = Pool(8)
+    results = pool.map(brute_force_job, tuple(range(163)))
 
     lf.close()
     # Bruce Force Pickle
