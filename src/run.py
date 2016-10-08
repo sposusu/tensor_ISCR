@@ -1,16 +1,15 @@
 import argparse
 from collections import defaultdict
 import cPickle as pickle
-import numpy as np
 import datetime
 import logging
 import itertools
-from multiprocessing import Pool
 import os
 import random
 import sys
 import time
 
+import numpy as np
 from progressbar import ProgressBar,Percentage,Bar,ETA
 from sklearn.cross_validation import KFold
 from termcolor import cprint
@@ -52,7 +51,7 @@ def set_environment(retrieval_args):
   env = Environment(retrievalmodule,simulateduser)
   return env
 
-def set_agent(training_args, reinforce_args, feature_length, result_dir):
+def set_agent(retrieval_args, training_args, reinforce_args, feature_length, result_dir):
     print("Setting up Agent...")
 
     ######################################
@@ -94,7 +93,7 @@ def set_agent(training_args, reinforce_args, feature_length, result_dir):
                                     rng               = rng
                                       )
 
-    experiment_prefix = os.path.join(result_dir,'model')
+    experiment_prefix = os.path.join(result_dir,retrieval_args.get("exp_name"),'model')
 
     agt = agent.NeuralAgent(
                             q_network           = network,
@@ -114,12 +113,12 @@ def set_agent(training_args, reinforce_args, feature_length, result_dir):
 ###############################
 #          Experiment         #
 ###############################
-class experiment():
+class experiment(object):
     def __init__(self,retrieval_args, training_args, reinforce_args, agent,env):
         print('Initializing experiment...')
         self.set_logging(retrieval_args)
 
-        self.training_data, self.testing_data = self.load_query(retrieval_args)
+        self.training_data, self.testing_data = experiment.load_query(retrieval_args)
 
         self.agent = agent
         self.env = env
@@ -143,28 +142,56 @@ class experiment():
 
         logging.basicConfig(filename=exp_log_path,level=logging.DEBUG)
 
-    def load_query(self, retrieval_args):
+        # Display Parameters
+        experiment.print_green("data dir: {}".format(retrieval_args.get('data_dir')))
+        experiment.print_green("fold: {}".format(retrieval_args.get('fold')))
+        experiment.print_green("feature_type: {}".format(retrieval_args.get('feature_type')))
+        experiment.print_green("keyterm_thres: {}".format(retrieval_args.get('keyterm_thres')))
+        experiment.print_green("experiment_log_file: {}".format(exp_log_path))
 
-      data_dir = retrieval_args.get("data_dir")
-      query_pickle = os.path.join(data_dir,'query.pickle')
-      data = reader.load_from_pickle(query_pickle)
+    @staticmethod
+    def print_red(x):  # epoch
+        cprint(x, 'red')
+        logging.info(x)
 
-      fold = retrieval_args.get('fold')
+    @staticmethod
+    def print_blue(x): # train info
+        cprint(x, 'blue')
+        logging.info(x)
 
-      if fold == -1:
-          return data, data
-      else:
-          kf = KFold(len(data), n_folds=10)
+    @staticmethod
+    def print_yellow(x): # test info
+        cprint(x, 'yellow')
+        logging.info(x)
 
-          tr,tx = list(kf)[fold-1]
+    @staticmethod
+    def print_green(x):  # parameter
+        cprint(x, 'green')
+        logging.info(x)
 
-          training_data = [ data[i] for i in tr ]
-          testing_data  = [ data[i] for i in tx ]
+    @staticmethod
+    def load_query(retrieval_args):
+        data_dir = retrieval_args.get("data_dir")
+        query_pickle = os.path.join(data_dir,'query.pickle')
+        data = reader.load_from_pickle(query_pickle)
 
-          return training_data, testing_data
+        fold = retrieval_args.get('fold')
+
+        if fold == -1:
+            return data, data
+        else:
+            kf = KFold(len(data), n_folds=10)
+
+            tr,tx = list(kf)[fold-1]
+
+            training_data = [ data[i] for i in tr ]
+            testing_data  = [ data[i] for i in tx ]
+
+            return training_data, testing_data
 
     def run(self):
-        print_red('Init Model')
+        # Start Running
+        experiment.print_red('Init Model')
 
         self.agent.start_testing()
         self.run_epoch(test_flag=True)
@@ -230,18 +257,18 @@ class experiment():
 
         if test_flag:
             MAP,Return = [ np.mean(APs) , np.mean(Returns) ]
-            print_yellow( 'MAP = {} \tReturn = {}'.format(MAP,Return) )
-            print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'\
+            experiment.print_yellow( 'MAP = {}\tReturn = {}'.format(MAP,Return) )
+            experiment.print_yellow( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'\
                 .format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
-
         else:
             Loss,BestReturn = [ np.mean(Losses), np.mean(self.best_return) ]
-            print_blue( 'Loss = {} \tepsilon = {} \tBest Return = {}'.format(Loss,self.agent.epsilon,BestReturn) )
-            print_blue( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'.format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
+            experiment.print_blue( 'Loss = {} \tepsilon = {} \tBest Return = {}'.format(Loss,self.agent.epsilon,BestReturn) )
+            experiment.print_blue( 'act[0] = {}\tact[1] = {}\tact[2] = {}\tact[3] = {}\tact[4] = {}'\
+                .format(self.act_stat[0],self.act_stat[1],self.act_stat[2],self.act_stat[3],self.act_stat[4]) )
 
-    def run_episode(self,q,ans,ans_index,max_steps,test_flag = False):
-        state = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
-        action     = self.agent.start_episode(state)
+    def run_episode(self,q,ans,ans_index,max_steps,test_flag=False):
+        state  = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
+        action = self.agent.start_episode(state)
         if test_flag and action != 4:
             logging.debug('action : -1 first pass\t\tAP : %f', self.env.retrievalmodule.MAP)
 
@@ -266,13 +293,13 @@ class experiment():
 
 
 #################################
-#     Run Training Function     #
+#     Run Training Function     #print_
 #################################
 def run_training(retrieval_args, training_args, reinforce_args):
     tstart = time.time()
 
     env   = set_environment(retrieval_args)
-    agent = set_agent(training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
+    agent = set_agent(retrieval_args, training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
 
     exp   = experiment(retrieval_args, training_args, reinforce_args, agent, env)
     print('Experiment Set. Time taken: {} seconds'.format(time.time()-tstart))
@@ -282,12 +309,13 @@ def run_training(retrieval_args, training_args, reinforce_args):
 #################################
 #    Brute Force Best Results   #
 #################################
-
 def run_bruteforce(retrieval_args, training_args, reinforce_args):
+    print("Running brute force")
+    # Brute Force Not Working
     tstart = time.time()
 
     env   = set_environment(retrieval_args)
-    agent = set_agent(training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
+    agent = set_agent(retrieval_args, training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
 
     assert retrieval_args.get('fold') == -1, "Fold should be -1 in brue force"
 
@@ -295,18 +323,18 @@ def run_bruteforce(retrieval_args, training_args, reinforce_args):
     print('Experiment Set. Time taken: {} seconds'.format(time.time()-tstart))
 
     # Brute Force Queries
-    queries, test_queries = exp.load_query()
+    queries, test_queries = exp.load_query(retrieval_args)
 
     # Brute Force Logging File
     result_dir = retrieval_args.get("result_dir")
-    exp_name = retrieval_args.get("exp_name")
-    exp_dir = os.path.join(result_dir,exp_name)
+    exp_name   = retrieval_args.get("exp_name")
+    exp_dir    = os.path.join(result_dir,exp_name)
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
-
     exp_logpath = os.path.join(exp_dir,exp_name + '_bruteforce.log')
+
     lf = open(exp_logpath,'w')
-    lf.write('Index\tBest sequence\tBest return\tAP\n')
+    lf.write('Index\tBest Sequence\tBest Return\tAP\n')
     lf.flush()
 
     best_returns = - np.ones(163)
@@ -315,10 +343,10 @@ def run_bruteforce(retrieval_args, training_args, reinforce_args):
 
     def brute_force_job(idx):
         q, ans, ans_index = queries[idx]
-        for seq in itertools.product(range(5),repeat=4)
+        for seq in itertools.product(range(5),repeat=4):
             cur_return = 0.
             init_state = env.setSession(q,ans,ans_index,True)
-            seq += [ 4 ] # Final Action is show
+            seq += [ 4 ] # Final action is show
             for act in seq:
                 reward, state = env.step(act)
                 cur_return += reward
@@ -333,44 +361,25 @@ def run_bruteforce(retrieval_args, training_args, reinforce_args):
                 best_seqs[idx] = seq
                 APs[idx] = AP
 
-
         lf.write( '{}\t{}\t{}\t{}\n'.format(idx, best_seqs[idx], best_returns[idx], APs[idx]))
         lf.flush()
         return best_seqs[idx],best_returns[idx],APs[idx]
 
     # Start multiprocessing
     pool = Pool(10)
-
     for i in xrange(16):
         print("{}0~{}9".format(i,i))
-        print(pool.map(brute_force_job, range(i*10,(i+1)*10)))
+        pool.map(brute_force_job, range(i*10,(i+1)*10))
         print('160~162')
-        print(pool.map(brute_force_job, range(160,163)))
+        pool.map(brute_force_job, range(160,163))
 
-    bruteforce_pickle = os.path.join(exp_dir,exp_name + '_bruteforce.pickle')
-
+    lf.close()
+    # Bruce Force Pickle
+    bruteforce_pickle = os.path.join(exp_dir,exp_name+'_bruteforce.pickle')
     with open(bruteforce,'w') as f:
         pickle.dump( (best_returns, best_seqs,APs),f )
         print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))
 
-#################################
-#        Cprint Function        #
-#################################
-def print_red(x):  # epoch
-    cprint(x, 'red')
-    logging.info(x)
-
-def print_blue(x): # train info
-    cprint(x, 'blue')
-    logging.info(x)
-
-def print_yellow(x): # test info
-    cprint(x, 'yellow')
-    logging.info(x)
-
-def print_green(x):  # parameter
-    cprint(x, 'green')
-    logging.info(x)
 
 if __name__ == "__main__":
     #################################
@@ -378,10 +387,10 @@ if __name__ == "__main__":
     #################################
     parser = argparse.ArgumentParser(description="Interactive Spoken Content Retrieval")
 
-    parser.add_argument("-d", "--directory", type=str, help="data directory", default='/home/ubuntu/InteractiveRetrieval/data/reference')
     parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
-    parser.add_argument("--result",  type=str, help="result directory", default=None)
-    parser.add_argument("--name",  type=str, help="experiment name", default=None)
+    parser.add_argument("-d", "--directory", type=str, help="data directory", default="")
+    parser.add_argument("--result", type=str, help="result directory", default=None)
+    parser.add_argument("--name", type=str, help="experiment name", default=None)
     parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
 
     args = parser.parse_args()
