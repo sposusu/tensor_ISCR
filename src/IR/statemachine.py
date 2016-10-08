@@ -35,7 +35,8 @@ class StateMachine(object):
       self.feat_len = 49
     elif feat == "wig" or feat == "nqc":
       self.feat_len = 5
-    print("feature length = {}".format(self.feat_len))
+
+    #print("feature length = {}".format(self.feat_len))
 
   def __call__(self,ret,action_type,curtHorizon,\
                 posmodel,negmodel,posprior,negprior):

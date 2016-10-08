@@ -15,7 +15,6 @@ class SimulatedUser(object):
 
     self.keyterm_thres = keyterm_thres
     self.topic_prob = topic_prob
-    print "keyterm_thres = ",self.keyterm_thres
 
     self.ans = None
 
