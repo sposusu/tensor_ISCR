@@ -89,7 +89,21 @@ if __name__ == "__main__":
         logfile_handle.write( '{}\t{}\t{}\n'.format(idx,EAPs[idx],EReturns[idx]) )
         logfile_handle.flush()
 
-        print("Random action idx {} ended. Time taken {} seconds.".format(idx,time.time()-tstart))
+        EAP_avg = np.mean(EAPs)
+        EReturns_avg = np.mean(EReturns)
+
+        print("Random action idx {} ended. AP {}, Return {}, Time taken {} seconds.".format(idx,EAP_avg, EReturns_avg, time.time()-tstart))
+
+        return EAP_avg, EReturns_avg
 
     p = multiprocessing.Pool(8)
-    p.map(randon_action_job,tuple(range(163)))
+    results = p.map(randon_action_job,tuple(range(163)))
+
+    aps, rets = zip(*results)
+    total_ap_avg = np.mean(aps)
+    total_ret_avg = np.mean(rets)
+
+    print("Total AP {}, Total Return {}".format(total_ap_avg,total_ap_avg))
+    logfile_handle.write("Total AP {}, Total Return {}".format(total_ap_avg,total_ap_avg))
+    logfile_handle.flush()
+    logfile_handle.close()
