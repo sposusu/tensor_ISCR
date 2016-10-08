@@ -7,7 +7,7 @@
 
 
 ### 2. Train Retrieval agent
-  * run.py: Specify data, fold, feature, experiment_prefix(directory to save results), result_directory with argparser\
+  * run.py: Specify data, fold, feature, experiment_prefix(directory to save results), result_directory with argparser
   * python src/run.py
   * Other argument can be adjusted/added/altered, see for yourself
 
