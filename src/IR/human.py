@@ -229,15 +229,5 @@ class SimulatedUser(object):
 
     return params
 
-
-
   def view(self, params):
     self.ret = params['ret']
-
-if __name__ == "__main__":
-    data_dir = '/home/ubuntu/InteractiveRetrieval/data/reference'
-    keyterm_thres = 0.5
-    topic_prob = True
-    survey = False
-    su = SimulatedUser( data_dir, keyterm_thres, topic_prob, survey)
-    import pdb; pdb.set_trace()
