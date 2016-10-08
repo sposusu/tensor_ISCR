@@ -131,9 +131,8 @@ class experiment():
         result_dir = retrieval_args.get('result_dir')
         exp_name = retrieval_args.get('exp_name')
         fold = retrieval_args.get('fold')
-
-        exp_name = result_dir.split('/')[-1] + '_fold{}'.format(str(fold)) + '.log'
-        exp_log_path = os.path.join(result_dir,exp_name)
+        exp_logfile = exp_name + '_fold{}'.format(str(fold)) + '.log'
+        exp_log_path = os.path.join(result_dir,exp_logfile)
         if not os.path.exists(result_dir):
             os.makedirs(result_dir)
 
@@ -143,7 +142,7 @@ class experiment():
 
       result_dir = retrieval_args.get("data_dir")
       query_pickle = os.path.join(result_dir,'query.pickle')
-      data = reader.load_from_pickle(query_pickle)[:10]
+      data = reader.load_from_pickle(query_pickle)
 
       fold = retrieval_args.get('fold')
 
@@ -265,7 +264,6 @@ def run_training(retrieval_args, training_args, reinforce_args):
 
     env   = set_environment(retrieval_args)
     agent = set_agent(training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
-    print("Environemt and Agent Set")
 
     exp   = experiment(retrieval_args, training_args, reinforce_args, agent, env)
     print('Experiment Set. Time taken: {} seconds'.format(time.time()-tstart))
@@ -298,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", type=str, help="data directory", default='/home/ubuntu/InteractiveRetrieval/data/reference')
     parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
     parser.add_argument("--prefix",  type=str, help="experiment prefix", default=None)
-    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all") # TODO not implement yet
+    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
 
     args = parser.parse_args()
 
@@ -310,7 +308,7 @@ if __name__ == "__main__":
         'result_dir': '/home/ubuntu/InteractiveRetrieval/result/onebest_CMVN',
         'exp_name': 'onebest_CMVN',
         'fold': args.fold,
-        'feature_type': args.feature
+        'feature_type': args.feature,
         'keyterm_thres': 0.5,
         'topic_prob': True,
         'cost_noise_std': 1
