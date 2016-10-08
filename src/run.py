@@ -2,25 +2,24 @@ import argparse
 from collections import defaultdict
 import cPickle as pickle
 import numpy as np
-import datetime,logging
+import datetime
+import logging
+import itertools
+from multiprocessing import Pool
 import os
 import random
 import sys
 import time
 
-import progressbar,argparse
-
-from termcolor import cprint
 from progressbar import ProgressBar,Percentage,Bar,ETA
+from sklearn.cross_validation import KFold
+from termcolor import cprint
 
 from DQN import agent, q_network
-from IR.environment import *
 from IR.dialoguemanager import DialogueManager
+from IR.environment import Environment
 from IR.human import SimulatedUser
-# util IO
-from IR.util import readFoldQueries,readLex,readInvIndex
 from IR import reader
-from sklearn.cross_validation import KFold
 
 ###############################
 #  Environment & Agent Setup  #
@@ -146,8 +145,8 @@ class experiment():
 
     def load_query(self, retrieval_args):
 
-      result_dir = retrieval_args.get("data_dir")
-      query_pickle = os.path.join(result_dir,'query.pickle')
+      data_dir = retrieval_args.get("data_dir")
+      query_pickle = os.path.join(data_dir,'query.pickle')
       data = reader.load_from_pickle(query_pickle)
 
       fold = retrieval_args.get('fold')
@@ -280,6 +279,79 @@ def run_training(retrieval_args, training_args, reinforce_args):
 
     exp.run()
 
+#################################
+#    Brute Force Best Results   #
+#################################
+
+def run_bruteforce(retrieval_args, training_args, reinforce_args):
+    tstart = time.time()
+
+    env   = set_environment(retrieval_args)
+    agent = set_agent(training_args, reinforce_args, env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
+
+    assert retrieval_args.get('fold') == -1, "Fold should be -1 in brue force"
+
+    exp   = experiment(retrieval_args, training_args, reinforce_args, agent, env)
+    print('Experiment Set. Time taken: {} seconds'.format(time.time()-tstart))
+
+    # Brute Force Queries
+    queries, test_queries = exp.load_query()
+
+    # Brute Force Logging File
+    result_dir = retrieval_args.get("result_dir")
+    exp_name = retrieval_args.get("exp_name")
+    exp_dir = os.path.join(result_dir,exp_name)
+    if not os.path.exists(exp_dir):
+        os.makedirs(exp_dir)
+
+    exp_logpath = os.path.join(exp_dir,exp_name + '_bruteforce.log')
+    lf = open(exp_logpath,'w')
+    lf.write('Index\tBest sequence\tBest return\tAP\n')
+    lf.flush()
+
+    best_returns = - np.ones(163)
+    best_seqs = defaultdict(list)
+    APs = np.zeros(163)
+
+    def brute_force_job(idx):
+        q, ans, ans_index = queries[idx]
+        for seq in itertools.product(range(5),repeat=4)
+            cur_return = 0.
+            init_state = env.setSession(q,ans,ans_index,True)
+            seq += [ 4 ] # Final Action is show
+            for act in seq:
+                reward, state = env.step(act)
+                cur_return += reward
+                if act == 4:
+                    break
+
+            terminal, AP = env.game_over()
+            sys.stderr.write('Query {}, Actions Sequence {}, Return = {}\n'.format(idx,seq,cur_return))
+
+            if cur_return > best_returns[idx]:
+                best_returns[idx] = cur_return
+                best_seqs[idx] = seq
+                APs[idx] = AP
+
+
+        lf.write( '{}\t{}\t{}\t{}\n'.format(idx, best_seqs[idx], best_returns[idx], APs[idx]))
+        lf.flush()
+        return best_seqs[idx],best_returns[idx],APs[idx]
+
+    # Start multiprocessing
+    pool = Pool(10)
+
+    for i in xrange(16):
+        print("{}0~{}9".format(i,i))
+        print(pool.map(brute_force_job, range(i*10,(i+1)*10)))
+        print('160~162')
+        print(pool.map(brute_force_job, range(160,163)))
+
+    bruteforce_pickle = os.path.join(exp_dir,exp_name + '_bruteforce.pickle')
+
+    with open(bruteforce,'w') as f:
+        pickle.dump( (best_returns, best_seqs,APs),f )
+        print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))
 
 #################################
 #        Cprint Function        #
