@@ -105,7 +105,7 @@ class Experiment(object):
 
         network = q_network.DeepQLearner(
                                         input_width       = feature_length,
-                                        input_height      = 1,
+                                        input_height      = input_height,
                                         net_width         = training_args.get('model_width'),
                                         net_height        = training_args.get('model_height'),
                                         num_actions       = num_actions,
