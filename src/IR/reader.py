@@ -1,5 +1,6 @@
 from collections import defaultdict
 from glob import glob
+import logging
 import operator
 import os
 import pickle
@@ -75,6 +76,9 @@ def readKeytermlist(keyterm_dir, query_dict):
 
     for word_id, prob in query_dict.iteritems():
         filepath = os.path.join(keyterm_dir,str(word_id))
+        if not os.path.isfile(filepath):
+            logging.info("Keyterm {} does not exist".format(word_id))
+            continue
         with open(filepath,'r') as fin:
             for idx, line in enumerate(fin.readlines(),1):
                 if idx > 100:
@@ -91,6 +95,9 @@ def readRequestlist(request_dir,fileIDs):
     requests = defaultdict(float)
     for fileID in fileIDs.keys():
         filepath = os.path.join(request_dir,str(fileID))
+        if not os.path.isfile(filepath):
+            logging.info("Request {} does not exist".format(fileID))
+            continue
         with open(filepath,'r') as fin:
             for line in fin.readlines():
                 pair = line.split()
