@@ -1,0 +1,10 @@
+Cython==0.24.1
+Lasagne==0.2.dev1
+Theano==0.8.0
+h5py==2.6.0
+progressbar==2.3
+scikit-learn==0.18
+sklearn==0.0
+termcolor==1.1.0
+tqdm==4.8.4
+tsne==v0.1.5
