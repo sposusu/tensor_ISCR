@@ -61,7 +61,7 @@ class Experiment(object):
         data_dir = retrieval_args.get('data_dir')
         feature_type = retrieval_args.get('feature_type')
 
-        retrievalmodule = DialogueManager(
+        dialoguemanager = DialogueManager(
                               data_dir            = data_dir,
                               feature_type        = feature_type
                             )
@@ -79,7 +79,7 @@ class Experiment(object):
                             )
 
         # Set Environment
-        env = Environment(retrievalmodule,simulateduser)
+        env = Environment(dialoguemanager,simulateduser)
         return env
 
     @staticmethod
