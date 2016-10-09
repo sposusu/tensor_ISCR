@@ -56,7 +56,7 @@ def run_visualize(network, feature, num_of_features, save_path):
         h5_handle.create_dataset('actions',data=actions)
 
     # Information
-    print("Number of features")
+    print("Number of features: {}".format(num_of_features))
 
 
 if __name__ == "__main__":
