@@ -26,7 +26,7 @@ class Experiment(object):
         self.env = Experiment.set_environment(retrieval_args)
 
         self.agent = Experiment.set_agent(retrieval_args, training_args, reinforce_args,\
-                self.env.retrievalmodule.statemachine.feat_len, retrieval_args.get('result_dir'))
+                self.env.dialoguemanager.statemachine.feat_len, retrieval_args.get('result_dir'))
 
         self.num_epochs      = training_args.get('num_epochs')
         self.steps_per_epoch = reinforce_args.get('steps_per_epoch')
@@ -242,7 +242,7 @@ class Experiment(object):
         state  = self.env.setSession(q,ans,ans_index,test_flag)  # Reset & First-pass
         action = self.agent.start_episode(state)
         if test_flag and action != 4:
-            logging.debug('action : -1 first pass\t\tAP : %f', self.env.retrievalmodule.MAP)
+            logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
         num_steps = 0
         while True:
@@ -252,7 +252,7 @@ class Experiment(object):
             num_steps += 1
 
             if test_flag: #and action != 4:
-                AM = self.env.retrievalmodule.actionmanager
+                AM = self.env.dialoguemanager.actionmanager
                 logging.debug('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
 
             if num_steps >= max_steps or terminal:  # STOP Retrieve

@@ -5,7 +5,7 @@ import numpy as np
 class Environment(object):
   def __init__(self, dialoguemanager,simulateduser):
     # Retrieval Module, with Search Engine and State Machine
-    self.dialoguemanager = dialologuemanager
+    self.dialoguemanager = dialoguemanager
     # Simulated User
     self.simulateduser = simulateduser
 
