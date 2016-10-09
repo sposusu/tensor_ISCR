@@ -4,23 +4,23 @@ import logging
 import operator
 import os
 
-# For Feature Extraction
+import numpy as np
+
 from actionmanager import ActionManager
 from searchengine import SearchEngine
 from statemachine import StateMachine
-import numpy as np
 
 class DialogueManager(object):
-  def __init__(self, data_dir, feature_type):
+  def __init__(self, data_dir, feature_type, survey):
     data_dir  = os.path.normpath(data_dir)
     data_name = os.path.basename(data_dir)
 
+    # Search Engine
     lex_file        = os.path.join(data_dir,data_name + '.lex')
     background_file = os.path.join(data_dir,data_name + '.background')
     inv_index_file  = os.path.join(data_dir, data_name + '.index')
     doclengs_file   = os.path.join(data_dir, data_name + '.doclength')
 
-    # Search Engine
     self.searchengine = SearchEngine(
                                     lex_file        = lex_file,
                                     background_file = background_file,
@@ -38,11 +38,11 @@ class DialogueManager(object):
                               )
 
     # Action Manager
-    #topic_dir       = os.path.join(data_dir,'lda')
     self.actionmanager = ActionManager(
                               background  = self.searchengine.background,
                               doclengs    = self.searchengine.doclengs,
-                              data_dir    = data_dir
+                              data_dir    = data_dir,
+                              survey      = survey
                               )
 
     # Training or Testing
@@ -133,15 +133,13 @@ class DialogueManager(object):
 
   def evalMAP(self,ret,ans):
     APs = [ evalAP(ret[i],ans[i]) for i in xrange(len(ret)) ]
-    print "warning!! MAP"
+    print("warning!! MAP")
     return sum(APs)/len(APs)
 
   def calculate_reward(self):
     if self.terminal:
-      reward = self.actionmanager.costTable[ 4 ]  # 0
+      reward = self.actionmanager.costTable[ 4 ]
     else:
-      #reward_std = self.actionmanager.noiseTable[ self.cur_action ]
-
       reward = self.actionmanager.costTable[ self.cur_action ] +\
                self.actionmanager.costTable['lambda'] * (self.MAP - self.lastMAP)
 

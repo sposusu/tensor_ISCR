@@ -9,11 +9,19 @@ if __name__ == "__main__":
     #################################
     parser = argparse.ArgumentParser(description="Interactive Spoken Content Retrieval")
 
+    # Retrieval Arguments
     parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
     parser.add_argument("-d", "--directory", type=str, help="data directory", default="")
-    parser.add_argument("--result", type=str, help="result directory", default=None)
-    parser.add_argument("--name", type=str, help="experiment name", default=None)
     parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
+    parser.add_argument("--use_survey", action = "store_true", help="use survey prob distributions", default = False)
+
+    # Training Arguments
+    parser.add_argument("--num_epochs", type=int, help="number of epochs", default=100)
+
+
+    # Saving Path Arguments
+    parser.add_argument("--name", type=str, help="experiment name", default=None)
+    parser.add_argument("--result", type=str, help="result directory", default=None)
 
     args = parser.parse_args()
 
@@ -31,12 +39,13 @@ if __name__ == "__main__":
         'exp_name': args.name,
         'fold': args.fold,
         'feature_type': args.feature,
+        'survey': args.use_survey,
         'keyterm_thres': 0.5,
         'topic_prob': True,
     }
 
     training_args = {
-        'num_epochs': 100,
+        'num_epochs': args.num_epochs,
         'batch_size': 256,
         'model_width': 1024,
         'model_height': 2,
@@ -52,7 +61,7 @@ if __name__ == "__main__":
         'epsilon_decay': 100000,
         'epsilon_min': 0.1,
         'epsilon_start': 1.0,
-        'freeze_interval': 100,
+        'freeze_interval': 500,
         'update_frequency': 1
     }
 

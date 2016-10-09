@@ -16,13 +16,17 @@ from util import  IndexToDocName, pruneAndNormalize
 from util import  renormalize
 import reader
 
-# Define Cost Table
-def genCostTable():
-  # default
-  values = [ -30., -10., -50., -20., 0., 0., 1000. ]
-  # according to survey
-  #values = [ -23., -13., -19., -23., 0., 0., 1000. ]
 
+########################
+#      Cost Table      #
+########################
+
+# Define Cost Table
+def genCostTable(survey):
+  if not survey: # Human defined costs
+    values = [ -30., -10., -50., -20., 0., 0., 1000. ]
+  else: # Survey Values
+    values = [ -23., -13., -19., -23., 0., 0., 1000. ]
   costTable = dict(zip(range(6)+['lambda'],values))
   return costTable
 
@@ -41,14 +45,16 @@ def genActionTable():
   at[4]  = 'show'
   return at
 
+##########################
+#     Action Manager     #
+##########################
 class ActionManager(object):
-    def __init__(self, background, doclengs, data_dir, \
+    def __init__(self, background, doclengs, data_dir, survey,\
                     topicleng=100, topicnumword=500):
 
         self.background  = background
         self.doclengs    = doclengs
 
-        #self.topiclist   = reader.load_from_pickle(topiclist_pickle)
         topic_dir         = os.path.join(data_dir,'lda')
         self.topiclist    = reader.readTopicWords(topic_dir)
 
@@ -59,7 +65,7 @@ class ActionManager(object):
         self.topicnumword = topicnumword
 
         # Since agent only returns integer as action
-        self.actionTable  = genActionTable()
+        self.actionTable  = genActionTable(survey)
         self.costTable    = genCostTable()
         self.noiseTable   = genNoiseTable()
 
@@ -126,12 +132,9 @@ class ActionManager(object):
     def expansion(self,prior,docnames,doclengs,back,iteration=10,mu=10,delta=1):
         models = []
         alphas = []
-        #print("Doc names")
-        #print(docnames)
-        #import pdb; pdb.set_trace()
+
         for name in docnames:
             if isinstance(name, str) or isinstance(name,int):
-                #docmodel_path = os.path.join(self.docmodel_dir,name)
                 docmodel_path = name
                 models.append(reader.readDocModel(docmodel_path))
             else:

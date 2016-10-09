@@ -34,6 +34,9 @@ class Experiment(object):
         self.best_seq = {}
         self.best_return = np.zeros(163) # to be removed
 
+    def __del__(self):
+        self.feature_pickle_handle.close()
+
     def set_logging(self, retrieval_args):
         result_dir   = retrieval_args.get('result_dir')
         exp_name     = retrieval_args.get('exp_name')
@@ -41,11 +44,16 @@ class Experiment(object):
         if not os.path.exists(exp_dir):
             os.makedirs(exp_dir)
 
+        # Log File
         fold         = retrieval_args.get('fold')
         exp_logfile  = exp_name + '_fold{}'.format(str(fold)) + '.log'
         exp_log_path = os.path.join(exp_dir,exp_logfile)
 
         logging.basicConfig(filename=exp_log_path,level=logging.DEBUG)
+
+        # Feature Pickle
+        feature_pickle = os.path.join(exp_dir,exp_name + '_feature.pickle')
+        self.feature_pickle_handle = open(feature_pickle,'wb')
 
         # Display Parameters
         Experiment.print_green("data dir: {}".format(retrieval_args.get('data_dir')))
@@ -60,10 +68,12 @@ class Experiment(object):
         # Dialogue Manager
         data_dir = retrieval_args.get('data_dir')
         feature_type = retrieval_args.get('feature_type')
+        survey = retrieval_args.get('survey')
 
         dialoguemanager = DialogueManager(
                               data_dir            = data_dir,
-                              feature_type        = feature_type
+                              feature_type        = feature_type,
+                              survey              = survey,
                             )
 
         # Simulated User
@@ -244,14 +254,21 @@ class Experiment(object):
         if test_flag and action != 4:
             logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
+        # Save state
+        self.feature_pickle_handle.write(str(state)+"\n")
+
         num_steps = 0
         while True:
-            reward, state = self.env.step(action)				# ENVIROMENT STEP
-            terminal, AP = self.env.game_over()
-            self.act_stat[action] += 1
+            reward, state = self.env.step(action) # ENVIRONMENT STEP
+            terminal, AP  = self.env.game_over()
+            self.act_stat[ action ] += 1
             num_steps += 1
 
-            if test_flag: #and action != 4:
+            # Save state
+            self.feature_pickle_handle.write(str(state)+"\n")
+
+            # Antonie: Why do this?
+            if test_flag: # and action != 4:
                 AM = self.env.dialoguemanager.actionmanager
                 logging.debug('action : %d %s\tcost : %s\tAP : %f\treward : %f',action,AM.actionTable[ action ],AM.costTable[ action ],AP,reward)
 
@@ -259,7 +276,7 @@ class Experiment(object):
                 self.agent.end_episode(reward, terminal)
                 break
 
-            action = self.agent.step(reward, state)			# AGENT STEP
+            action = self.agent.step(reward, state)	# AGENT STEP
 
         return num_steps, AP
 
