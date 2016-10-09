@@ -3,6 +3,7 @@
 ### Installation
   1. Lasagne, Theano
   2. Progressbar, tqdm
+  3. tsne(pip version)
 
 ### Work flow
   1. Built language models from PTV transcripts
@@ -25,8 +26,9 @@
 ### Change cost
   1. Change cost table: src/IR/actionmanager.py, possibly add another option in run_training.py, argparse
 
-### (NOT implemented) Visualize
-  1. I would record features, save to pickle of whatever during training, then use model pickle files ( stored in result/$exp_dir/$model ) to run and and record the results
+### Visualize
+  1. specify network pickle ,feature file, number of features, save_path with src/run_visualize.py
+  2. use jupyter notebook to open result/plot_feature_action.ipynb & previous save h5 file
 
 ### Other Notes
 - Don't ask me about the code and the data storage format, it's just as it is
