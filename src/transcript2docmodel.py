@@ -461,7 +461,7 @@ def cut_queries(query_utf8_file, query_utf8_jieba_file):
     if os.path.exists(query_utf8_jieba_file):
         print("Jieba query file has already been cut {}".format(query_utf8_jieba_file))
         return
-
+    print("Cutting queries with jieba to {}".format(query_utf8_jieba_file))
     with codecs.open(query_utf8_file,'r','utf-8') as f:
         with codecs.open(query_utf8_jieba_file,'w','utf-8') as fout:
             for line in f.readlines():
@@ -553,6 +553,7 @@ if __name__ == "__main__":
     query_pickle      = os.path.join(lm_dir,'query.pickle')
 
     run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)
+
     ###############################
     #     Create Action Models    #
     ###############################
