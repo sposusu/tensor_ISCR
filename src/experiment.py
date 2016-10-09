@@ -35,7 +35,7 @@ class Experiment(object):
         self.best_return = np.zeros(163) # to be removed
 
     def __del__(self):
-        self.feature_pickle_handle.close()
+        self.feature_handle.close()
 
     def set_logging(self, retrieval_args):
         result_dir   = retrieval_args.get('result_dir')
@@ -52,8 +52,8 @@ class Experiment(object):
         logging.basicConfig(filename=exp_log_path,level=logging.DEBUG)
 
         # Feature Pickle
-        feature_pickle = os.path.join(exp_dir,exp_name + '_feature.pickle')
-        self.feature_pickle_handle = open(feature_pickle,'wb')
+        feature_file = os.path.join(exp_dir,exp_name + '.feature')
+        self.feature_handle = open(feature_file,'wb')
 
         # Display Parameters
         Experiment.print_green("data dir: {}".format(retrieval_args.get('data_dir')))
@@ -61,6 +61,7 @@ class Experiment(object):
         Experiment.print_green("feature_type: {}".format(retrieval_args.get('feature_type')))
         Experiment.print_green("keyterm_thres: {}".format(retrieval_args.get('keyterm_thres')))
         Experiment.print_green("experiment_log_file: {}".format(exp_log_path))
+        Experiment.print_green("feature_file: {}".format(feature_file))
 
     @staticmethod
     def set_environment(retrieval_args):
@@ -255,7 +256,7 @@ class Experiment(object):
             logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
         # Save state
-        self.feature_pickle_handle.write(str(state)+"\n")
+        self.feature_handle.write(str(state.tolist())+"\n")
 
         num_steps = 0
         while True:
@@ -265,7 +266,8 @@ class Experiment(object):
             num_steps += 1
 
             # Save state
-            self.feature_pickle_handle.write(str(state)+"\n")
+            if state is not None:
+                self.feature_handle.write(str(state.tolist())+"\n")
 
             # Antonie: Why do this?
             if test_flag: # and action != 4:

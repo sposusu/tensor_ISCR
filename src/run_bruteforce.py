@@ -1,7 +1,6 @@
 import argparse
 from collections import defaultdict
 import cPickle as pickle
-import datetime
 import logging
 import itertools
 from multiprocessing import Pool

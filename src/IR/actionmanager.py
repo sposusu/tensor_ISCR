@@ -65,8 +65,8 @@ class ActionManager(object):
         self.topicnumword = topicnumword
 
         # Since agent only returns integer as action
-        self.actionTable  = genActionTable(survey)
-        self.costTable    = genCostTable()
+        self.actionTable  = genActionTable()
+        self.costTable    = genCostTable(survey)
         self.noiseTable   = genNoiseTable()
 
     def __call__(self, query):
