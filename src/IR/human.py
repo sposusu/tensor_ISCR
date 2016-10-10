@@ -57,7 +57,13 @@ class SimulatedUser(object):
     elif action == 'doc':
       if self.use_survey:
         l = [ item[0] for item in ret if self.ans.has_key(item[0]) ]
-        if self.use_survey:
+        # Work around for empty list
+        if len(l) == 0:
+          doc = None
+        elif len(l) == 1:
+          doc = l[0]
+        else:
+          # Normal procedure
           flag = np.random.uniform() * 100
           if flag < self.survey_probs['doc']:
             doc = l[0]
