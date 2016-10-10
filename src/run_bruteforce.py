@@ -133,4 +133,4 @@ if __name__ == "__main__":
     bruteforce_pickle = os.path.join(exp_dir,exp_name+'_bruteforce.pickle')
     with open(bruteforce_pickle,'wb') as f:
         pickle.dump( (best_returns, best_seqs,APs),f )
-    print("MAP = {}, Return = {}".format(np.means(APs),np.mean(best_returns)))
+    print("MAP = {}, Return = {}".format(np.mean(APs),np.mean(best_returns)))
