@@ -75,11 +75,16 @@ class SimulatedUser(object):
       params['doc'] = doc
 
     elif action == 'keyterm':
-      if len(self.keytermlist):
+      if len(self.keytermlist) is not 0:
         keyterm = self.keytermlist[0][0]
-        # Read Doc Model & determine relevancy
-        cnt = sum( 1.0 for a in self.ans \
-            if reader.readDocModel(os.path.join(self.data_dir,'docmodel',IndexToDocName(a))).has_key(a) )
+
+        # Determine relevancy with doc mdoels
+        cnt = 0.
+        for a in self.ans:
+            model_path = os.path.join(self.data_dir,'docmodel',reader.IndexToDocName(a)
+            if reader.readDocModel.has_key(a):
+                cnt += 1.
+
         del self.keytermlist[0]
 
         isrel =  ( True if cnt/len(self.ans) > self.keyterm_thres else False )

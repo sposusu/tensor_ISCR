@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # Simulator
     parser.add_argument("--keyterm_thres", type=float, help="keyterm threshold probability: 0.~1. | default=0.5",default=0.5)
     parser.add_argument("--choose_random_topic", action="store_true", help="choose random topic using topic weights", default=False)
-    parser.add_argument("--use_survey", action="store_true", help="use survey prob distributions, overrides --choose_random_topic", default=False)
+    parser.add_argument("--use_survey", action="store_true", help="use survey prob distributions, overrides choose_random_topic", default=False)
 
     # Training Arguments
     parser.add_argument("--num_epochs", type=int, help="number of epochs | default=100", default=100)
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, help="experiment name", default=None)
     parser.add_argument("--result", type=str, help="result directory", default=None)
 
+    # parse args
     args = parser.parse_args()
 
     # Check parser arguments

@@ -5,6 +5,7 @@ import operator
 import os
 import pickle
 import sys
+
 #############################
 #     Document Model        #
 #############################
@@ -70,24 +71,22 @@ def readDocModel(fname):
 ##############################
 #       Simulated User       #
 ##############################
-
 def readKeytermlist(keyterm_dir, query_dict):
     keyterms = defaultdict(float)
-
+    ##############
     for word_id, prob in query_dict.iteritems():
         filepath = os.path.join(keyterm_dir,str(word_id))
         if not os.path.isfile(filepath):
             logging.info("Keyterm {} does not exist".format(word_id))
             continue
+
         with open(filepath,'r') as fin:
             for idx, line in enumerate(fin.readlines(),1):
                 if idx > 100:
                     break
-
                 pair = line.split()
-
                 keyterms[ int(pair[0]) ] += prob * float(pair[1])
-
+                
     sorted_keyterm_list = sorted(keyterms.iteritems(),key=operator.itemgetter(1),reverse=True)
     return sorted_keyterm_list
 
@@ -108,9 +107,10 @@ def readRequestlist(request_dir,fileIDs):
 
 def readTopicWords(topic_dir):
     topic_word_list = []
-
-    for topic_filepath in sorted(glob(os.path.join(topic_dir,'*'))):
+    for i in range(128):
+        topic_filepath = os.path.join(topic_dir,str(i))
         if not os.path.isfile(topic_filepath):
+            logging.debug("topic file {} does not exist!".format(topic_filepath))
             continue
 
         words = {}
@@ -141,6 +141,19 @@ def load_from_pickle(filepath):
 
 def docNameToIndex(fname):
     return int(fname[1:])
+
+def IndexToDocName(index):
+    name = 'T'
+    if index < 10:
+        name += '000' + str(index)
+    elif index < 100:
+        name += '00' + str(index)
+    elif index < 1000:
+        name += '0' + str(index)
+    else:
+        name += str(index)
+    return name
+
 
 def pickle_searchengine(data_dir):
     searchengine_pickle = os.path.join(data_dir,'searchengine.pickle')

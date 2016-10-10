@@ -110,6 +110,7 @@ class Experiment(object):
         #    Predefined Network Parameters   #
         ######################################
 
+        # Network
         input_height = 1              # change feature
         input_width  = feature_length
         num_actions  = 5
@@ -144,7 +145,7 @@ class Experiment(object):
                                         batch_accumulator = batch_accumulator,
                                         rng               = rng
                                           )
-
+        # Agent
         experiment_prefix = os.path.join(result_dir,retrieval_args.get("exp_name"),'model')
 
         agt = agent.NeuralAgent(
@@ -183,8 +184,8 @@ class Experiment(object):
 
     def run(self):
         # Start Running
-        Experiment.print_red('Init Model')
-
+        # Test one epoch first
+        #Experiment.print_red('Init Model')
         #self.agent.start_testing()
         #self.run_epoch(test_flag=True)
         #self.agent.finish_testing(0)

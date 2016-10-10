@@ -1,5 +1,3 @@
-#from retrievalmodule import DialogueManager
-#from human import SimulatedUser
 import numpy as np
 
 class Environment(object):
@@ -70,6 +68,3 @@ class Environment(object):
 
   def game_over(self):
     return self.dialoguemanager.game_over()
-
-if __name__ == "__main__":
-  pass

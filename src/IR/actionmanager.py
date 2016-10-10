@@ -8,12 +8,11 @@
 from collections import defaultdict
 from copy import deepcopy
 import json
+import logging
 import operator
 import os
-import pdb
 
-from util import  IndexToDocName, pruneAndNormalize
-from util import  renormalize
+from util import  renormalize, pruneAndNormalize
 import reader
 
 
@@ -92,13 +91,13 @@ class ActionManager(object):
 
         elif action == 'doc':
             doc = params['doc']
-            if doc:
+            if doc is not None:
                 doc = int(doc)
-                self.posdocs.append(os.path.join(self.docmodel_dir,IndexToDocName(doc)))
+                self.posdocs.append(os.path.join(self.docmodel_dir,reader.IndexToDocName(doc)))
             	self.poslengs.append(self.doclengs[doc])
 
         elif action == 'keyterm':
-            if 'keyterm' in params:
+            if 'keyterm' in params: # len(keytermlist) is not 0
                 keyterm = int(params['keyterm'])
                 isrel = params['isrel'] == 'True'
                 if isrel:
@@ -111,15 +110,13 @@ class ActionManager(object):
             self.posprior[ request ] = 1.0
 
         elif action == 'topic':
-            if params['topic'] != None:
+            if params['topic'] is not None:
                 topicIdx = int(params['topic'])
                 self.topiclist[ topicIdx ]
                 self.posdocs.append(pruneAndNormalize(self.topiclist[ topicIdx ],self.topicnumword))
                 self.poslengs.append(self.topicleng)
-
-        elif action == 'show':
-          # This condition shouldn't happen, since we blocked this in environment.py
-            assert 0
+        else:
+            raise ValueError("Invalid action {}".format(action))
 
         posmodel = self.expansion(renormalize(self.posprior),self.posdocs,self.poslengs,self.background)
         negmodel = self.expansion(renormalize(self.negprior),self.negdocs,self.doclengs,self.background)

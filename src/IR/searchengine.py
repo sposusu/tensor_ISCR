@@ -1,8 +1,7 @@
+import logging
 import operator
-import pdb
 
 from retmath import cross_entropy
-from util import readLex, readList, readInvIndex, readBackground, readAnswer, readDocLength, docNameToIndex
 import reader
 
 class SearchEngine(object):
@@ -82,6 +81,3 @@ class SearchEngine(object):
 
     sorted_ret = sorted(result.iteritems(),key=operator.itemgetter(1),reverse=True)
     return sorted_ret
-
-if __name__ == "__main__":
-  pass

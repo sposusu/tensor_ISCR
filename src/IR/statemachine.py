@@ -1,5 +1,6 @@
 from collections import defaultdict
 import math
+import logging
 import os
 
 import numpy as np
@@ -8,7 +9,6 @@ import random
 from expansion import expansion
 from retmath import *
 from retrieval import retrieveCombination
-from util import IndexToDocName
 import reader
 
 class StateMachine(object):
@@ -66,7 +66,7 @@ class StateMachine(object):
 	doclengs = []
         for docID,score in ret[:50]:
           #model = self.docmodels[IndexToDocName(docID)]
-          docmodel_path = os.path.join(self.docmodel_dir,IndexToDocName(docID))
+          docmodel_path = os.path.join(self.docmodel_dir,reader.IndexToDocName(docID))
           model = reader.readDocModel(docmodel_path)
 
           docs.append(model)
@@ -104,7 +104,7 @@ class StateMachine(object):
       if k>=20:
         break
       #model = self.docmodels[IndexToDocName(docID)]
-      docmodel_path = os.path.join(self.docmodel_dir,IndexToDocName(docID))
+      docmodel_path = os.path.join(self.docmodel_dir, reader.IndexToDocName(docID))
       model = reader.readDocModel(docmodel_path)
 
       docs.append(model)
