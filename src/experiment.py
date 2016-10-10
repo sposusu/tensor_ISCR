@@ -185,10 +185,10 @@ class Experiment(object):
     def run(self):
         # Start Running
         # Test one epoch first
-        #Experiment.print_red('Init Model')
-        #self.agent.start_testing()
-        #self.run_epoch(test_flag=True)
-        #self.agent.finish_testing(0)
+        Experiment.print_red('Init Model')
+        self.agent.start_testing()
+        self.run_epoch(test_flag=True)
+        self.agent.finish_testing(0)
 
         for epoch in range(1,self.num_epochs+1,1):
             Experiment.print_red('Running epoch {0}'.format(epoch))
