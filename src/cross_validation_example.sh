@@ -8,5 +8,5 @@
 
 for i in {1..10}
 do
-    python run.py -f ${i} --feature ${1} --directory ${2} --result ${3} --name ${4}
+    python run_training.py -f ${i} --feature ${1} --directory ${2} --result ${3} --name ${4}
 done
