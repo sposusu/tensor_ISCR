@@ -57,40 +57,34 @@ class StateMachine(object):
 
     top_scores = [ -1 * x[1] for x in ret[:49] ]
     if self.feat == "raw":
-	return top_scores
+        return top_scores
     elif self.feat == "wig" or self.feat == "nqc":
-	wigs = []
-	nqcs = []
-	# read puesdo rel docs
-	docs = []
-	doclengs = []
+        metrics = []
+        # read puesdo rel docs
+        docs = []
+        doclengs = []
         for docID,score in ret[:50]:
-          #model = self.docmodels[IndexToDocName(docID)]
-          docmodel_path = os.path.join(self.docmodel_dir,reader.IndexToDocName(docID))
-          model = reader.readDocModel(docmodel_path)
+            docmodel_path = os.path.join(self.docmodel_dir,reader.IndexToDocName(docID))
+            model = reader.readDocModel(docmodel_path)
 
-          docs.append(model)
-          doclengs.append(self.doclengs[docID])
+            docs.append(model)
+            doclengs.append(self.doclengs[docID])
 
-	# Calculate wig & nqc
+        # Calculate wig & nqc
         irrel = cross_entropies(posmodel,self.background) - \
-                0.1 * cross_entropies(negmodel,self.background)
+            0.1 * cross_entropies(negmodel,self.background)
 
-	# Calculate at 10, 20, 30, 40 ,50
-	cal_num_list = [0, 10,20,30,40,50]
-   	for start, end in zip( cal_num_list[:-1], cal_num_list[1:] ):
-	  wig = 0.
-	  nqc = 0.
-	  for r in ret[start:end]:
-	    wig += ( r[1] - irrel ) / 10.
-	    nqc += math.pow(r[1]-irrel,2) / 10.
-	  wigs.append(wig)
-	  nqcs.append(nqc)
-
-	if self.feat == "wig":
-	  return wigs
-	else:
-	  return nqcs
+        # Calculate at 10, 20, 30, 40 ,50
+        cal_num_list = [0,10,20,30,40,50]
+        for start, end in zip( cal_num_list[:-1], cal_num_list[1:] ):
+            metric = 0.
+            for r in ret[start:end]:
+                if self.feat == "wig":
+                    metric += ( r[1] - irrel ) / 10.
+                else:
+                    metric += math.pow(r[1]-irrel,2) / 10.
+                metrics.append(metric)
+        return metrics
 
     feature = []
 

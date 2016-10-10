@@ -81,8 +81,8 @@ class SimulatedUser(object):
         # Determine relevancy with doc mdoels
         cnt = 0.
         for a in self.ans:
-            model_path = os.path.join(self.data_dir,'docmodel',reader.IndexToDocName(a)
-            if reader.readDocModel.has_key(a):
+            model_path = os.path.join(self.data_dir,'docmodel',reader.IndexToDocName(a))
+            if reader.readDocModel(model_path).has_key(a):
                 cnt += 1.
 
         del self.keytermlist[0]

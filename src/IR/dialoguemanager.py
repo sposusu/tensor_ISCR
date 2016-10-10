@@ -82,6 +82,7 @@ class DialogueManager(object):
     # Search Engine Retrieves Result
     self.ret = self.searchengine.retrieve( self.actionmanager.posmodel,\
                                             self.actionmanager.negmodel )
+
     self.curtHorizon += 1
 
     # Feature Extraction
