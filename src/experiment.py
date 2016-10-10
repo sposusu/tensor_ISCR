@@ -51,9 +51,12 @@ class Experiment(object):
 
         logging.basicConfig(filename=exp_log_path,level=logging.DEBUG)
 
-        # Feature Pickle
-        feature_file = os.path.join(exp_dir,exp_name + '.feature')
-        self.feature_handle = open(feature_file,'wb')
+        # Feature file handler, Open is specified
+        if retrieval_args.get('save_feature'):
+            feature_file = os.path.join(exp_dir,exp_name + '.feature')
+            self.feature_handle = open(feature_file,'wb')
+        else:
+            self.feature_handle = None
 
         # Display Parameters
         Experiment.print_green("data dir: {}".format(retrieval_args.get('data_dir')))
@@ -256,7 +259,8 @@ class Experiment(object):
             logging.debug('action : -1 first pass\t\tAP : %f', self.env.dialoguemanager.MAP)
 
         # Save state
-        self.feature_handle.write(str(state.tolist())+"\n")
+        if self.feature_handle is not None:
+            self.feature_handle.write(str(state.tolist())+"\n")
 
         num_steps = 0
         while True:
@@ -266,7 +270,7 @@ class Experiment(object):
             num_steps += 1
 
             # Save state
-            if state is not None:
+            if self.feature_handle is not None and state is not None:
                 self.feature_handle.write(str(state.tolist())+"\n")
 
             # Antonie: Why do this?

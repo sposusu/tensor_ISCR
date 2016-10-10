@@ -20,6 +20,7 @@ if __name__ == "__main__":
 
 
     # Saving Path Arguments
+    parser.add_argument("--save_feature", action="store_true", help="save encountered features to file", default = False)
     parser.add_argument("--name", type=str, help="experiment name", default=None)
     parser.add_argument("--result", type=str, help="result directory", default=None)
 
@@ -42,6 +43,7 @@ if __name__ == "__main__":
         'survey': args.use_survey,
         'keyterm_thres': 0.5,
         'topic_prob': True,
+        'save_feature': args.save_feature
     }
 
     training_args = {
