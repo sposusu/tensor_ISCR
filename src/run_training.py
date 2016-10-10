@@ -12,12 +12,15 @@ if __name__ == "__main__":
     # Retrieval Arguments
     parser.add_argument("-f", "--fold", type=int, help="fold 1~10", default=-1)
     parser.add_argument("-d", "--directory", type=str, help="data directory", default="")
-    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
-    parser.add_argument("--use_survey", action = "store_true", help="use survey prob distributions", default = False)
+    parser.add_argument("--feature_type", help="feature type (all/raw/wig/nqc)", default="all")
+
+    # Simulator
+    parser.add_argument("--keyterm_thres", type=float, help="keyterm threshold probability: 0.~1. | default=0.5",default=0.5)
+    parser.add_argument("--choose_random_topic", action="store_true", help="choose random topic using topic weights", default=False)
+    parser.add_argument("--use_survey", action="store_true", help="use survey prob distributions, overrides --choose_random_topic", default=False)
 
     # Training Arguments
     parser.add_argument("--num_epochs", type=int, help="number of epochs", default=100)
-
 
     # Saving Path Arguments
     parser.add_argument("--save_feature", action="store_true", help="save encountered features to file", default = False)
@@ -40,9 +43,9 @@ if __name__ == "__main__":
         'exp_name': args.name,
         'fold': args.fold,
         'feature_type': args.feature,
-        'survey': args.use_survey,
-        'keyterm_thres': 0.5,
-        'topic_prob': True,
+        'user_survey': args.use_survey,
+        'keyterm_thres': args.keyterm_thres,
+        'choose_random_topic': args.choose_random_topic,
         'save_feature': args.save_feature
     }
 

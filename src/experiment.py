@@ -81,15 +81,15 @@ class Experiment(object):
                             )
 
         # Simulated User
-        keyterm_thres = retrieval_args.get('keyterm_thres')
-        topic_prob    = retrieval_args.get('topic_prob')
-        survey        = retrieval_args.get('survey')
+        keyterm_thres          = retrieval_args.get('keyterm_thres')
+        choose_random_topic    = retrieval_args.get('choose_random_topic')
+        use_survey             = retrieval_args.get('use_survey')
 
         simulateduser = SimulatedUser(
-                            data_dir      = data_dir,
-                            keyterm_thres = keyterm_thres,
-                            topic_prob    = topic_prob,
-                            survey        = survey
+                            data_dir              = data_dir,
+                            keyterm_thres         = keyterm_thres,
+                            choose_random_topic   = choose_random_topic,
+                            use_survey            = use_survey
                             )
 
         # Set Environment
