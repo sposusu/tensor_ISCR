@@ -35,7 +35,8 @@ class Experiment(object):
         self.best_return = np.zeros(163) # to be removed
 
     def __del__(self):
-        self.feature_handle.close()
+        if self.feature_handle is not None:
+            self.feature_handle.close()
 
     def set_logging(self, retrieval_args):
         result_dir   = retrieval_args.get('result_dir')
