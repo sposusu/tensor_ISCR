@@ -116,7 +116,9 @@ def readTopicWords(topic_dir):
         words = {}
         with open(topic_filepath,'r') as f:
             for line in f.readlines():
-                pair = line.split()
+		pair = line.split()
+		if len(pair) == 0:
+			continue
                 words[ int(pair[0]) ] = float(pair[1])
         topic_word_list.append(words)
 
