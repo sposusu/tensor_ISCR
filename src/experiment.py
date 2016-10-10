@@ -63,8 +63,13 @@ class Experiment(object):
         Experiment.print_green("fold: {}".format(retrieval_args.get('fold')))
         Experiment.print_green("feature_type: {}".format(retrieval_args.get('feature_type')))
         Experiment.print_green("keyterm_thres: {}".format(retrieval_args.get('keyterm_thres')))
+        Experiment.print_green("choose_random_topic: {}".format(retrieval_args.get('choose_random_topic')))
+        Experiment.print_green("use_survey: {}".format(retrieval_args.get('use_survey')))
+        if retrieval_args.get('choose_random_topic') and retrieval_args.get('use_survey'):
+            Experiment.print_yellow("choose_random_topic overrided by use_survey!")
         Experiment.print_green("experiment_log_file: {}".format(exp_log_path))
-        Experiment.print_green("feature_file: {}".format(feature_file))
+        if retrieval_args.get('save_feature'):
+            Experiment.print_green("feature_file: {}".format(feature_file))
 
     @staticmethod
     def set_environment(retrieval_args):
@@ -179,9 +184,9 @@ class Experiment(object):
         # Start Running
         Experiment.print_red('Init Model')
 
-        self.agent.start_testing()
-        self.run_epoch(test_flag=True)
-        self.agent.finish_testing(0)
+        #self.agent.start_testing()
+        #self.run_epoch(test_flag=True)
+        #self.agent.finish_testing(0)
 
         for epoch in range(1,self.num_epochs+1,1):
             Experiment.print_red('Running epoch {0}'.format(epoch))

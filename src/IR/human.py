@@ -15,7 +15,7 @@ class SimulatedUser(object):
     self.data_dir = data_dir
 
     self.keyterm_thres = keyterm_thres
-    self.topic_prob = topic_prob
+    self.choose_random_topic = choose_random_topic
 
     self.ans = None
 
@@ -59,7 +59,7 @@ class SimulatedUser(object):
         l = [ item[0] for item in ret if self.ans.has_key(item[0]) ]
         if self.use_survey:
           flag = np.random.uniform() * 100
-          if flag < self.doc_prob:
+          if flag < self.survey_probs['doc']:
             doc = l[0]
           else:
             doc = l[1]
@@ -71,16 +71,17 @@ class SimulatedUser(object):
     elif action == 'keyterm':
       if len(self.keytermlist):
         keyterm = self.keytermlist[0][0]
-        # Read Doc Model
+        # Read Doc Model & determine relevancy
         cnt = sum( 1.0 for a in self.ans \
-            if os.path.join(self.data_dir,'model',IndexToDocName(a)).has_key(a) )
+            if reader.readDocModel(os.path.join(self.data_dir,'docmodel',IndexToDocName(a))).has_key(a) )
         del self.keytermlist[0]
 
         isrel =  ( True if cnt/len(self.ans) > self.keyterm_thres else False )
 
+        # Flip relevancy with keyterm probability
         if self.use_survey:
           flag = np.random.uniform() * 100.
-          if flag > self.keyterm_prob:
+          if flag > self.survey_probs['keyterm']:
             isrel = not isrel
 
         params['keyterm'] = keyterm
@@ -88,8 +89,9 @@ class SimulatedUser(object):
 
     elif action == 'request':
       if self.use_survey:
-        if self.request_type <= len(self.requestlist):
-          flag = np.random.randint(self.request_type)
+        request_type = self.survey_probs['request_type']
+        if request_type <= len(self.requestlist):
+          flag = np.random.randint(request_type)
         else:
           flag = np.random.randint(len(self.requestlist))
         request = self.requestlist[flag][0]

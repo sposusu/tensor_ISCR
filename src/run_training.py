@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_survey", action="store_true", help="use survey prob distributions, overrides --choose_random_topic", default=False)
 
     # Training Arguments
-    parser.add_argument("--num_epochs", type=int, help="number of epochs", default=100)
+    parser.add_argument("--num_epochs", type=int, help="number of epochs | default=100", default=100)
 
     # Saving Path Arguments
     parser.add_argument("--save_feature", action="store_true", help="save encountered features to file", default = False)
@@ -42,8 +42,8 @@ if __name__ == "__main__":
         'result_dir': args.result,
         'exp_name': args.name,
         'fold': args.fold,
-        'feature_type': args.feature,
-        'user_survey': args.use_survey,
+        'feature_type': args.feature_type,
+        'use_survey': args.use_survey,
         'keyterm_thres': args.keyterm_thres,
         'choose_random_topic': args.choose_random_topic,
         'save_feature': args.save_feature
