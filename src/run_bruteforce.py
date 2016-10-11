@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", type=str, help="data directory", default="")
     parser.add_argument("--result", type=str, help="result directory", default=None)
     parser.add_argument("--name", type=str, help="experiment name", default=None)
-    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="all")
+    parser.add_argument("--feature", help="feature type (all/raw/wig/nqc)", default="raw")
 
     args = parser.parse_args()
 
@@ -122,11 +122,17 @@ if __name__ == "__main__":
         lf.flush()
 
         print("Brute forcing answer index {}, Best return {}. Time taken {}".format(idx, best_returns[idx], time.time() - tstart))
-        return best_seqs[idx],best_returns[idx],APs[idx]
+        return idx, best_seqs[idx],best_returns[idx],APs[idx]
 
     # Start multiprocessing
     pool = Pool(8)
     results = pool.map(brute_force_job, tuple(range(163)))
+
+    # Since numpy isn't shared 
+    for idx, best_seq, best_return, AP in results:
+	best_seqs[idx] = best_seq
+	best_returns[idx] = best_return
+	APs[idx] = AP
 
     lf.close()
     # Bruce Force Pickle
