@@ -510,7 +510,6 @@ if __name__ == "__main__":
     ############################
 
     transcript_dir    = '../data/PTV_onebest_fromMATBN_charSeg'
-    jieba_dir         = os.path.join(transcript_dir,'jieba')
     transcript_name   = 'dnn'
 
     mallet_binary     = '../../Mallet/bin/mallet'
@@ -520,6 +519,7 @@ if __name__ == "__main__":
     data_dir  = '../data'
     PTV_dir   = os.path.join(data_dir,'ISDR-CMDP')
     query_dir = os.path.join(data_dir,'query')
+    jieba_dir         = os.path.join(transcript_dir,'jieba')
 
     cmvn_model_query_file = os.path.join(PTV_dir,'PTV.qry.model.CMVN')
     query_big5hex_file    = os.path.join(query_dir,'PTV.big5.query')
@@ -549,7 +549,7 @@ if __name__ == "__main__":
     #     Create Query Pickle     #
     ###############################
 
-    answer_file       = os.path.join(PTV_dir,'PTV.ans')
+    answer_file       = os.path.join(query_dir,'PTV.ans')
     query_pickle      = os.path.join(lm_dir,'query.pickle')
 
     run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)
