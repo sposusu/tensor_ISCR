@@ -368,8 +368,6 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
     else:
         os.system(train_topics_cmd.format(**train_topics_param))
 
-    os.system(train_topics_cmd.format(**train_topics_param))
-
     # Create topic models with normalized lda weights
     print("Create topic model word distributions with normalized lda weights {}".format(topic_words_weight_file))
 
