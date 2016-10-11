@@ -3,7 +3,7 @@
 ### Installation
   1. Lasagne, Theano
   2. Progressbar, tqdm
-  3. tsne(pip version)
+  3. tsne, cprint
 
 ### Work flow
   1. Built language models from PTV transcripts
