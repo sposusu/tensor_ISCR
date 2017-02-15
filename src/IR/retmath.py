@@ -74,6 +74,8 @@ def stdev(data):
   mean = sum(data)/float(len(data))
   for d in data:
     norm2 += math.pow(d,2)/float(len(data))
+  if norm2-math.pow(mean,2) < 0:
+    return 0;
   return math.sqrt(norm2-math.pow(mean,2))
 
 def Variability(ret,segments):

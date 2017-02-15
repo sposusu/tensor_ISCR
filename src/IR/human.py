@@ -21,10 +21,10 @@ class SimulatedUser(object):
 
     # surveyed distribution
     self.use_survey   = use_survey
-    self.survey_probs = { 'doc': 76.78,
-                          'keyterm': 95.28,
-                          'request_type': 22,
-                          'topic': 73.14 }
+    self.survey_probs = { 'doc': 78.26,
+                          'keyterm': 95.66,
+                          'request_type': 22, # no function
+                          'topic': 72.68 }
 
   def __call__(self,query,ans,ans_index):
     # query and desired answer
@@ -99,17 +99,17 @@ class SimulatedUser(object):
         params['isrel'] = isrel
 
     elif action == 'request':
-      if self.use_survey:
-        request_type = self.survey_probs['request_type']
-        if request_type <= len(self.requestlist):
-          flag = np.random.randint(request_type)
-        else:
-          flag = np.random.randint(len(self.requestlist))
-        request = self.requestlist[flag][0]
-        del self.requestlist[flag]
-      else:
-        request = self.requestlist[0][0]
-        del self.requestlist[0]
+      #if self.use_survey:
+      #  request_type = self.survey_probs['request_type']
+      #  if request_type <= len(self.requestlist):
+      #    flag = np.random.randint(request_type)
+      #  else:
+      #    flag = np.random.randint(len(self.requestlist))
+      #  request = self.requestlist[flag][0]
+      #  del self.requestlist[flag]
+      #else:
+      request = self.requestlist[0][0]
+      del self.requestlist[0]
 
       params['request'] = request
 

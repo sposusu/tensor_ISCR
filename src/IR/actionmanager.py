@@ -25,12 +25,12 @@ def genCostTable(survey):
   if not survey: # Human defined costs
     values = [ -30., -10., -50., -20., 0., 0., 1000. ]
   else: # Survey Values
-    values = [ -23., -13., -19., -23., 0., 0., 1000. ]
+    values = [ -22.5, -13., -19.6, -23.5, 0., 0., 1000. ]
   costTable = dict(zip(range(6)+['lambda'],values))
   return costTable
 
 def genNoiseTable():
-  values = [ 11., 7., 10., 11., 0.001, 0.001, 0001. ]
+  values = [ 11.9, 7., 11., 13., 0.001, 0.001, 0001. ]
   noiseTable = dict(zip(range(6)+['lambda'],values))
   return noiseTable
 
