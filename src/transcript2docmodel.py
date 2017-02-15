@@ -513,6 +513,10 @@ if __name__ == "__main__":
     jieba_dir         = os.path.join(transcript_dir,'jieba')
     transcript_name   = 'dnn'
 
+#    transcript_dir    = '../data/PTV_transcription_charSeg'
+#    jieba_dir         = os.path.join(transcript_dir,'jieba')
+#    transcript_name   = 'transcript'
+
     mallet_binary     = '../../Mallet/bin/mallet'
     ###############################
     #       Reconstruct Query     #
