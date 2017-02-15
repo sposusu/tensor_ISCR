@@ -368,8 +368,6 @@ def run_create_lda(mallet_binary, docmodel_dir, lda_dir, lex_file):
     else:
         os.system(train_topics_cmd.format(**train_topics_param))
 
-    os.system(train_topics_cmd.format(**train_topics_param))
-
     # Create topic models with normalized lda weights
     print("Create topic model word distributions with normalized lda weights {}".format(topic_words_weight_file))
 
@@ -510,7 +508,6 @@ if __name__ == "__main__":
     ############################
 
     transcript_dir    = '../data/PTV_onebest_fromMATBN_charSeg'
-    jieba_dir         = os.path.join(transcript_dir,'jieba')
     transcript_name   = 'dnn'
 
 #    transcript_dir    = '../data/PTV_transcription_charSeg'
@@ -524,6 +521,7 @@ if __name__ == "__main__":
     data_dir  = '../data'
     PTV_dir   = os.path.join(data_dir,'ISDR-CMDP')
     query_dir = os.path.join(data_dir,'query')
+    jieba_dir         = os.path.join(transcript_dir,'jieba')
 
     cmvn_model_query_file = os.path.join(PTV_dir,'PTV.qry.model.CMVN')
     query_big5hex_file    = os.path.join(query_dir,'PTV.big5.query')
@@ -553,7 +551,7 @@ if __name__ == "__main__":
     #     Create Query Pickle     #
     ###############################
 
-    answer_file       = os.path.join(PTV_dir,'PTV.ans')
+    answer_file       = os.path.join(query_dir,'PTV.ans')
     query_pickle      = os.path.join(lm_dir,'query.pickle')
 
     run_create_query_pickle(lex_file, query_utf8_file, answer_file, query_pickle)

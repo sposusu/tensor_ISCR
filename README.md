@@ -3,7 +3,7 @@
 ### Installation
   1. Lasagne, Theano
   2. Progressbar, tqdm
-  3. tsne(pip version)
+  3. tsne, cprint
 
 ### Work flow
   1. Built language models from PTV transcripts
@@ -34,3 +34,4 @@
 - Don't ask me about the code and the data storage format, it's just as it is
 - I believe there are bugs in Wen's data, naming a few
   - Some keyterms/requests do not exist, can reproduce if I can access Wen's recognition transcripts
+- Other cutting methods: snownlp
