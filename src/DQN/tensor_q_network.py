@@ -58,6 +58,7 @@ class DeepQLearner:
         self.S_ = tf.placeholder(tf.float32, [None, self.input_width], 's_')
         self.R = tf.placeholder(tf.float32,[None, 1],'r')
         self.A = tf.placeholder(tf.int32, [None, 1], 'a')
+        self.T = tf.placeholder(tf.float32, [None, 1], 't')
 
         #self.loss = tf.placeholder(tf.float32, [1], name='loss')
         self.q_target = tf.placeholder(tf.float32, [None, self.num_actions], name='Q_target') 
@@ -239,17 +240,24 @@ class DeepQLearner:
         states = states.reshape(-1, self.input_width)
         next_states = next_states.reshape(-1, self.input_width)
         update_rule = self.update_rule
+        terminals = terminals.astype(np.float32) 
         if (self.freeze_interval > 0 and
             self.update_counter % self.freeze_interval == 0):
             self.reset_q_hat()
-        q_vals, next_q_vals = self.sess.run([self.q_vals, self.next_q_vals],{self.S: states, self.A: actions, self.R: rewards, self.S_: next_states})
+        q_vals, next_q_vals = self.sess.run([self.q_vals, self.next_q_vals],{self.S: states, self.A: actions, self.R: rewards, self.S_: next_states, self.T: terminals})
         q_target = q_vals.copy()
-        #print(q_vals)
+        print(q_vals)
+        print("q_vals")
         #print(actions)
-        #print(self.R)        
-        q_target[np.arange(self.batch_size,dtype=np.int32), actions.astype(int)] = rewards +  self.discount * np.max(next_q_vals, axis=1)
+        #print(self.R) 
+        #print(terminals)
+        term = (np.ones_like(terminals) - terminals)
+        next_wq = np.multiply(term, np.max(next_q_vals, axis=1))
+        for i,r in enumerate(rewards):
+            q_target[i, actions[i][0]] = r + self.discount *next_wq[i][0]
         #q_vals = q_vals.reshape(-1,self.num_actions)
               # print(tar)
+        print(q_target)
         _,loss = self.sess.run([self._train,self.loss], feed_dict={self.S: states, self.q_target: q_target})
 #        loss, _ = self._train()
         self.update_counter += 1
@@ -549,7 +557,7 @@ class DeepQLearner:
         l_out = tf.layers.dense(
             layer,
             units=output_dim,
-            activation = self.activation,
+            #activation = self.activation,
             kernel_initializer=tf.truncated_normal_initializer(stddev=var),
             bias_initializer=tf.constant_initializer(bias),
             trainable = trainable
