@@ -57,12 +57,12 @@ if __name__ == "__main__":
         'model_height': 2,
         'learning_rate': 0.00025,
         'clip_delta': 1.0,
-        'update_rule': 'deepmind_rmsprop'
+        'update_rule': 'adam'
     }
 
     reinforce_args = {
         'steps_per_epoch': 1000,
-        'replay_start_size': 500,
+        'replay_start_size':500,
         'replay_memory_size': 10000,
         'epsilon_decay': 100000,
         'epsilon_min': 0.1,

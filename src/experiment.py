@@ -7,7 +7,7 @@ from progressbar import ProgressBar,Percentage,Bar,ETA
 from sklearn.cross_validation import KFold
 from termcolor import cprint
 
-from DQN import agent, q_network
+from DQN import agent, tensor_q_network
 from IR.dialoguemanager import DialogueManager
 from IR.environment import Environment
 from IR.human import SimulatedUser
@@ -124,7 +124,7 @@ class Experiment(object):
         batch_accumulator = 'sum'
         rng = np.random.RandomState()
 
-        network = q_network.DeepQLearner(
+        network = tensor_q_network.DeepQLearner(
                                         input_width       = feature_length,
                                         input_height      = input_height,
                                         net_width         = training_args.get('model_width'),
