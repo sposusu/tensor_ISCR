@@ -283,7 +283,7 @@ class NeuralAgent(object):
     def finish_epoch(self, epoch):
         net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
                         '.pkl', 'w')
-        cPickle.dump(self.network, net_file, -1)
+        #cPickle.dump(self.network, net_file, -1)
         net_file.close()
 
     def start_testing(self):

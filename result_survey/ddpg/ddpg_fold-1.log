@@ -39479,3 +39479,535 @@ DEBUG:root:ans_index 69
 DEBUG:root:average loss: 22.2547
 DEBUG:root:ans_index 64
 DEBUG:root:ans_index 143
+DEBUG:root:average loss: 22.2547
+DEBUG:root:ans_index 135
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 78
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 16
+DEBUG:root:ans_index 93
+DEBUG:root:average loss: 22.2288
+DEBUG:root:ans_index 31
+DEBUG:root:average loss: 22.0268
+DEBUG:root:ans_index 125
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 98
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 141
+DEBUG:root:average loss: 22.0749
+DEBUG:root:ans_index 53
+DEBUG:root:average loss: 21.2961
+DEBUG:root:ans_index 39
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 132
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 15
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 71
+DEBUG:root:ans_index 94
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 14
+DEBUG:root:average loss: 22.2288
+DEBUG:root:ans_index 120
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 118
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 52
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 111
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 24
+DEBUG:root:average loss: 20.6448
+DEBUG:root:ans_index 106
+DEBUG:root:ans_index 30
+DEBUG:root:average loss: 21.3431
+DEBUG:root:ans_index 73
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 161
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 147
+DEBUG:root:average loss: 21.7417
+DEBUG:root:ans_index 149
+DEBUG:root:average loss: 21.3431
+DEBUG:root:ans_index 79
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 10
+INFO:root:Keyterm 2753 does not exist
+DEBUG:root:ans_index 41
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 42
+DEBUG:root:ans_index 116
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 8
+DEBUG:root:average loss: 23.1405
+DEBUG:root:ans_index 18
+DEBUG:root:average loss: 22.0268
+DEBUG:root:ans_index 57
+DEBUG:root:ans_index 59
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 95
+DEBUG:root:ans_index 34
+DEBUG:root:ans_index 87
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 90
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 12
+INFO:root:Keyterm 4434 does not exist
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 5
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 77
+INFO:root:Keyterm 59601 does not exist
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 104
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 51
+DEBUG:root:average loss: 20.6124
+DEBUG:root:ans_index 114
+DEBUG:root:average loss: 21.3118
+DEBUG:root:ans_index 50
+DEBUG:root:average loss: 23.0354
+DEBUG:root:ans_index 133
+DEBUG:root:average loss: 20.6123
+DEBUG:root:ans_index 40
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 157
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 86
+DEBUG:root:average loss: 21.7676
+DEBUG:root:ans_index 136
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 146
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 27
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 107
+DEBUG:root:ans_index 108
+DEBUG:root:average loss: 19.8816
+DEBUG:root:ans_index 101
+DEBUG:root:ans_index 13
+DEBUG:root:ans_index 43
+DEBUG:root:average loss: 20.6124
+DEBUG:root:ans_index 124
+DEBUG:root:ans_index 85
+DEBUG:root:average loss: 23.1405
+DEBUG:root:ans_index 155
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 65
+DEBUG:root:average loss: 20.8560
+DEBUG:root:ans_index 119
+DEBUG:root:ans_index 38
+DEBUG:root:ans_index 67
+DEBUG:root:average loss: 21.6191
+DEBUG:root:ans_index 128
+DEBUG:root:average loss: 22.0268
+DEBUG:root:ans_index 17
+DEBUG:root:ans_index 137
+DEBUG:root:average loss: 21.2545
+DEBUG:root:ans_index 28
+DEBUG:root:average loss: 21.3118
+DEBUG:root:ans_index 47
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 99
+DEBUG:root:average loss: 22.2547
+DEBUG:root:ans_index 144
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 138
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 96
+DEBUG:root:average loss: 21.3118
+DEBUG:root:ans_index 88
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 45
+DEBUG:root:ans_index 48
+DEBUG:root:ans_index 156
+DEBUG:root:average loss: 21.3117
+DEBUG:root:ans_index 49
+DEBUG:root:average loss: 19.8816
+DEBUG:root:ans_index 35
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 7
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 91
+DEBUG:root:average loss: 24.0003
+DEBUG:root:ans_index 162
+DEBUG:root:average loss: 21.3117
+DEBUG:root:ans_index 1
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 83
+DEBUG:root:ans_index 74
+DEBUG:root:average loss: 21.7417
+DEBUG:root:ans_index 89
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 3
+DEBUG:root:average loss: 21.2961
+DEBUG:root:ans_index 62
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 72
+DEBUG:root:average loss: 21.7676
+DEBUG:root:ans_index 113
+DEBUG:root:ans_index 76
+DEBUG:root:average loss: 20.8246
+DEBUG:root:ans_index 61
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 68
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 29
+DEBUG:root:ans_index 58
+DEBUG:root:average loss: 22.2547
+DEBUG:root:ans_index 26
+DEBUG:root:average loss: 21.3117
+DEBUG:root:ans_index 100
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 140
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 153
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 37
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 19
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 6
+DEBUG:root:average loss: 19.8817
+DEBUG:root:ans_index 115
+DEBUG:root:ans_index 32
+DEBUG:root:average loss: 21.3117
+DEBUG:root:ans_index 75
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 110
+DEBUG:root:average loss: 20.8559
+DEBUG:root:ans_index 145
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 56
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 126
+DEBUG:root:average loss: 22.1975
+DEBUG:root:ans_index 105
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 159
+DEBUG:root:average loss: 22.7106
+DEBUG:root:ans_index 131
+DEBUG:root:average loss: 20.3688
+DEBUG:root:ans_index 134
+DEBUG:root:average loss: 20.6124
+DEBUG:root:ans_index 158
+DEBUG:root:average loss: 21.3430
+DEBUG:root:ans_index 151
+DEBUG:root:average loss: 24.0003
+DEBUG:root:ans_index 22
+DEBUG:root:ans_index 97
+DEBUG:root:average loss: 21.7989
+DEBUG:root:ans_index 33
+DEBUG:root:average loss: 21.7676
+DEBUG:root:ans_index 139
+DEBUG:root:average loss: 20.3688
+INFO:root:Loss = 8.83214334253 	epsilon = 0.997057 	Best Return = 51.7775330402
+INFO:root:act[0] = 223	act[1] = 202	act[2] = 202	act[3] = 181	act[4] = 192
+INFO:root:data dir: ../data/onebest_CMVN
+INFO:root:fold: -1
+INFO:root:feature_type: raw
+INFO:root:keyterm_thres: 0.5
+INFO:root:choose_random_topic: False
+INFO:root:use_survey: False
+INFO:root:experiment_log_file: ../result_survey/ddpg/ddpg_fold-1.log
+INFO:root:Init Model
+DEBUG:root:ans_index 0
+DEBUG:root:action : -1 first pass		AP : 0.010617
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.826316	reward : 765.698745
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.811355	reward : -64.960478
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.364410	reward : -496.945140
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.235747	reward : -178.663056
+DEBUG:root:Episode Reward : 25.130071
+DEBUG:root:ans_index 1
+DEBUG:root:action : -1 first pass		AP : 0.300860
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.334285	reward : -16.575154
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.672632	reward : 288.347059
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.706061	reward : -16.570973
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.650909	reward : -105.151515
+DEBUG:root:Episode Reward : 150.049418
+DEBUG:root:ans_index 2
+DEBUG:root:action : -1 first pass		AP : 0.500389
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.502849	reward : -47.539800
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.511494	reward : -41.354750
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.257576	reward : -303.918495
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.520408	reward : 212.832406
+DEBUG:root:Episode Reward : -179.980639
+DEBUG:root:ans_index 3
+DEBUG:root:action : -1 first pass		AP : 0.189603
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.173000	reward : -66.603543
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.237996	reward : 14.996117
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.209884	reward : -78.111553
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.022792	reward : -237.092559
+DEBUG:root:Episode Reward : -366.811537
+DEBUG:root:ans_index 4
+DEBUG:root:action : -1 first pass		AP : 0.531127
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.515860	reward : -65.266996
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.550809	reward : -15.050357
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.486234	reward : -114.575472
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.826262	reward : 290.028321
+DEBUG:root:Episode Reward : 95.135495
+DEBUG:root:ans_index 5
+DEBUG:root:action : -1 first pass		AP : 0.029402
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.035029	reward : -44.372861
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.310510	reward : 225.481079
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.414479	reward : 53.968587
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.458046	reward : -6.432903
+DEBUG:root:Episode Reward : 228.643901
+DEBUG:root:ans_index 6
+DEBUG:root:action : -1 first pass		AP : 0.333064
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.368640	reward : -14.423882
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.360491	reward : -58.149212
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.280867	reward : -129.624258
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.272208	reward : -58.658708
+DEBUG:root:Episode Reward : -260.856060
+DEBUG:root:ans_index 7
+DEBUG:root:action : -1 first pass		AP : 0.352811
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.354721	reward : -48.089587
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.391647	reward : -13.073621
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.347268	reward : -94.379734
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.247958	reward : -149.309881
+DEBUG:root:Episode Reward : -304.852823
+DEBUG:root:ans_index 8
+DEBUG:root:action : -1 first pass		AP : 0.151910
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.153417	reward : -48.493141
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.302855	reward : 99.437320
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.267636	reward : -85.218835
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.048683	reward : -268.952483
+DEBUG:root:Episode Reward : -303.227139
+DEBUG:root:ans_index 9
+DEBUG:root:action : -1 first pass		AP : 0.154086
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.164966	reward : -39.120789
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.231711	reward : 16.744934
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.168077	reward : -113.633406
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.238608	reward : 20.530515
+DEBUG:root:Episode Reward : -115.478746
+DEBUG:root:ans_index 10
+INFO:root:Keyterm 2753 does not exist
+DEBUG:root:action : 4 show	cost : 0.0	AP : 0.005222	reward : 0.000000
+DEBUG:root:Episode Reward : 0.000000
+DEBUG:root:ans_index 11
+DEBUG:root:action : -1 first pass		AP : 0.165109
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.132262	reward : -82.847028
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.035134	reward : -147.127739
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.034323	reward : -50.811806
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.238880	reward : 154.557561
+DEBUG:root:Episode Reward : -126.229011
+DEBUG:root:ans_index 12
+INFO:root:Keyterm 4434 does not exist
+DEBUG:root:action : -1 first pass		AP : 0.125446
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.086134	reward : -89.311179
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.044697	reward : -91.437484
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.502075	reward : 407.377719
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.500957	reward : -51.117751
+DEBUG:root:Episode Reward : 175.511305
+DEBUG:root:ans_index 13
+DEBUG:root:action : -1 first pass		AP : 0.000766
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.171429	reward : 120.662454
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.171429	reward : -50.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.316667	reward : 95.238095
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.500000	reward : 133.333333
+DEBUG:root:Episode Reward : 299.233883
+DEBUG:root:ans_index 14
+DEBUG:root:action : -1 first pass		AP : 0.722889
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.730220	reward : -42.668574
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.707421	reward : -72.799451
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.683678	reward : -73.742757
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.079339	reward : -654.338854
+DEBUG:root:Episode Reward : -843.549635
+DEBUG:root:ans_index 15
+DEBUG:root:action : -1 first pass		AP : 0.950000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 0.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.892857	reward : -157.142857
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 57.142857
+DEBUG:root:Episode Reward : -150.000000
+DEBUG:root:ans_index 16
+DEBUG:root:action : -1 first pass		AP : 0.505898
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.774854	reward : 218.955917
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.802778	reward : -22.076023
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.690278	reward : -162.500000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.638351	reward : -101.926523
+DEBUG:root:Episode Reward : -67.546630
+DEBUG:root:ans_index 17
+DEBUG:root:action : -1 first pass		AP : 0.063882
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.044095	reward : -69.786937
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.114305	reward : 20.210141
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.055057	reward : -109.247645
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.056067	reward : -48.990508
+DEBUG:root:Episode Reward : -207.814948
+DEBUG:root:ans_index 18
+DEBUG:root:action : -1 first pass		AP : 0.579939
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.556496	reward : -73.442748
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.587557	reward : -18.939090
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.482977	reward : -154.579515
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.161328	reward : -371.649018
+DEBUG:root:Episode Reward : -618.610370
+DEBUG:root:ans_index 19
+DEBUG:root:action : -1 first pass		AP : 0.077062
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.061006	reward : -66.055641
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.346632	reward : 235.625762
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.460777	reward : 64.145693
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.372682	reward : -138.095817
+DEBUG:root:Episode Reward : 95.619998
+DEBUG:root:ans_index 20
+DEBUG:root:action : -1 first pass		AP : 0.869794
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.778259	reward : -141.535689
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.827538	reward : -0.720570
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.351422	reward : -526.116558
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.339798	reward : -61.623832
+DEBUG:root:Episode Reward : -729.996649
+DEBUG:root:ans_index 21
+DEBUG:root:action : -1 first pass		AP : 0.505664
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.548758	reward : -6.905656
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.431778	reward : -166.979923
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.311374	reward : -170.403815
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.257605	reward : -103.769411
+DEBUG:root:Episode Reward : -448.058805
+DEBUG:root:ans_index 22
+DEBUG:root:action : -1 first pass		AP : 0.877572
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.871135	reward : -56.437119
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.879140	reward : -41.994789
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.873481	reward : -55.658792
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.875548	reward : -47.933144
+DEBUG:root:Episode Reward : -202.023843
+DEBUG:root:ans_index 23
+DEBUG:root:action : -1 first pass		AP : 0.297623
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.293825	reward : -53.798566
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.554334	reward : 210.509122
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.502839	reward : -101.494640
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.384938	reward : -167.901498
+DEBUG:root:Episode Reward : -112.685582
+DEBUG:root:ans_index 24
+DEBUG:root:action : -1 first pass		AP : 0.340529
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.339449	reward : -51.080017
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.647108	reward : 257.659306
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.547521	reward : -149.587202
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.515530	reward : -81.990573
+DEBUG:root:Episode Reward : -24.998486
+DEBUG:root:ans_index 25
+DEBUG:root:action : -1 first pass		AP : 0.423303
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.530830	reward : 57.527465
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.407076	reward : -173.754476
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.171779	reward : -285.296832
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.181947	reward : -39.831937
+DEBUG:root:Episode Reward : -441.355779
+DEBUG:root:ans_index 26
+DEBUG:root:action : -1 first pass		AP : 0.558436
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.583694	reward : -24.741877
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.556069	reward : -77.625044
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.414313	reward : -191.756421
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.587406	reward : 123.093521
+DEBUG:root:Episode Reward : -171.029821
+DEBUG:root:ans_index 27
+DEBUG:root:action : -1 first pass		AP : 0.581714
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.601495	reward : -30.218629
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.593340	reward : -58.155795
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.570458	reward : -72.881160
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.508730	reward : -111.728679
+DEBUG:root:Episode Reward : -272.984263
+DEBUG:root:ans_index 28
+DEBUG:root:action : -1 first pass		AP : 0.067320
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.074562	reward : -42.758682
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.279956	reward : 155.393982
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.656931	reward : 326.975580
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.549150	reward : -157.781521
+DEBUG:root:Episode Reward : 281.829360
+DEBUG:root:ans_index 29
+DEBUG:root:action : -1 first pass		AP : 0.482833
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.495386	reward : -37.447535
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.394265	reward : -151.120436
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.226107	reward : -218.157844
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.157658	reward : -118.449787
+DEBUG:root:Episode Reward : -525.175602
+DEBUG:root:ans_index 30
+DEBUG:root:action : -1 first pass		AP : 0.627912
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.641520	reward : -36.391716
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.645455	reward : -46.065355
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.588209	reward : -107.245587
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.162435	reward : -475.774093
+DEBUG:root:Episode Reward : -665.476751
+DEBUG:root:ans_index 31
+DEBUG:root:action : -1 first pass		AP : 0.554375
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.524110	reward : -80.265772
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.494631	reward : -79.478320
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.354748	reward : -189.883121
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.037256	reward : -367.491801
+DEBUG:root:Episode Reward : -717.119013
+DEBUG:root:ans_index 32
+DEBUG:root:action : -1 first pass		AP : 0.636940
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.632973	reward : -53.967228
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.666791	reward : -16.182147
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.692194	reward : -24.596495
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.663821	reward : -78.373013
+DEBUG:root:Episode Reward : -173.118884
+DEBUG:root:ans_index 33
+DEBUG:root:action : -1 first pass		AP : 0.002381
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.014085	reward : -38.296445
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.333333	reward : 269.248826
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 616.666667
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:Episode Reward : 797.619048
+DEBUG:root:ans_index 34
+DEBUG:root:action : -1 first pass		AP : 0.144311
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.145197	reward : -49.113844
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.192799	reward : -2.397593
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.239285	reward : -3.514246
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.154917	reward : -134.368378
+DEBUG:root:Episode Reward : -189.394061
+DEBUG:root:ans_index 35
+DEBUG:root:action : -1 first pass		AP : 0.016845
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.011644	reward : -55.201296
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.132395	reward : 70.750802
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.453932	reward : 271.536880
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.304798	reward : -199.133954
+DEBUG:root:Episode Reward : 87.952431
+DEBUG:root:ans_index 36
+DEBUG:root:action : -1 first pass		AP : 0.704728
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.695774	reward : -58.953952
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.656821	reward : -88.953183
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.069691	reward : -637.129980
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.360844	reward : 241.152777
+DEBUG:root:Episode Reward : -543.884338
+DEBUG:root:ans_index 37
+DEBUG:root:action : -1 first pass		AP : 0.625000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 325.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.833333	reward : -216.666667
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 116.666667
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:Episode Reward : 175.000000
+DEBUG:root:ans_index 38
+DEBUG:root:action : -1 first pass		AP : 0.000290
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 949.710313
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.500000	reward : -550.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : 450.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:Episode Reward : 799.710313
+DEBUG:root:ans_index 39
+DEBUG:root:action : -1 first pass		AP : 0.837127
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.840807	reward : -46.320478
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.825309	reward : -65.498175
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.858320	reward : -16.989053
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.866310	reward : -42.009559
+DEBUG:root:Episode Reward : -170.817267
+DEBUG:root:ans_index 40
+DEBUG:root:action : -1 first pass		AP : 1.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:action : 2 request	cost : -50.0	AP : 1.000000	reward : -50.000000
+DEBUG:root:Episode Reward : -200.000000
+DEBUG:root:ans_index 41
+DEBUG:root:action : -1 first pass		AP : 0.295008
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.272181	reward : -72.826435
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.292057	reward : -30.124944
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.205972	reward : -136.084927
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.212266	reward : -43.705957
+DEBUG:root:Episode Reward : -282.742263
+DEBUG:root:ans_index 42
+DEBUG:root:action : -1 first pass		AP : 0.637704
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.717337	reward : 29.633380
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.706803	reward : -60.534740
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.707629	reward : -49.173955
+DEBUG:root:action : 2 request	cost : -50.0	AP : 0.624835	reward : -132.793565
+DEBUG:root:Episode Reward : -212.868881
+DEBUG:root:ans_index 43
